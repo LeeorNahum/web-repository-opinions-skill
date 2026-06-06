@@ -1,6 +1,8 @@
 # Environment
 
-Env is for secrets and true environment variance. It is a contract per runtime, not a settings file and not a deployment database.
+Env setup should be boring, explicit, and hard to drift. An env example is a contract, not a secret store and not a deployment database. Each runtime owns its own contract. Deployed environments supply values through their host or provider.
+
+Env is for secrets and true environment variance, not a general settings file.
 
 ## Core Standard
 
@@ -10,6 +12,7 @@ Env is for secrets and true environment variance. It is a contract per runtime, 
 - Use the same key names across local, staging, and production. The store supplies different values.
 - Do not create `LOCAL_*`, `DEV_*`, and `PROD_*` triples unless one process truly connects to multiple stages at once.
 - Do not add a root `.env*` unless root code genuinely reads env at runtime. Package scripts, the monorepo tool, and workspace manifests do not justify it.
+- Do not create host-specific example files by default. Add a mode-specific example only when the required key set genuinely differs or a specific build artifact requires a different file.
 
 ## Keep In Env
 
@@ -31,6 +34,16 @@ Env is for secrets and true environment variance. It is a contract per runtime, 
 
 If a value changes product behavior and should be reviewed, prefer code. If it changes by store or stage, prefer env.
 
+## Stages
+
+Three conceptual stages. Key names stay the same across all three; only the values change by store.
+
+- `local`: values in `.env.local`, used from the developer machine.
+- `staging`: deployed non-production values, in the hosting platform's staging scope and the dev/test tier of each provider.
+- `production`: live values in the production host and provider environments.
+
+When provider resources can mix between stages, identify the intended source before wiring values. Pointing the wrong stage at a production provider is a category of mistake worth catching explicitly.
+
 ## Gitignore Contract
 
 ```gitignore
@@ -42,19 +55,37 @@ If a value changes product behavior and should be reviewed, prefer code. If it c
 
 Add project-specific secret patterns when relevant (`*credentials*.json`, `*.pem`). Never unignore a real env file to make a deploy easier.
 
-## Public And Server-Only
-
-Treat `NEXT_PUBLIC_*`, `VITE_*`, and similar prefixes as browser-exposed. Never put a secret behind a public prefix. Shared packages used by client bundles may read only public env. Framework-magic keys can be real even when grep does not find them; do not delete provider or framework keys just because no direct read appears.
-
 ## Runtime Ownership
 
+Each runtime that reads env gets its own `.env.example` and `.env.local` pair:
+
 ```text
-apps/site/.env.example      -> apps/site/.env.local
-apps/app/.env.example       -> apps/app/.env.local
+<surface-a>/.env.example      -> <surface-a>/.env.local
+<surface-b>/.env.example      -> <surface-b>/.env.local
 packages/backend/.env.example -> packages/backend/.env.local
 ```
 
-Beyond local files, values live in their store: the hosting platform's staging and production env, the backend deployment's env, and each provider dashboard. Provider function secrets belong in the backend deployment store, not in app env.
+Root package scripts, workspace manifests, and build orchestration tools do not justify a root env file.
+
+## Provider Stores
+
+Values live in exactly one durable store per stage:
+
+| Store | Owns |
+| --- | --- |
+| `.env.example` | Committed contract and setup hints |
+| `.env.local` | Developer-local real values, gitignored |
+| Hosting platform env (staging scope) | Deployed non-production surface values |
+| Hosting platform env (production scope) | Deployed production surface values |
+| Backend deployment env | Secrets the backend functions read, per deployment |
+| Provider dashboards | OAuth, webhooks, API keys, and provider-owned secrets |
+| CI secrets | Automation-only values |
+
+Inspect local and example files without printing secrets. Use provider CLIs or dashboards when available and safe. Ask for values only when they cannot be found or accessed.
+
+## Public And Server-Only
+
+Treat `NEXT_PUBLIC_*`, `VITE_*`, and similar prefixes as browser-exposed. Never put a secret behind a public prefix. Shared packages used by client bundles may read only public env. Framework-magic keys can be real even when no direct read appears in source; do not delete provider or framework keys just because grep does not find them.
 
 ## Cleanup Workflow
 
@@ -64,8 +95,9 @@ Beyond local files, values live in their store: the hosting platform's staging a
 4. Remove root env files unless justified.
 5. Remove unused or future-only keys unless clearly marked.
 6. Replace hardcoded production URL fallbacks with required env, safe origin inference, or a documented constant.
-7. Report missing values as key names and store locations, never secret values.
+7. Verify deployed stage separation for provider-backed services.
+8. Report missing values as key names and store locations, never secret values.
 
 If build or test output depends on env, update the build tool's task env inputs intentionally rather than adding a root env file as a workaround.
 
-Ask before rotating a credential or moving a secret between provider stores.
+Ask before rotating a credential, moving a secret between provider stores, or deleting a key whose usage may be framework-magic or provider-magic.
