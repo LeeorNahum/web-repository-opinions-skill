@@ -13,6 +13,18 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 
 One owner per opinion. Each reference owns its concept; other files use the term or shape without restating the rule. The reference-loading map lives in `SKILL.md` once; references assume the agent already loaded what their section needs.
 
+## Repository-Opinions Skill Layout
+
+This skill follows the shared layout for repository-opinions skills. Keep that shape so the skill type stays consistent and grows cleanly:
+
+- `SKILL.md` is a slim spine: a short thesis, a default-stack or default-toolchain table of swappable tool picks, the reference-loading map, the core non-negotiables, the repository audit, and a closing note that risky-change "Ask before" lines live in the references.
+- `references/*.md` hold one concept each, named by paradigm, carrying the detailed opinions. Distribute each "Ask before" guardrail into the reference that owns its topic rather than a standalone section.
+- `assets/` hold copyable starter configs that drop into a target repo. References explain the judgment; assets are the copy-paste artifacts.
+- `AGENTS.md` is this maintenance contract.
+- `README.md` is the human skim layer.
+
+A repository-opinions skill is opinionated and explicit, names its default tools as swappable picks, uses placeholder project names, and keeps one owner per opinion.
+
 ## Editing
 
 - Bump `metadata.version` with semver in the same change whenever behavior changes.
