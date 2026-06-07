@@ -17,7 +17,7 @@ Provider - Product Purpose (Scope)
 
 - Provider is the service the record points at or is verified by.
 - Product Purpose is the product plus what this specific record is for: the surface it serves, the connection it enables, or the verification it proves.
-- Scope is the deployment stage in parentheses, omitted for production.
+- Scope is the deployment stage in parentheses. Include it on any record that serves a single stage, production included. Leave it off only when one shared record is reused unchanged across every stage.
 
 So a single record reads as one phrase that says who owns it, what it does, and which stage it belongs to. Apply the comment to every record created during domain, verification, or provider setup, so the zone stays self-documenting.
 

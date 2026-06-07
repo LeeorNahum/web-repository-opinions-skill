@@ -8,4 +8,6 @@ Design every provider workflow around its order of operations, not its happy pat
 
 When the backend function shape changes, regenerate the clients and types before claiming the app is ready. Generated files are part of the runtime contract, not a build detail.
 
+A green build or typecheck proves the code compiles, not that the served surface renders or behaves correctly. Verify the running surface itself, including how it renders and whether styles and assets resolve, before calling it done.
+
 Saying done after a Git push while a runtime deploy, migration, or provider setting is still missing is not done. It is only locally edited.

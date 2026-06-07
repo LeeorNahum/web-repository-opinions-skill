@@ -22,3 +22,5 @@ Pick the role first, then the tool. Do not let a tool dictate architecture: the 
 Keep the chosen tool out of paradigm names. A folder is `auth`, not `clerk`. A module is `origins`, not `vercel-origins`. Name by what it does, not who provides it.
 
 TypeScript is the floor, not a choice. Prefer one language across apps, packages, and backend so types and helpers cross boundaries cleanly.
+
+Prefer the latest stable release of each tool, and follow its current conventions rather than an older major's. Keep the parts of the toolchain that must agree on the same major, so the config, build, types, and rendered runtime stay consistent.
