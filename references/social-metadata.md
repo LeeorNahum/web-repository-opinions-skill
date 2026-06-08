@@ -6,10 +6,16 @@ Every surface declares its identity for browsers and for the link-preview cards 
 
 Every surface ships a favicon. Set it deliberately rather than leaving the framework default.
 
-- First check whether a brand icon already exists in the repo or the brand source, and reuse it. Prefer an SVG icon, which scales cleanly across all sizes.
-- If none exists, create an SVG icon from the brand identity and use it.
-- Place the icon at the framework's expected path so the favicon links are emitted automatically.
-- Use the canonical brand asset, never a placeholder or a redrawn copy.
+First check whether a brand icon already exists in the repo or brand source, and reuse it. Prefer SVG, which scales cleanly. If none exists, create one from the brand identity. Use the canonical brand asset, never a placeholder or a redrawn copy.
+
+For **Next.js App Router**, ship two files in `app/` and nothing else:
+
+- `app/icon.svg` - Next.js auto-generates `<link rel="icon">` and serves it at `/icon.svg`. Use `/icon.svg` for in-page references such as the site header logo and OG image renderer.
+- `app/apple-icon.png` - the same icon as a 180x180 PNG. Next.js auto-generates `<link rel="apple-touch-icon">` for iOS home screen bookmarks.
+
+Do not add `metadata.icons` in `layout.tsx`. The files above handle it automatically with no configuration. Do not copy the icon into `public/` unless the product has additional brand assets beyond the favicon. Do not use `rel="shortcut icon"` - it is deprecated.
+
+Keep the in-page path in a named constant so all callers stay in sync if the path ever changes.
 
 ## Link Preview Cards
 
