@@ -14,3 +14,7 @@ Keep raw provider responses behind an adapter. Do not spread a provider's respon
 User-facing job status stays coarse. Store the internal step and the raw provider detail as metadata for operators, and show the user a simple, honest state.
 
 Route handlers must not own product rules for jobs. The same rule is needed by clients, server routes, jobs, and future clients, so it lives in shared logic.
+
+For work that can exceed one transaction or function budget, persist a phase and process bounded batches. Each invocation completes one small idempotent step, records progress, and schedules the next step. Repeated invocation resumes safely rather than restarting or duplicating effects.
+
+Use generation or version tokens when newer state can supersede a scheduled job before it runs. The job verifies the token and exits without changing current data when it represents an older snapshot.

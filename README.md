@@ -13,7 +13,7 @@ The opinions are paradigm-named and provider-stated: sections are named for what
 
 ## Coverage
 
-Architecture and naming, rendering and SPA feel, public and signed-in surfaces, routing, IDs, domains, origins, env contracts, branches, deployment, DNS, auth, bootstrap, data ownership, object storage, uploads, jobs, quota, failures, billing, admin, responsive layout, fonts, product UX, design tokens, social metadata, provider setup, and the operating philosophy that decides when work is actually done.
+Architecture and identity, rendering and surfaces, URL state, runtime and deployment, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI, billing and administration, and release readiness.
 
 ## Use
 

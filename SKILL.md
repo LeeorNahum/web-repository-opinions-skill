@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Use when planning, scaffolding, auditing, naming, or implementing a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS."
 metadata:
   author: "Leeor Nahum"
-  version: "1.2.1"
+  version: "1.3.0"
 ---
 
 # Web Repository Opinions
@@ -57,6 +57,7 @@ Surfaces:
 Identity and URLs:
 
 - Read `references/routing.md` when designing route paths.
+- Read `references/query-state.md` when URL-addressing search, filters, sorting, views, pagination, or explicitly selected defaults.
 - Read `references/ids.md` when choosing URL identifiers for resources.
 - Read `references/domains.md` when laying out apex, subdomains, and the canonical host.
 - Read `references/origins.md` when generating links or callbacks across apps and stages.
@@ -75,12 +76,16 @@ Auth and data:
 - Read `references/data-model.md` when modeling entities, names, and value precedence.
 - Read `references/source-of-truth.md` when deciding which system owns which fact.
 - Read `references/live-data.md` when wiring a reactive backend so the UI updates live.
+- Read `references/search-indexing.md` when defining searchable fields, indexing fetched data, or running search migrations.
+- Read `references/external-sources.md` when importing, canonicalizing, checking, or recovering provider-owned resources.
 
 Media and jobs:
 
 - Read `references/object-storage.md` when storing large files.
 - Read `references/uploads.md` when moving bytes from the browser to storage.
 - Read `references/background-jobs.md` when running provider-backed or long-running work.
+- Read `references/bulk-actions.md` when one user action processes multiple independent items or supports partial success.
+- Read `references/data-deletion.md` when one deletion operation must remove a dependent data graph across bounded steps.
 - Read `references/quota.md` when charging usage against limits.
 - Read `references/failure-and-retries.md` when handling failed work and retry behavior.
 
@@ -94,6 +99,7 @@ Frontend and UI:
 - Read `references/responsive-layout.md` when building or reviewing any layout across viewports.
 - Read `references/font-loading.md` when choosing or loading fonts.
 - Read `references/product-ux.md` when shaping the primary path, states, and product-native language.
+- Read `references/interaction-feedback.md` when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
 - Read `references/design-tokens.md` when defining a design token layer.
 - Read `references/social-metadata.md` when adding icons, favicons, and social embed metadata.
 
@@ -117,6 +123,7 @@ Operating philosophy:
 - Heavy bytes live in object storage. The database owns metadata and live state.
 - A reactive backend is wired end to end so the UI updates live, not by manual refetch.
 - One durable owner per fact. User-edited values outrank generated values; generated outrank defaults.
+- Compatibility requires an explicit supported contract. Current intended behavior replaces unreleased mistakes.
 - Env holds secrets and true environment variance. Product decisions live in code.
 - Same env key names across stages. Values change by store, not the key.
 - Branches are deployment roles: `dev` is local, `preview` is hosted staging on dev resources, `main` is production.
@@ -128,12 +135,12 @@ Operating philosophy:
 When invoked to audit a web repo:
 
 1. Classify public versus signed-in surfaces and whether their rendering posture matches.
-2. Inspect URL ID strategy, route paths, and link stability across reorganization.
+2. Inspect URL IDs, route paths, query-state restoration, and link stability across reorganization.
 3. Check auth bootstrap, workspace creation, and permission-gated UI that hides unavailable actions.
 4. Confirm per-runtime env contracts, no root env clutter, and same key names across stages.
-5. Check the media versus database split, direct uploads, and coarse user-facing job states.
-6. Verify no raw provider errors surface, no auto-retry on expensive jobs, and no UI freeze on upload or stop.
-7. Confirm branch-to-stage mapping, deploy gating, DNS records, and provider setup are documented near the runtime contract.
+5. Check ownership boundaries, external sources, search scope, media storage, and bounded data work.
+6. Verify user-facing failures, partial results, feedback, and responsive interaction states remain coherent.
+7. Confirm branch-to-stage mapping, deploy gating, migrations, webhooks, DNS records, and provider setup are documented near the runtime contract.
 8. Report mismatches by category and file area, never by leaking secret values or one-off product names.
 
 Several references end with an "Ask before" line for their riskiest changes, such as production domains, DNS, credentials, billing mode, public sharing, and provider resources. Honor those where the topic lives.

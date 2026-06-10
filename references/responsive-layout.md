@@ -39,6 +39,24 @@ At small viewports, decide what to show, defer, or hide, not just how to reflow.
 
 Horizontal scroll caused by layout is always a failure. Any element that can escape its container at any width must be fixed.
 
+Test hostile content, not only normal examples:
+
+- Long unbroken paths, URLs, identifiers, and filenames
+- Dialogs with scrollable result lists
+- Fixed or sticky action bars
+- Dense multi-action controls
+- Loading, success, and error icons in light and dark themes
+
+Keep keyboard focus visible through every responsive rearrangement.
+
+## Scrollbars And Scroll Lock
+
+Keep native scrolling. Style native scrollbars with standard scrollbar properties and a browser fallback rather than replacing wheel, touch, keyboard, or assistive behavior with a custom JavaScript scroller.
+
+Reserve the root scrollbar gutter so content does not shift when page overflow appears, disappears, or is locked by a dialog. When a dialog library adds scrollbar-width compensation, verify it does not double-compensate after a stable gutter is reserved.
+
+Use a visually intentional thumb and track that remain legible in light and dark themes. Preserve comfortable pointer targeting on the page scrollbar; reserve thin scrollbars for compact nested panes where space is constrained.
+
 ## Surface Considerations
 
 | Surface | Key constraint |
@@ -51,4 +69,4 @@ Horizontal scroll caused by layout is always a failure. Any element that can esc
 
 ## Verification
 
-Before a layout is complete, confirm no horizontal overflow and no broken hierarchy at the smallest target viewport, the largest, and a sweep of widths between. Resize continuously and watch for any width where the layout breaks, not just at named breakpoints.
+Before a layout is complete, confirm no horizontal overflow and no broken hierarchy at the smallest target viewport, the largest, and a sweep of widths between. Resize continuously and watch for any width where the layout breaks, not just at named breakpoints. Exercise real interaction states, including selection, partial failure, dialogs, and long content.

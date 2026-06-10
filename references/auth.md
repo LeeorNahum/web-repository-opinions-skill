@@ -26,4 +26,18 @@ Use separate OAuth credentials per stage. Each auth instance issues a different 
 
 Integration contract names, such as a JWT template name, can be code conventions. Make them env only if deployments truly need different names.
 
+## Identity And Deletion
+
+Store the provider's stable subject identifier on the application user. Provider webhooks and account cleanup resolve by that subject, not mutable email, handle, or profile data.
+
+Account deletion webhooks follow a strict contract:
+
+- Verify the signature before trusting the payload.
+- Deduplicate delivery by the provider event ID.
+- Treat repeated delivery as successful completion.
+- Enqueue bounded cleanup instead of deleting an account graph inside the HTTP request.
+- Remove only user-owned relationships, deduplication rows, and private metadata.
+- Delete the application user record last.
+- Preserve shared objects the user referenced but did not own.
+
 Ask before changing OAuth callback hosts or production auth settings.

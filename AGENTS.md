@@ -29,6 +29,12 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 
 - Bump `metadata.version` with semver in the same change whenever behavior changes.
 - Encode a default only when backed by user preference or real usage.
+- Treat criticism as evidence to reassess an opinion, not an automatic instruction to remove or preserve it.
+- Admit an opinion only when its scope is clear and it improves decisions across multiple unrelated web products. Keep a proven project pattern out of the skill when its generality is still uncertain.
+- Distinguish universal invariants, conditional patterns, product choices, and implementation details. State the condition for a conditional pattern instead of promoting it as a universal invariant.
+- Give broad sections an attention budget. A batch of related additions must not dominate Core Non-Negotiables, the repository audit, or README coverage merely because they were edited together.
+- Reserve Core Non-Negotiables for rules that should affect nearly every web repo. Keep narrower guidance in its owning reference.
+- Keep the repository audit balanced across architecture, runtime, data, UX, operations, and release readiness. Fold new checks into an existing category when they do not deserve a permanent top-level audit step.
 - Prefer deletion over caveats. More words is not better.
 - One opinion per reference. When a new paradigm, way of thinking, service, or workflow is added, give it its own reference file and add it to the `SKILL.md` reference-loading map. Do not bolt a second unrelated concept onto an existing reference.
 - When an existing concept grows, refactor its reference rather than scattering the idea across several files.
@@ -41,5 +47,11 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - **Capitalized bullets.** Start every bullet with a capital letter. Keep list voice consistent across all files.
 - **Sparing examples.** Use a concrete example only to clarify a shape or structure, never to fix a naming choice. Do not anchor a name with an example token the reader could copy verbatim instead of choosing the most accurate name for their own case.
 - **Positive rules.** State the action to take, not the mistake to avoid. Write "Use a role name for the integration" rather than "Do not name the integration after the vendor". A negative rule names the failure and quietly anchors it as the thing to copy; a positive rule points only at the correct move. A bare prohibition such as "Do not collapse the two surfaces" is weaker than "Keep each surface its own deployable". Reserve a "do not" only when no positive phrasing carries the same force, and never turn a banned example into a label the reader could lift verbatim.
+
+## Compatibility Posture
+
+Treat the current intended product contract as truth. Compatibility is never an automatic courtesy for unreleased, internal, or mistaken behavior.
+
+Add compatibility only when an explicit supported contract, deployed client, public integration, durable user data, or approved rollout requires it. Name the preserved contract, its consumers, its removal condition if temporary, and the verification that proves both old and new behavior remain intentional.
 
 Before finishing, confirm every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped if behavior changed, and the README layout matches the actual files.

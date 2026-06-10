@@ -8,6 +8,7 @@ Pick one durable owner per fact. The app orchestrates between owners; it does no
 | Raw bytes of large media | Object storage |
 | Subscription and payment truth | Billing provider |
 | Login identity | Auth provider |
+| External resource identity, canonical metadata, and availability | Source provider |
 | Pure product rules and constants | Domain package |
 | Deploy and runtime env values | Hosting and provider stores |
 
