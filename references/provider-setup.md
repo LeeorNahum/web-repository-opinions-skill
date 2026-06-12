@@ -2,6 +2,8 @@
 
 Provider dashboards are part of the product. A setting that can break the app is product work, not a chore buried in chat history.
 
+Provider resources should be understandable from the dashboard alone. Fill optional descriptions, labels, and tags with the product, operational purpose, and environment or shared scope. Use canonical names from the repo, and prefer concise metadata that helps both people and automation distinguish similar resources across stages. Resource-specific formats, such as DNS record comments, remain authoritative where defined.
+
 Track near the runtime contract:
 
 - CORS policies
