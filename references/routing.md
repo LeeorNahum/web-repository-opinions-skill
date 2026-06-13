@@ -40,4 +40,8 @@ Public routes for a marketing site are full descriptive leaf paths:
 
 Links must survive reorganization. Do not nest a stable entity under a reorganizable parent in the URL when moving the parent would break shared links. If an entity can move between parents, keep it at its own top-level prefix rather than under the parent's path.
 
+Owner-nest a public resource only when the owner is part of how people identify, browse, and verify it. Keep the child ID globally unique, give the resource one canonical owner-nested URL, and keep ownership stable for the lifetime of that URL.
+
+Use a top-level route when the resource is understood independently, can move between owners, or would keep the same identity after an ownership change.
+
 Same-app navigation uses relative paths. Cross-app navigation goes through origin helpers, never hardcoded hosts.

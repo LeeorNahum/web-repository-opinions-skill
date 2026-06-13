@@ -15,6 +15,10 @@ Name by paradigm, not by provider. A thing is named for what it does so the name
 
 Use `app` for the signed-in product. Name additional surfaces by their role: `admin`, `dashboard`, `console`, `portal`, `studio`. The role word is the name; there is no need for generic suffixes.
 
+Carry that role name through the whole surface. The app directory, package or deployable slug, hosting project suffix, and DNS subdomain should all identify the same role.
+
+Name a hosting project from the canonical repo identity plus the app role. Let the provider normalize unsupported characters. Add an environment suffix only when one provider project does not already represent all stages.
+
 ## Package Names
 
 Package names state purpose. Use names like `backend`, `domain`, `config`, `ui`. Keep each package's name describing the one job it owns.

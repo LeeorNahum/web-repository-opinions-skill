@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Use when planning, scaffolding, auditing, naming, or implementing a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS."
 metadata:
   author: "Leeor Nahum"
-  version: "1.4.0"
+  version: "1.6.0"
 ---
 
 # Web Repository Opinions
@@ -52,6 +52,7 @@ Surfaces:
 - Read `references/marketing-site.md` when building the public site.
 - Read `references/app-surface.md` when building the signed-in product.
 - Read `references/seo.md` when handling SEO for public pages.
+- Read `references/public-discovery.md` when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
 - Read `references/legal-pages.md` when adding privacy, terms, or other trust pages required by providers.
 
 Identity and URLs:
@@ -61,6 +62,7 @@ Identity and URLs:
 - Read `references/ids.md` when choosing URL identifiers for resources.
 - Read `references/domains.md` when laying out apex, subdomains, and the canonical host.
 - Read `references/origins.md` when generating links or callbacks across apps and stages.
+- Read `references/public-interfaces.md` when designing public APIs, MCP servers, Agent Skill adapters, OpenAPI contracts, protocol subdomains, CORS, caching, or rate limits.
 
 Runtime and environment:
 
@@ -100,6 +102,7 @@ Frontend and UI:
 - Read `references/font-loading.md` when choosing or loading fonts.
 - Read `references/product-ux.md` when shaping the primary path, states, and product-native language.
 - Read `references/interaction-feedback.md` when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
+- Read `references/user-facing-errors.md` when presenting failures from providers, frameworks, backend functions, validation, or unexpected exceptions.
 - Read `references/design-tokens.md` when defining a design token layer.
 - Read `references/social-metadata.md` when adding icons, favicons, and social embed metadata.
 
@@ -108,7 +111,7 @@ Operating philosophy:
 - Read `references/provider-setup.md` when configuring OAuth, webhooks, CORS, or allowed origins.
 - Read `references/runtime-truth.md` when deciding whether a change is actually complete.
 - Read `references/promotion.md` when promoting work between deployment stages.
-- Read `references/definition-of-done.md` when judging whether a feature is shippable.
+- Read `references/definition-of-done.md` before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.
 - Read `references/versioning.md` when bumping versions or keeping version mentions in sync.
 - Read `references/cleanup.md` when removing dead flows, stale docs, or temporary artifacts.
 
@@ -120,6 +123,7 @@ Operating philosophy:
 - Short, stable, non-sensitive IDs in private URLs. Never slugs for private, renameable objects.
 - Split the public site from the signed-in app by audience and runtime posture.
 - Name and isolate integrations by role so any single system can be swapped without rewriting callers.
+- Build product capabilities with product-shaped inputs and outputs so UI, API, MCP, jobs, and webhooks can compose them without owning their rules.
 - Heavy bytes live in object storage. The database owns metadata and live state.
 - A reactive backend is wired end to end so the UI updates live, not by manual refetch.
 - One durable owner per fact. User-edited values outrank generated values; generated outrank defaults.
@@ -128,6 +132,7 @@ Operating philosophy:
 - Same env key names across stages. Values change by store, not the key.
 - Branches are deployment roles: `dev` is local, `preview` is hosted staging on dev resources, `main` is production.
 - Charge quota before expensive work. Expensive jobs retry only on user action. Failed states must be actionable.
+- User-facing failures use product-owned copy. Raw exception, provider, framework, request, and stack details stay internal.
 - A change is done when the runtime it depends on is true, not when TypeScript compiles.
 
 ## Web Repository Audit

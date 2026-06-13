@@ -1,6 +1,8 @@
 # Modularity
 
-Build so the codebase is easy to change later. The cost that matters is not writing a feature once; it is swapping a system, adding a caller, or rerouting a flow a year from now. Design for that.
+Build the product as connected capabilities, not one long implementation welded to its first trigger and destination. The cost that matters is not writing a feature once. It is adding a caller, changing a provider, redirecting output, or repairing one section without breaking the whole flow.
+
+Treat boundaries like standard pipe fittings. A capability should accept a product-shaped input, perform one owned job, and return a product-shaped output that another capability can consume. Its first caller and first destination are examples, not permanent parts of its identity.
 
 ## Name By Role, Not Vendor
 
@@ -17,14 +19,16 @@ Keep provider payloads, model names, and SDK types from leaking past the adapter
 
 ## Make Capabilities Routable
 
-When a flow takes an input through a system and produces an output, build the system as a callable capability, not as logic welded inside one button handler or one route. Then any trigger can drive the same capability and get the same result: a UI action, a server route, a scheduled job, a webhook, or a future client.
+When a flow takes an input through a system and produces an output, build the system as a callable capability rather than logic embedded in one button handler or route. Any authorized trigger can then drive the same capability: UI, public API, MCP, scheduled job, webhook, CLI, or a future client.
 
-Prefer a shape where the trigger and the core are separable. The button calls the capability; an API endpoint can call the same capability; both produce the same output. This avoids rebuilding the logic the day a second entry point is needed.
+Keep trigger adapters, product rules, provider adapters, and destination adapters separately replaceable. The button and API endpoint translate their inputs into the same product command. The capability enforces the rules once. Each output adapter translates the result for its destination.
+
+UI, public API, MCP, jobs, and webhooks call shared product capabilities. They adapt inputs and outputs for their protocol but do not reimplement product rules.
 
 ## Think In The Whole Chain
 
-Design each flow as a sequence of steps that can be reasoned about and connected cleanly, with attention to how systems hand off to each other and in what order. Many failures come from connection order, not from any single step being wrong. Make the handoffs explicit so a flow can be extended, reordered, or partially reused.
+Design each flow as a sequence of explicit connections. Name what each step accepts, owns, returns, and may fail to produce. A flow should be extendable, reorderable, and partially reusable without copying its internal rules or breaking every caller.
 
 ## Right-Size The Complexity
 
-Modularity is for change that is plausible, not every change imaginable. Do not add layers, indirection, or seams for a swap that will never happen. Build the boundary where a real future swap or a real second caller is likely, and keep everything else direct. The goal is a clean chain that is easy to augment, not an over-engineered framework.
+Modularity is for plausible rerouting, not every imaginary variation. Add a boundary when a capability has multiple callers, multiple destinations, provider-owned behavior, independent failure handling, or a likely replacement. Keep one-off local transformations direct. The goal is a set of useful connection points, not an abstract framework.

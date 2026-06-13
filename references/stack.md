@@ -5,7 +5,9 @@ Default building blocks for a serious web product. Swap any tool, keep the role 
 | Role | Default | Swap when |
 | --- | --- | --- |
 | Monorepo | Turborepo + pnpm | A single deployable with no shared packages |
-| Framework | Next.js App Router + TypeScript | Static-only site, or a non-React target |
+| Rendered public or hybrid surface | Next.js App Router + TypeScript | Static-only site, or a non-React target |
+| Private client SPA | Vite + TypeScript | Server rendering or framework routing is required |
+| Protocol-only HTTP app | Hono + TypeScript | The runtime already provides an equally small standards-based router |
 | Styling | Tailwind + shadcn/ui + lucide-react | A design system already exists |
 | App data + live sync | Convex | No realtime need, or an existing database |
 | Auth | Clerk | Enterprise SSO requirements Clerk cannot meet |

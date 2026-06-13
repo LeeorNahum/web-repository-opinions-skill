@@ -14,3 +14,5 @@ For each page, decide what the viewer should notice first, next, and last, then 
 Fix structure before style. If the skeleton of a page is wrong, do not decorate it; reset the path first, then polish.
 
 Simulate the real interaction, not the static screenshot. A page that survives a skim can still break the moment someone tries to use it.
+
+Use product-owned dialogs, sheets, menus, and inline forms for user input and destructive confirmation. Browser-native `prompt`, `confirm`, and `alert` UI is not a product interface and must not ship.

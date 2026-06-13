@@ -8,10 +8,14 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 | --- | --- |
 | `SKILL.md` | Trigger, default stack, reference-loading map, non-negotiables, audit |
 | `references/*.md` | One single concept per file, named by paradigm |
-| `assets/` | Copyable starter files that become files in a target repo |
+| `assets/` | Exact copyable starter files governed by an owning reference |
 | `README.md` | Short human summary |
 
 One owner per opinion. Each reference owns its concept; other files use the term or shape without restating the rule. The reference-loading map lives in `SKILL.md` once; references assume the agent already loaded what their section needs.
+
+`definition-of-done.md` is a summary index across owning references, not a second source of truth. It may name completion categories and representative checks, but detailed rules stay in their concept references.
+
+When a reference has a copyable asset, the reference owns the decision and the asset owns the exact file bytes. Do not maintain a second complete copy of the asset inside the reference.
 
 ## Repository-Opinions Skill Layout
 
@@ -33,6 +37,8 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - Admit an opinion only when its scope is clear and it improves decisions across multiple unrelated web products. Keep a proven project pattern out of the skill when its generality is still uncertain.
 - Distinguish universal invariants, conditional patterns, product choices, and implementation details. State the condition for a conditional pattern instead of promoting it as a universal invariant.
 - Give broad sections an attention budget. A batch of related additions must not dominate Core Non-Negotiables, the repository audit, or README coverage merely because they were edited together.
+- Judge every addition against the whole file, not the size or focus of the current prompt. Give it only the heading level, repetition, and surrounding coverage its enduring importance warrants. Prefer fitting a narrow rule into its existing owner over creating a new section or widening several summary files around it.
+- Preserve working wording outside the required change. Refactor or replace an existing sentence only when the new requirement makes that sentence inaccurate, misplaced, or genuinely weaker, and confirm that the replacement preserves its prior meaning.
 - Reserve Core Non-Negotiables for rules that should affect nearly every web repo. Keep narrower guidance in its owning reference.
 - Keep the repository audit balanced across architecture, runtime, data, UX, operations, and release readiness. Fold new checks into an existing category when they do not deserve a permanent top-level audit step.
 - Prefer deletion over caveats. More words is not better.
