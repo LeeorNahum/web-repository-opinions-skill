@@ -2,13 +2,13 @@
 
 Each deployable app owns one hosting project, its public domain, and its runtime environment contract. Shared packages do not own deployments.
 
-Keep provider project boundaries aligned with deployable app boundaries. Site, app, API, MCP, jobs, and webhook runtimes must be able to deploy, roll back, and scale independently when they are separate apps.
+Keep provider project boundaries aligned with deployable app boundaries. The common order is site, signed-in app, API, MCP, admin, webhooks, then dedicated job runtimes as the product proves it needs them. Every separate app must be able to deploy, roll back, and scale without coupling its release to another surface.
 
 ## Branch Deployment
 
 Control branch deployment explicitly. Only `main` and `preview` auto-deploy by default. Block every other branch.
 
-Each deployable app carries a hosting config that gates deploys by branch. The exact starter file lives in `assets/vercel.json`; copy it rather than maintaining another inline version.
+Each deployable app carries its own hosting config that gates deploys by branch. Apply the same branch policy to every app instead of configuring only the primary site. The exact starter file lives in `assets/vercel.json`; copy it rather than maintaining another inline version.
 
 - `"*": false` blocks all branches by default, including `dev` and feature branches.
 - List explicit branches first and the wildcard last. Order is cosmetic.

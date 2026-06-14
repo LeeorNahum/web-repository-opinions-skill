@@ -4,6 +4,15 @@ This is a completion summary across the skill. It is not the source of truth for
 
 A feature is done only when its product contract, implementation, runtime, and verification agree. If one category is false or unknown, the work is locally edited, not done.
 
+Use this file as the first completion index:
+
+- Product behavior and failure states: `product-ux.md`, `interaction-feedback.md`, `user-facing-errors.md`
+- URLs and public discovery: `routing.md`, `query-state.md`, `public-discovery.md`, `seo.md`
+- Public protocols and agent access: `public-interfaces.md`
+- Data, migrations, and external sources: `data-model.md`, `source-of-truth.md`, `external-sources.md`, `search-indexing.md`
+- Runtime and deployment: `environment.md`, `branches.md`, `deployment.md`, `runtime-truth.md`, `provider-setup.md`
+- Responsive UI and visual contracts: `responsive-layout.md`, `design-tokens.md`, `social-metadata.md`
+
 ## Product Contract
 
 - The user flow works end to end.
