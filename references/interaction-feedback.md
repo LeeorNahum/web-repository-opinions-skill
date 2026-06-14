@@ -27,6 +27,16 @@ Transient feedback must not reflow the surrounding interface. Reserve its space,
 
 Choose reset timing by how the state was produced. Pointer feedback may reset when the pointer leaves if that is an established immediate interaction. Keyboard-triggered and remotely coordinated feedback stays visible long enough to perceive, then resets on a timer.
 
+## Compact Counts
+
+Use locale-aware short compact decimal notation for social and aggregate counts when the full value would compete with the action label. Build on the runtime's ECMA-402 `Intl.NumberFormat` compact notation so suffixes follow Unicode CLDR locale data.
+
+- Show exact localized integers below 1,000.
+- At 1,000 and above, use short compact notation with at most two significant digits, such as `1K`, `1.2K`, `12K`, `1.2M`, and `25M`.
+- Keep the full localized value in the accessible label and, when useful, a tooltip.
+- Reserve enough width for the longest supported compact form so count changes do not resize the control.
+- Keep the action label and its loading or success state in a separate stable column so wording changes do not move the count.
+
 ## Selection Surfaces
 
 Suppress accidental text selection only when a primary-pointer gesture begins on the non-interactive selection surface.
