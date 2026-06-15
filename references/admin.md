@@ -2,6 +2,8 @@
 
 Admin is a gated internal surface, not a hidden corner of the user app. Gate it explicitly by an admin role checked on the server, never by an unlinked route or client-only check.
 
+Keep the operator and admin allowlist the server checks against in versioned code, reviewed in code review. Who counts as internal staff is a product decision, so it lives with the code alongside the other product constants.
+
 What admin surfaces exist for:
 
 - Inspecting job failures and raw provider detail kept out of the user UI
