@@ -7,7 +7,7 @@ Default building blocks for a serious web product. Swap any tool, keep the role 
 | Monorepo | Turborepo + pnpm | A single deployable with no shared packages |
 | Rendered public or hybrid surface | Next.js App Router + TypeScript | Static-only site, or a non-React target |
 | Private client SPA | Vite + TypeScript | Server rendering or framework routing is required |
-| Protocol-only HTTP app | Hono + TypeScript | The runtime already provides an equally small standards-based router |
+| Protocol-only HTTP app | Hono + TypeScript | The runtime already provides an equally small standards-based router, or the protocol helper officially supports a different framework first |
 | Styling | Tailwind + shadcn/ui + lucide-react | A design system already exists |
 | App data + live sync | Convex | No realtime need, or an existing database |
 | Auth | Clerk | Enterprise SSO requirements Clerk cannot meet |
@@ -20,6 +20,8 @@ Default building blocks for a serious web product. Swap any tool, keep the role 
 | LLM calls | Vercel AI SDK | A provider SDK with no AI SDK adapter |
 
 Pick the role first, then the tool. Do not let a tool dictate architecture: the same product rules must hold if the tool changes.
+
+Keep Hono as the default for HTTP APIs, OpenAPI surfaces, and edge-style protocol apps. Use Express for MCP servers when the implementation depends on Clerk's official MCP Express helpers until official non-Express helpers are proven end to end with real MCP clients such as Cursor.
 
 Keep the chosen tool out of paradigm names. A folder is `auth`, not `clerk`. A module is `origins`, not `vercel-origins`. Name by what it does, not who provides it.
 
