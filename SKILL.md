@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Use when planning, scaffolding, auditing, naming, or implementing a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS."
 metadata:
   author: "Leeor Nahum"
-  version: "1.10.0"
+  version: "1.11.0"
 ---
 
 # Web Repository Opinions

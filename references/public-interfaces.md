@@ -6,9 +6,9 @@ Give each public protocol one product-owned role subdomain and one canonical end
 - OpenAPI document: `https://api.<domain>/openapi.json`
 - Remote MCP: `https://mcp.<domain>/mcp`
 
-Deploy API and MCP as separate protocol apps when they need independent compatibility, scaling, caching, rate limiting, or release control. Use Hono as the default HTTP framework for HTTP API surfaces, including OpenAPI-backed `/v1` apps. Use the official MCP SDK transport for MCP protocol behavior.
+Deploy API and MCP as separate protocol apps when they need independent compatibility, scaling, caching, rate limiting, or release control. Use Hono as the default HTTP framework for HTTP API surfaces, including OpenAPI-backed `/v1` apps. Use the official MCP SDK transport for MCP protocol behavior, and on serverless runtimes configure it for buffered JSON responses rather than SSE streaming. A serverless function can finalize before an asynchronously written SSE result event is flushed, which silently drops slow tool-call results even while fast handshakes like initialize and tools/list still return. Reserve SSE streaming for long-lived runtimes.
 
-When an MCP server uses Clerk's MCP helpers, prefer Express while Clerk's supported helper path is Express-specific and until a non-Express path is proven with real clients. Keep this as a protocol-specific compatibility choice, not a general rejection of Hono.
+When an MCP server uses Clerk's MCP helpers, prefer Express while Clerk's supported helper path is Express-specific and until a non-Express path is proven with real clients. Keep this as a protocol-specific compatibility choice, not a general rejection of Hono. Use the helpers only for auth and OAuth metadata, and construct the SDK transport yourself in JSON-response mode rather than delegating transport to a helper that forces SSE.
 
 Version the HTTP API in its base path. Keep MCP at `/mcp`, because MCP negotiates protocol behavior through its transport and protocol contract rather than an application API path version.
 
