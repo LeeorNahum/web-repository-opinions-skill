@@ -17,6 +17,12 @@ When building an absolute URL, resolve in this order:
 
 Same-surface navigation uses relative paths (`/pricing`, `/settings/billing`). Cross-surface navigation goes through the shared resolvers, never a hardcoded host.
 
+## Stage Awareness
+
+A resolver must know which deployment stage it is serving, not only which surface. When no explicit override or current request origin is available, fall back to the platform's stage signal, such as a build or runtime environment indicator, before the canonical production origin, so a preview deployment resolves to the preview origin instead of production.
+
+Any UI that displays an origin, endpoint, base URL, example request, or copyable command builds it from the resolver. A page served from preview shows preview URLs, a page served from production shows production URLs. Never print a hardcoded production origin on a non-production stage, because users copy what they see and will hit the wrong or non-existent host.
+
 ## Shape
 
 The shared module exposes a canonical origin and a resolver per surface, plus an absolute-URL helper. One resolver exists for each surface the product actually has, named by the surface role, not hardcoded to a fixed pair. A product with only a site has one resolver; a product with site, app, and dashboard has three.
