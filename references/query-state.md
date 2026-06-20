@@ -9,6 +9,7 @@ Put shareable collection state in the URL so a reload, copied link, browser navi
 - Omit empty values and state the user has not chosen.
 - Preserve an explicitly selected default when that choice must survive sharing or reload.
 - Give an explicit all-value to a control only when selecting all is meaningful state rather than the absence of a filter.
+- Address pagination in the URL when a position is a distinct, linkable destination, such as a page number or a cursor into a large result set. Treat an incremental "load more" that only deepens the current view as view depth the base view already restores, and leave it out of the URL.
 - Reject unknown formats instead of silently maintaining an unreleased contract.
 
 Centralize parsing, validation, normalization, and serialization in shared domain logic. UI components consume typed state rather than interpreting query strings independently.
