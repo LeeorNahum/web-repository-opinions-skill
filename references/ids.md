@@ -24,6 +24,6 @@ A private link is shareable only as a deliberate product feature. A short ID in 
 For secret keys, webhook signing secrets, restricted keys, and any token that must be identifiable out of context.
 
 - A prefix identifies the credential type, and often its environment.
-- A long random body follows the prefix: a UUID or a 32-or-more character secret.
+- A long random body follows the prefix: a version 4 UUID with its dashes stripped, so the whole credential reads as one unbroken token. Mint it from the runtime's crypto UUID generator through one shared helper, never a hand-rolled random string. When a single UUID's entropy is not enough, concatenate more version 4 UUIDs in the same dashless form rather than switching to another alphabet.
 
-Prefixes belong here, and not on entity IDs, because credentials appear in env files, logs, and dashboards with no route path to give them context. The prefix lets a human or a tool tell key types apart at a glance and prevents passing one kind of credential where another is expected. Never reuse the short fixed-length entity format for a credential body; a credential needs full-length opaque randomness.
+Prefixes belong here, and not on entity IDs, because credentials appear in env files, logs, and dashboards with no route path to give them context. The prefix lets a human or a tool tell key types apart at a glance and prevents passing one kind of credential where another is expected. Never reuse the short fixed-length entity format for a credential body; a credential needs full-length opaque randomness. A shared internal secret that lives only under a descriptive env key may skip the prefix, but its body still follows the same dashless UUID standard.

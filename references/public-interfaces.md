@@ -12,7 +12,7 @@ When an MCP server uses Clerk's MCP helpers, prefer Express while Clerk's suppor
 
 Version the HTTP API in its base path. Keep MCP at `/mcp`, because MCP negotiates protocol behavior through its transport and protocol contract rather than an application API path version.
 
-Publish an OpenAPI contract for every public HTTP API. Keep one normalized product resource schema across search, direct lookup, collections, API responses, MCP tools, and Agent Skill guidance.
+Publish an OpenAPI contract for every public HTTP API, and design contract-first by settling that contract before implementing the surface. Keep one normalized product resource schema across search, direct lookup, collections, API responses, MCP tools, and Agent Skill guidance.
 
 Public adapters call shared product capabilities. They translate protocol inputs and outputs but never expose provider payloads, backend-native identifiers, or duplicate product rules.
 

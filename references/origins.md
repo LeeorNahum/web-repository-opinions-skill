@@ -38,13 +38,11 @@ Env overrides use the same key names across stages; only the value changes by st
 
 ## Local Ports
 
-Local ports follow a stable ladder so links are predictable across surfaces. The primary site takes the default browser port; each additional surface takes the next port in role order:
+Local ports follow a stable ladder so links are predictable across surfaces. The primary public surface takes the default browser port, `3000`; every additional surface takes the next free port up.
 
-```text
-site      -> 3000
-app       -> 3001   (the first signed-in surface, whatever its role name)
-dashboard -> 3002
-admin     -> 3003
-```
+Order the ladder by two rules, applied in that order:
 
-The first signed-in surface gets 3001 whether it is named `app`, `portal`, or another role. Keep the ladder dense and ordered so any developer can guess a surface's local origin.
+1. Canonical appearance: place each surface in the order a person first meets it in the product's own journey.
+2. Dependency necessity: when one surface must be running for another to function, the depended-on surface takes the earlier port.
+
+The same two-rule ordering governs any ordered enumeration the product defines, not only ports. Keep the ladder dense, and keep every store, doc, and code default that names a port consistent with it, so a developer can guess a surface's local origin without consulting a list that may have drifted.

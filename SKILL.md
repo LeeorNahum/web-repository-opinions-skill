@@ -1,9 +1,9 @@
 ---
 name: "web-repository-opinions"
-description: "Opinionated defaults for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Use when planning, scaffolding, auditing, naming, or implementing a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS."
+description: "Opinionated defaults and standards for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. When unsure whether it applies, load it; almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.11.0"
+  version: "1.12.0"
 ---
 
 # Web Repository Opinions
@@ -33,7 +33,7 @@ Prefer these unless the product has a stronger reason not to. Swap the tool, kee
 
 ## Reference Loading
 
-Always read every reference relevant to the task before acting on its topic. Bias toward loading: if a reference covers what you are about to do, read it rather than guessing. Loading more references is cheap; acting on a topic blind is not.
+This skill's substance lives in its references; the map below only points to them, so consult the skill for decisions and not just implementation. Before acting on any topic, read every reference that could touch it, in full, including the ones that seem only adjacent, and read deeply rather than skim. Bias hard toward loading: if a reference might cover what you are about to plan, decide, name, review, or build, read it rather than guess. Loading more references, and reading each completely, is cheap; acting on a topic blind, or on a half-read reference, is not. Re-read the owning reference whenever a decision in its area comes back up.
 
 Architecture:
 

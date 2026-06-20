@@ -20,4 +20,6 @@ See `assets/vercel.json` for a copyable starter.
 
 Custom domains, branch domains, and env vars are dashboard concerns, not part of the deploy-gating config. Document them in the setup checklist.
 
+Deploying is not releasing. When a change must ship before it is visible, gate the user-facing behavior behind a feature flag and switch it on once the runtime is ready, dark-launching a risky path by running it with its output withheld until verified.
+
 Which branch is production is a dashboard setting, not part of the hosting config. Confirm `main` as the production branch once per project so the provider cannot silently select another branch.

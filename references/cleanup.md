@@ -2,6 +2,8 @@
 
 Treat the current intended product contract as truth. Prefer replacing wrong or unreleased behavior over layering shims on top of it.
 
+Before removing something, understand why it exists; remove it only once you can explain what it did and confirm the replacement covers it (Chesterton's fence). Leave each area you touch cleaner than you found it (the boy scout rule) without expanding into unrelated rewrites.
+
 - Remove dead routes, stale compatibility paths, and unreferenced code.
 - Add compatibility only for an explicit supported contract, deployed consumer, durable user data, or approved rollout.
 - Name what the compatibility preserves and why before adding aliases, conversions, dual writes, fallbacks, or deprecated paths.

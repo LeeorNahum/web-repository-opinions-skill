@@ -2,7 +2,7 @@
 
 Env setup should be boring, explicit, and hard to drift. An env example is a contract, not a secret store and not a deployment database. Each runtime owns its own contract. Deployed environments supply values through their host or provider.
 
-Env is for secrets and true environment variance, not a general settings file.
+Env is for secrets and true environment variance, not a general settings file. This is the twelve-factor posture: configuration that varies by deploy lives in the environment, and stages stay at parity by sharing key names so only values differ by store.
 
 ## Core Standard
 

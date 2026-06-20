@@ -8,7 +8,7 @@ Web-derived means any environment whose layout model descends from HTML and CSS:
 
 ## Smallest Viable Space First
 
-Design from the smallest viable container outward. Each increase in available space is an opportunity to reveal labels, increase density, or change composition. Device identity does not determine which state is active.
+Design from the smallest viable container outward. Each increase in available space is an opportunity to reveal labels, increase density, or change composition. Device identity does not determine which state is active. This is mobile-first generalized: start from the smallest viable container rather than a device class, and treat each gain in space as a chance to enhance.
 
 ## Fluid By Default
 

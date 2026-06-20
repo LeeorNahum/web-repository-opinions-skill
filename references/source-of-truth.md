@@ -1,6 +1,6 @@
 # Source Of Truth
 
-Pick one durable owner per fact. The app orchestrates between owners; it does not duplicate truth casually.
+Pick one durable owner per fact. This is the single source of truth principle: one authoritative owner per fact, with every other copy a cache or a reference and never a competing authority. The app orchestrates between owners; it does not duplicate truth casually.
 
 | Fact | Owner |
 | --- | --- |

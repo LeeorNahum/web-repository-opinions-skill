@@ -6,5 +6,6 @@ Prefer a reactive backend whose queries push updates to the client, and wire it 
 - Let the query layer own loading and live state. Do not re-fetch on an interval or rebuild state by hand when the backend already pushes changes.
 - Wire the auth-to-backend connection cleanly so an authenticated client establishes its reactive session correctly on first load, not only after a refresh. If a first authenticated load needs a refresh to start receiving data, the connection order is wrong.
 - Keep mutations going through the backend so every subscribed client sees the result, rather than mutating local state in isolation.
+- For a mutation whose outcome is predictable, apply an optimistic update: reflect the change in the UI immediately, then let the backend confirmation reconcile or roll it back. The backend stays the authority that every subscribed client converges on.
 
 When a view depends on data that can change, assume another client or another process may change it, and let the live subscription keep the view current.

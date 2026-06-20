@@ -10,12 +10,12 @@ Name modules, functions, and folders after the capability they provide, not the 
 
 ## Isolate Integrations Behind Adapters
 
-Each external system sits behind one boundary that speaks the product's own vocabulary. Callers depend on the capability, not on the provider's response shape, error format, or SDK. Two levels of swap stay cheap:
+Each external system sits behind one boundary that speaks the product's own vocabulary. This is the ports and adapters (hexagonal) pattern: the product owns the port in its own terms, and each adapter translates one provider onto it, acting as an anti-corruption layer that keeps provider shapes out of the product's model. Callers depend on the capability, not on the provider's response shape, error format, or SDK. Two levels of swap stay cheap:
 
 - Swapping the vendor of one capability touches only that adapter.
 - Swapping an entire system for another touches only the boundary, not the flows that use it.
 
-Keep provider payloads, model names, and SDK types from leaking past the adapter into general app code.
+Migrate a replacement with the strangler fig pattern: stand the new adapter up beside the old one and route callers over once it covers every case, removing the old integration only after the new one is proven. Keep provider payloads, model names, and SDK types from leaking past the adapter into general app code.
 
 ## Make Capabilities Routable
 

@@ -2,6 +2,8 @@
 
 Use a managed auth provider so identity, sessions, and social sign-in are never hand-rolled. Clerk is the default. You never store or handle raw passwords or emails yourself; the provider owns credential security.
 
+Hold three postures throughout: least privilege, granting each caller the minimum scope it needs; defense in depth, re-verifying on the server even when the UI already hides an unavailable action; and zero trust, never trusting a request for where it came from, so every token is validated and every webhook signature is checked before its payload is believed.
+
 ## One Auth Route
 
 Authentication lives at a single route, `/auth`, handled by the provider's integration. Keep it as one route rather than separate sign-in, sign-up, and callback paths with redirect-back juggling. A single integrated route avoids the redirect dance and the post-login bounce, and it returns the user straight into the product.
