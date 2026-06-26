@@ -42,4 +42,12 @@ Account deletion webhooks follow a strict contract:
 - Delete the application user record last.
 - Preserve shared objects the user referenced but did not own.
 
+## One Authorization Gate
+
+Enforce authorization once, at the boundary every client crosses, so the MCP, the CLI, the raw API, and the UI all inherit the same rules instead of each re-implementing them. One gate keeps policy in one place and gives every surface the same answer. The gate is capability-granular: every action maps to a named capability, and access is the intersection of the caller's role, their per-resource allowlist, and, for a token or key, the token's own scope.
+
+Capabilities are assignable to roles and to individual members, so an admin can grant one verb while denying another on the same resource. Re-verify on the server even when the UI already hides an unavailable action, and fail closed when a capability is unknown or absent.
+
+The gate scopes what a member or token may do; keep it separate from what a plan sells. Whether any capability is also a paid feature is a billing decision, not a job for this gate.
+
 Ask before changing OAuth callback hosts or production auth settings.

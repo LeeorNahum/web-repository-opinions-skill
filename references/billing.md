@@ -8,4 +8,17 @@ Show usage against limits in clear, product-native language. A user should under
 
 Match billing mode to the stage: test mode for local and staging, live mode only on production. Never wire live billing into a non-production stage.
 
+## Seats As A Value Metric
+
+When a product's value scales with the size of a team rather than per-user usage, pricing on seats is one proven model (as many SaaS products do). It is a conditional choice, not a default: a product whose value scales on a different metric prices on that metric instead.
+
+When you do price on seats:
+
+- A free tier is solo: one member and no invites. With no shared organization to invite into, being solo is structural rather than a setting.
+- Creating and subscribing a shared organization is the upgrade. The owner pays; invited members are free, up to the plan's included seats.
+- Treat a plan's seats as an included batch at a flat price rather than a per-seat charge, so the entitlement's seat count comes from the plan, not a purchased quantity.
+- Enforce the seat count at the one place a member is admitted, so a member beyond the plan's seats is refused rather than silently absorbed. An existing member or a role change never consumes a new seat.
+
+Derive the active workspace server-side from the verified identity, never from a client-supplied id.
+
 Ask before changing live billing mode, plan entitlements, or anything that affects what customers are charged.

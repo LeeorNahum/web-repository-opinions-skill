@@ -47,6 +47,7 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - **Opinionated and explicit.** State the preference clearly. This skill takes positions.
 - **Paradigm-named, provider-stated.** File and section names describe the job, never the vendor. Inside a section, name the default tool as a swappable pick.
 - **No sibling-skill pointers.** Do not reference other skills by name. Where another skill's domain touches a topic, state the web opinion inline and stop.
+- **No cross-reference pointers.** A reference never links to or points at another reference. The `SKILL.md` reference-loading map is the only index, so a rename cannot leave a dead link and there is no second place to keep in sync. A reference assumes the agent already loaded what its section needs.
 - **No project leakage.** Use placeholder repo, product, and domain names. Do not embed a real product's name, palette, routes, or credentials.
 - **No em dashes.** Use commas, periods, parentheses, or "to".
 - **Match depth to scope.** A single-concept reference stays short. Do not pad.

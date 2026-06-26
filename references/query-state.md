@@ -48,3 +48,9 @@ Add contract tests when URL state is part of the product:
 - Prove equivalent interaction sequences serialize identically.
 
 These are automated parser and serializer tests, not a visual checklist.
+
+## URL-Openable Creation
+
+Make a creation or "adder" modal a URL-addressable view like any other, openable by a query parameter or a route, so it can be linked, shared, and deep-linked into from an onboarding step or a partner's setup link. Restoring the URL reopens the same modal.
+
+Pre-fill only non-sensitive fields, and only as a convenience for the shape of the form. Never put a secret, or any value that confers access or reveals private data, in a URL: URLs are logged, shared, and kept in history, and what a user may see is decided by their authenticated session, never by a query parameter. A sensitive value is always supplied behind auth, not through the link.

@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults and standards for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. When unsure whether it applies, load it; almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.14.0"
+  version: "1.15.0"
 ---
 
 # Web Repository Opinions
@@ -80,6 +80,7 @@ Auth and data:
 - Read `references/live-data.md` when wiring a reactive backend so the UI updates live.
 - Read `references/search-indexing.md` when defining searchable fields, indexing fetched data, or running search migrations.
 - Read `references/external-sources.md` when importing, canonicalizing, checking, or recovering provider-owned resources.
+- Read `references/integration-onboarding.md` when a user connects their own external system through the product UI.
 
 Media and jobs:
 
@@ -124,6 +125,7 @@ Operating philosophy:
 - Split the public site from the signed-in app by audience and runtime posture.
 - Name and isolate integrations by role so any single system can be swapped without rewriting callers.
 - Build product capabilities with product-shaped inputs and outputs so UI, API, MCP, jobs, and webhooks can compose them without owning their rules.
+- Enforce authorization once at the boundary every client crosses, capability-granular.
 - Heavy bytes live in object storage. The database owns metadata and live state.
 - A reactive backend is wired end to end so the UI updates live, not by manual refetch.
 - One durable owner per fact. User-edited values outrank generated values; generated outrank defaults.
