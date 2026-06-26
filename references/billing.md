@@ -21,4 +21,13 @@ When you do price on seats:
 
 Derive the active workspace server-side from the verified identity, never from a client-supplied id.
 
+## Losing Or Reducing A Plan
+
+A plan can shrink: a subscriber cancels, or downgrades below what they already own. Resolve this without destroying anything they bought.
+
+- Lock the resources the plan no longer covers rather than deleting them. A locked resource keeps all its data and history, refuses access at every gate, and becomes usable again the instant the plan covers it once more.
+- For a partial downgrade, let the owner choose which resources stay active within the new allowance instead of silently picking for them. Default to a stable, explainable rule, such as keeping the oldest, and let them change it.
+- Reconcile this from one place on every subscription change, so a subscribe, upgrade, downgrade, or cancellation always converges to the same correct, non-destructive state.
+- Make the locked state legible: show what is locked, why, and the single action that restores it.
+
 Ask before changing live billing mode, plan entitlements, or anything that affects what customers are charged.
