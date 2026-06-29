@@ -25,4 +25,10 @@ Agent Git rules:
 
 The point of the system: every change lands on `dev` first, `preview` proves it on real hosted infrastructure while still using safe dev/test resources, and `main` is the only place production credentials and live data are touched.
 
+## Preview Parity
+
+Preview is not a private feature branch runtime. It should run the same product posture as production, with dev/test credentials, staging origins, and non-production data. Keep authentication, route exposure, catalogs, and branch-specific behavior production-capable unless the product intentionally supports the same behavior in production behind a normal feature or authorization gate.
+
+When a surface is public in production, treat its preview deployment as public too. Anything advertised by preview discovery should be acceptable to advertise after promotion. Preview proves upcoming production behavior. It should not hide untested promotion changes behind special branch conditionals.
+
 Ask before pointing staging at production provider resources instead of the shared dev/test resources.

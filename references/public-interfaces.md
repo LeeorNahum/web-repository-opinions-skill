@@ -32,6 +32,18 @@ Expose the smallest useful MCP tool set. Mark read-only tools as read-only, retu
 
 Keep provider-host boundaries explicit. First-party clients may use a provider's visible default endpoint for internal product transport. Public API and MCP callers use only the product-owned protocol domains. Configure a provider custom domain only when the provider endpoint itself must be product-owned.
 
+## Preview And Private Access
+
+Public protocol surfaces are public in every deployed stage. A preview API, MCP server, webhook receiver, or CLI distribution should be reachable by machine clients when the same production surface is reachable by machine clients. Do not rely on a browser-only deployment wall as the security boundary for these surfaces, because non-browser clients cannot satisfy it and will fail before they reach OAuth, token verification, protected-resource metadata, dynamic client registration, or stable protocol errors.
+
+Preview should differ from production by runtime values, provider resources, and data, not by hidden behavior. Keep the same public contract, auth challenge behavior, and stable error shape across preview and production. A catalog or contract visible on preview should be a rehearsal of the production contract that will exist after promotion.
+
+Unauthenticated discovery is still disclosure. Public contracts, protocol metadata, tool catalogs, CLI help, and public examples must not reveal internal names, unreleased product promises, provider payloads, private identifiers, secret-shaped values, or future work that is not acceptable to show publicly. If an upcoming capability is not ready to disclose, keep it out of public discovery until the same disclosure is acceptable in production.
+
+When a public program intentionally needs no user authentication, design it as public from the first preview deploy: apply rate limits, narrow CORS, bounded pagination, stable typed errors, conservative caching, and abuse-aware logging before exposing it. A no-auth preview endpoint is not a safer category than a no-auth production endpoint. It is production-shaped behavior running against non-production resources.
+
+Private, experimental, or local-only protocol access belongs behind an explicit private transport instead of a public preview endpoint. Use a provider-supported tunnel or private connector when a client must reach a private server without making that server part of the product-owned public contract.
+
 ## Capability Exposure
 
 Exposure decides what a public surface advertises; it is never the security boundary. The authorization gate still enforces every call and returns a clean, instructive error in plain, protocol-neutral language naming what is unsupported.
