@@ -6,15 +6,15 @@ Hold three postures throughout: least privilege, granting each caller the minimu
 
 ## One Auth Route
 
-Authentication lives at a single route, `/auth`, handled by the provider's integration. Keep it as one route rather than separate sign-in, sign-up, and callback paths with redirect-back juggling. A single integrated route avoids the redirect dance and the post-login bounce, and it returns the user straight into the product.
+Authentication lives at a single route, `/auth`, handled by the provider's integration. Keep it as one route rather than separate sign-in, sign-up, and callback paths with redirect-back juggling. Use the provider's combined sign-in-or-up component so the same surface serves a returning and a new user, deciding between them from the identifier entered. A single integrated route avoids the redirect dance and the post-login bounce, and it returns the user straight into the product.
 
 Auth route structure is a product decision and lives in code, not env. Do not add sign-in and sign-up env keys out of habit.
 
-## Disable Email And Password
+## Sign-In Methods
 
-Default to social sign-in with the providers you choose, and turn email and password off. With a managed provider you gain nothing by storing credentials, and an email and password path adds a surface to secure and support for little benefit.
+Default to social sign-in plus email as an enabled identifier. The provider owns credential security, so you never store a password or verify an email yourself, and a password is an acceptable method when you want one, carrying no credential surface of your own. Keep the email identifier on regardless of whether a password is enabled, because it is what lets the product invite teammates by email, send sign-in links, and resolve a social sign-in and a verified email to one account.
 
-Enable email and password only when you must serve users who lack every social provider you offer. Absent that need, disable email sign-up and sign-in in the provider dashboard, and keep any implication of it out of naming, UI, and env comments.
+When a product's core function depends on every user holding one provider's account, make that provider the only identity and turn the others off, including email when no feature needs it, such as invitations or sign-in links. The product's own requirement wins over the open default.
 
 ## Social Sign-In With Account Selection
 
