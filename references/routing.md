@@ -40,6 +40,15 @@ Public routes for a marketing site are full descriptive leaf paths:
 
 Links must survive reorganization. Do not nest a stable entity under a reorganizable parent in the URL when moving the parent would break shared links. If an entity can move between parents, keep it at its own top-level prefix rather than under the parent's path.
 
+## The Active Workspace Lives In The URL
+
+The URL is the sole owner of which workspace (organization, team, account scope) a private app view addresses. Never hold the active workspace in provider session state, a cookie, or client memory as an authority the URL merely reflects.
+
+- Every private route nests under the workspace prefix (`/[workspace]/...`), so any view is a shareable snapshot of exactly where it points, including the workspace.
+- The workspace switcher is navigation: switching links to the same surface under the other workspace's prefix. It does not mutate session state and reload.
+- When the auth provider carries its own active-organization session state, the app syncs that state to follow the URL segment on entry (activating the matching organization, or none for a personal workspace), then renders. A deep link into any workspace the user belongs to works from a cold session without bouncing through a chooser; the session follows the URL, never the other way around.
+- The server still authorizes by verified identity and membership. The URL selects among the workspaces the caller can already reach; it never grants access, and an unknown or unauthorized workspace segment fails to a clear product-owned screen.
+
 Owner-nest a public resource only when the owner is part of how people identify, browse, and verify it. In that case, the owner segment supplies meaningful public context rather than database lookup scope. Keep the child ID globally unique, give the resource one canonical owner-nested URL, and keep ownership stable for the lifetime of that URL.
 
 Use a top-level route when the resource is understood independently, can move between owners, or would keep the same identity after an ownership change. Do not create a second short alias for an owner-nested canonical route unless a real migration or sharing requirement appears.
