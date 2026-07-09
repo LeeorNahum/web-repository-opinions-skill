@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults and standards for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. When unsure whether it applies, load it; almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.18.0"
+  version: "1.19.0"
 ---
 
 # Web Repository Opinions
@@ -102,6 +102,7 @@ Frontend and UI:
 - Read `references/responsive-layout.md` when building or reviewing any layout across viewports.
 - Read `references/font-loading.md` when choosing or loading fonts.
 - Read `references/product-ux.md` when shaping the primary path, states, and product-native language.
+- Read `references/path-display.md` when showing file paths, directory listings, breadcrumbs, or a browsable tree's root.
 - Read `references/interaction-feedback.md` when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
 - Read `references/user-facing-errors.md` when presenting failures from providers, frameworks, backend functions, validation, or unexpected exceptions.
 - Read `references/design-tokens.md` when defining a design token layer.
