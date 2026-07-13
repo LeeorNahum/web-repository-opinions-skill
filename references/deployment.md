@@ -25,3 +25,13 @@ Which branch is production is a dashboard setting, not part of the hosting confi
 Keep machine-facing apps reachable by non-browser clients. An API, MCP, or webhook project answers programmatic requests directly, so confirm any interactive access protection (a hosting platform preview-protection or SSO gate that only a browser session can satisfy) is off for those projects. A blanket gate turns every machine call into an opaque auth failure the client cannot resolve, including on preview deployments.
 
 Disabling a host's browser-only protection is not permission to make preview a special exposure mode. Machine-facing preview deployments should expose the same protocol shape production will expose after promotion: same public routes, same discovery posture, same OAuth or token challenge behavior, and same authorization failures, with only stage-owned values such as origins, credentials, data, rate-limit buckets, and provider resources changing. If an endpoint or tool would be unacceptable to reveal in production, keep it out of preview too, or put it behind the same production-capable authorization and feature gate.
+
+## Dependent Service Deployment
+
+Wire code-deployed services into the same stage-aware pipeline as the app that depends on them. A hosted branch push should deploy the complete runtime for that stage without a person or coding agent running a second release command afterward.
+
+- Give each dependent service one deployment owner so parallel app builds cannot race to publish it.
+- Use stage-scoped automation credentials that can reach only the intended non-production or production target.
+- Deploy the dependency as part of the owning app's build or release job, and fail that deployment when the dependency cannot publish.
+- Keep local development commands for interactive work. Hosted promotion should use the automated path.
+- Confirm the deployed service contract before treating the branch promotion as complete.
