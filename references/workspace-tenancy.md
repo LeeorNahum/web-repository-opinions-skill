@@ -15,6 +15,10 @@ When a product's collaboration model is workspaces, back every workspace with th
 - Serve protocol clients one canonical OAuth resource whose consent selects any organization the user belongs to. Selecting a different workspace is a new authorization of the same resource, not a second resource or a per-workspace path.
 - Fail closed when verified organization context is absent, with one clear product error.
 
+## The Provider's UI Speaks The Product's Vocabulary
+
+When the provider's own prebuilt components, an organization switcher, an organization or account management panel, become a primary surface for renaming, membership, or settings, they still carry the provider's own words in their labels by default: `organization`, `member`, `personal account`. Override those strings to the product's own tenancy term everywhere the provider renders, not only in the app's own copy. A component that still says the provider's word is a leak, not an accepted exception. Most providers expose a localization or strings-override mechanism for exactly this.
+
 ## Creation Limits And Seat Coherence
 
 - Put the paywall where the value appears, not on the container. A workspace without other people in it is an empty wrapper; seats (another person, with their own custodied, revocable, audited access) are what a plan sells, so workspace creation stays free with a generous fixed provider bound as anti-abuse, never as the paywall.

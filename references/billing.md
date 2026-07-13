@@ -8,6 +8,10 @@ Show usage against limits in clear, product-native language. A user should under
 
 Match billing mode to the stage: test mode for local and staging, live mode only on production. Never wire live billing into a non-production stage.
 
+## Ambient Usage Display
+
+Show a hard ceiling only where it is load-bearing: near the ceiling, at the moment an action would cross it, or inside a settings or billing surface the user opens on purpose. Leave it out of routine, always-visible chrome, a list header, a persistent counter, while the account sits comfortably under it. A limit nobody is near is not information, it is a standing reminder of a ceiling that does not matter yet, and it reads as surveillance rather than help. A free tier should feel complete, not like a metered preview of a bigger product.
+
 ## Seats As A Value Metric
 
 When a product's value scales with the size of a team rather than per-user usage, pricing on seats is one proven model (as many SaaS products do). It is a conditional choice, not a default: a product whose value scales on a different metric prices on that metric instead.

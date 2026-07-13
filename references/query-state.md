@@ -54,3 +54,7 @@ These are automated parser and serializer tests, not a visual checklist.
 Make a creation or "adder" modal a URL-addressable view like any other, openable by a query parameter or a route, so it can be linked, shared, and deep-linked into from an onboarding step or a partner's setup link. Restoring the URL reopens the same modal.
 
 Pre-fill only non-sensitive fields, and only as a convenience for the shape of the form. Never put a secret, or any value that confers access or reveals private data, in a URL: URLs are logged, shared, and kept in history, and what a user may see is decided by their authenticated session, never by a query parameter. A sensitive value is always supplied behind auth, not through the link.
+
+## Third-Party And Embedded Views
+
+The same rule extends past your own dialogs. When a workflow's step is a meaningful destination, an account or organization management panel, a payment portal step, an embedded settings surface, give it a real route instead of leaving it an anonymous popover, even when a third-party SDK owns its rendering. Most managed-auth and managed-billing component libraries expose a navigation mode that renders their panel as a page at a URL you choose instead of a modal. Use it wherever that panel is a primary surface rather than a momentary menu. A transient menu, popover, or tooltip stays out of the URL. A panel someone would want to reload, bookmark, or land on directly gets one.
