@@ -1,6 +1,6 @@
 # Auth
 
-Use a managed auth provider so identity, sessions, and social sign-in are never hand-rolled. Clerk is the default. You never store or handle raw passwords or emails yourself; the provider owns credential security.
+Use a managed auth provider so identity, sessions, and social sign-in are never hand-rolled. Clerk is the default. You never store or handle raw passwords or emails yourself. The provider owns credential security.
 
 Hold three postures throughout: least privilege, granting each caller the minimum scope it needs; defense in depth, re-verifying on the server even when the UI already hides an unavailable action; and zero trust, never trusting a request for where it came from, so every token is validated and every webhook signature is checked before its payload is believed.
 
@@ -20,7 +20,7 @@ When a product's core function depends on every user holding one provider's acco
 
 Use custom OAuth credentials for each social provider, and enable the account-selector prompt so a user can switch accounts after signing out instead of being locked into the last session.
 
-Some providers gate this behavior behind custom credentials. In Clerk specifically, the account-selector prompt can only be enabled once you supply your own OAuth client ID and secret; the shared development credentials do not expose it. Always create custom credentials so account switching works, even in development.
+Some providers gate this behavior behind custom credentials. In Clerk specifically, the account-selector prompt can only be enabled once you supply your own OAuth client ID and secret. The shared development credentials do not expose it. Always create custom credentials so account switching works, even in development.
 
 ## Stage Separation
 
@@ -48,6 +48,6 @@ Enforce authorization once, at the boundary every client crosses, so the MCP, th
 
 Capabilities are assignable to roles and to individual members, so an admin can grant one verb while denying another on the same resource. Re-verify on the server even when the UI already hides an unavailable action, and fail closed when a capability is unknown or absent.
 
-The gate scopes what a member or token may do; keep it separate from what a plan sells. Whether any capability is also a paid feature is a billing decision, not a job for this gate.
+The gate scopes what a member or token may do. Keep it separate from what a plan sells. Whether any capability is also a paid feature is a billing decision, not a job for this gate.
 
 Ask before changing OAuth callback hosts or production auth settings.

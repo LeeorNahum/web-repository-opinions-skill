@@ -1,9 +1,9 @@
 ---
 name: "web-repository-opinions"
-description: "Opinionated defaults and standards for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. When unsure whether it applies, load it; almost every decision in a web repo touches an opinion it holds."
+description: "Opinionated defaults and standards for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only pieces of a web product, such as an API route, a reactive backend function, or a webhook handler, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.21.0"
+  version: "1.22.1"
 ---
 
 # Web Repository Opinions
@@ -12,7 +12,7 @@ A web product is more than its Git repo. The real product is code plus database,
 
 Build around the thing the user came to do. A product should feel like its core workflow, not a generic dashboard with feature panels attached.
 
-These are opinionated defaults, not a single product spec. Apply what fits the repo. The named tools below are swappable defaults; the paradigms around them are not.
+These are opinionated defaults, not a single product spec. Apply what fits the repo. The named tools below are swappable defaults. The paradigms around them are not.
 
 ## Default Stack
 
@@ -33,7 +33,7 @@ Prefer these unless the product has a stronger reason not to. Swap the tool, kee
 
 ## Reference Loading
 
-This skill's substance lives in its references; the map below only points to them, so consult the skill for decisions and not just implementation. Before acting on any topic, read every reference that could touch it, in full, including the ones that seem only adjacent, and read deeply rather than skim. Bias hard toward loading: if a reference might cover what you are about to plan, decide, name, review, or build, read it rather than guess. Loading more references, and reading each completely, is cheap; acting on a topic blind, or on a half-read reference, is not. Re-read the owning reference whenever a decision in its area comes back up.
+This skill's substance lives in its references. The map below only points to them, so consult the skill for decisions and not just implementation. Before acting on any topic, read every reference that could touch it, in full, including the ones that seem only adjacent, and read deeply rather than skim. Bias hard toward loading: if a reference might cover what you are about to plan, decide, name, review, or build, read it rather than guess. Loading more references, and reading each completely, is cheap. Acting on a topic blind, or on a half-read reference, is not. Re-read the owning reference whenever a decision in its area comes back up.
 
 Architecture:
 
@@ -121,7 +121,7 @@ Operating philosophy:
 
 ## Core Non-Negotiables
 
-- The product feels like its core object first; secondary features attach to it.
+- The product feels like its core object first. Secondary features attach to it.
 - Every view is URL-addressable so any state can be linked, shared, and restored.
 - One canonical route model per concept. Do not keep long and short versions alive at once.
 - Short, stable, non-sensitive IDs in private URLs. Never slugs for private, renameable objects.
@@ -131,7 +131,7 @@ Operating philosophy:
 - Enforce authorization once at the boundary every client crosses, capability-granular.
 - Heavy bytes live in object storage. The database owns metadata and live state.
 - A reactive backend is wired end to end so the UI updates live, not by manual refetch.
-- One durable owner per fact. User-edited values outrank generated values; generated outrank defaults.
+- One durable owner per fact. User-edited values outrank generated values, and generated values outrank defaults.
 - Compatibility requires an explicit supported contract. Current intended behavior replaces unreleased mistakes.
 - Env holds secrets and true environment variance. Product decisions live in code.
 - Same env key names across stages. Values change by store, not the key.

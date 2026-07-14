@@ -11,7 +11,7 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 | `assets/` | Exact copyable starter files governed by an owning reference |
 | `README.md` | Short human summary |
 
-One owner per opinion. Each reference owns its concept; other files use the term or shape without restating the rule. The reference-loading map lives in `SKILL.md` once; references assume the agent already loaded what their section needs.
+One owner per opinion. Each reference owns its concept. Other files use the term or shape without restating the rule. The reference-loading map lives in `SKILL.md` once. References assume the agent already loaded what their section needs.
 
 `definition-of-done.md` is a summary index across owning references, not a second source of truth. It may name completion categories and representative checks, but detailed rules stay in their concept references.
 
@@ -23,7 +23,7 @@ This skill follows the shared layout for repository-opinions skills. Keep that s
 
 - `SKILL.md` is a slim spine: a short thesis, a default-stack or default-toolchain table of swappable tool picks, the reference-loading map, the core non-negotiables, the repository audit, and a closing note that risky-change "Ask before" lines live in the references.
 - `references/*.md` hold one concept each, named by paradigm, carrying the detailed opinions. Distribute each "Ask before" guardrail into the reference that owns its topic rather than a standalone section.
-- `assets/` hold copyable starter configs that drop into a target repo. References explain the judgment; assets are the copy-paste artifacts.
+- `assets/` hold copyable starter configs that drop into a target repo. References explain the judgment. Assets are the copy-paste artifacts.
 - `AGENTS.md` is this maintenance contract.
 - `README.md` is the human skim layer.
 
@@ -54,7 +54,7 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - **Match depth to scope.** A single-concept reference stays short. Do not pad.
 - **Capitalized bullets.** Start every bullet with a capital letter. Keep list voice consistent across all files.
 - **Sparing examples.** Use a concrete example only to clarify a shape or structure, never to fix a naming choice. Do not anchor a name with an example token the reader could copy verbatim instead of choosing the most accurate name for their own case.
-- **Positive rules.** State the action to take, not the mistake to avoid. Write "Use a role name for the integration" rather than "Do not name the integration after the vendor". A negative rule names the failure and quietly anchors it as the thing to copy; a positive rule points only at the correct move. A bare prohibition such as "Do not collapse the two surfaces" is weaker than "Keep each surface its own deployable". Reserve a "do not" only when no positive phrasing carries the same force, and never turn a banned example into a label the reader could lift verbatim.
+- **Positive rules.** State the action to take, not the mistake to avoid. Write "Use a role name for the integration" rather than "Do not name the integration after the vendor". A negative rule names the failure and quietly anchors it as the thing to copy. A positive rule points only at the correct move. A bare prohibition such as "Do not collapse the two surfaces" is weaker than "Keep each surface its own deployable". Reserve a "do not" only when no positive phrasing carries the same force, and never turn a banned example into a label the reader could lift verbatim.
 
 ## Compatibility Posture
 

@@ -17,4 +17,4 @@ Architecture and identity, rendering and surfaces, URL state, runtime and deploy
 
 ## Use
 
-Auto-invokes on web-technology repo work. Read `SKILL.md` first, then load only the references the task needs.
+Auto-invokes on web-technology repo work, including backend-only pieces of a web product. Read `SKILL.md` first, then load only the references the task needs.

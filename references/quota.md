@@ -9,4 +9,4 @@ Check quota before doing expensive work. Charge usage only after durable success
 
 Never leave the user with a generic failure when the real cause is quota. A quota stop is a clear, explained state, not a mystery error.
 
-Charging before success means a failed job can bill a user for nothing; checking after expensive work means you pay a provider before discovering the user had no room. Order both correctly: gate before, charge after.
+Charging before success means a failed job can bill a user for nothing. Checking after expensive work means you pay a provider before discovering the user had no room. Order both correctly: gate before, charge after.
