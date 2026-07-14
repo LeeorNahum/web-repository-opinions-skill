@@ -19,6 +19,8 @@ When a product's collaboration model is workspaces, back every workspace with th
 
 When the provider's own prebuilt components, an organization switcher, an organization or account management panel, become a primary surface for renaming, membership, or settings, they still carry the provider's own words in their labels by default: `organization`, `member`, `personal account`. Override those strings to the product's own tenancy term everywhere the provider renders, not only in the app's own copy. A component that still says the provider's word is a leak, not an accepted exception. Most providers expose a localization or strings-override mechanism for exactly this.
 
+Override the provider's complete default string resource rather than a hand-maintained list of keys: profile subpages, confirmation dialogs, and error states hide strings a partial override misses. Start from the resource version matched to the installed SDK, transform every string to the product's term, and keep interpolation placeholders exactly as the provider names them, because its templating resolves them by name. Providers typically stamp each rendered string with its key, so a word that still leaks traces straight to the entry that needs fixing. Pin the transform with a test over the whole resource, proving no provider term survives and every placeholder does.
+
 ## Creation Limits And Seat Coherence
 
 - Put the paywall where the value appears, not on the container. A workspace without other people in it is an empty wrapper; seats (another person, with their own custodied, revocable, audited access) are what a plan sells, so workspace creation stays free with a generous fixed provider bound as anti-abuse, never as the paywall.

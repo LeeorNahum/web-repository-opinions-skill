@@ -14,7 +14,7 @@ Render the app's persistent frame, navigation, header, page chrome, as soon as t
 
 ## The Dispatcher Is Not A Destination
 
-A route whose only job is to decide where a visitor actually belongs, an unauthenticated root sending a signed-in visitor into their default workspace, a locale root choosing a language, is a dispatcher, not a page. Give the dispatch its own resolver, separate from any route that carries an unrelated meaning of its own, a sign-in route, a marketing page, even when that other route already happens to contain similar redirect logic. Replace through the resolver so it leaves no stop in history.
+A route whose only job is to decide where a visitor actually belongs, an unauthenticated root sending a signed-in visitor into their default workspace, a locale root choosing a language, is a dispatcher, not a page. Make the dispatch one resolver, rendered in place by every route that legitimately ends in it: the entry root, the post-auth return, a switcher's landing route. The resolver comes to the route where the visitor already stands, so no visitor is navigated through another route's URL to borrow its redirect logic. Replace through the resolver so it leaves no stop in history.
 
 ## Framework Choice Does Not Fix This
 

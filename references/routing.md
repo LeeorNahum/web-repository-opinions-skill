@@ -49,6 +49,7 @@ A view has a URL. An entity has a URL too, and the two are not always the same U
 - Link to the entity, never to its own computed default. The entity is the one place that decides its default view, so a caller, a list row, a search result, a notification, never needs to know the capability rules that pick it. When the default changes, every caller that links to the entity keeps working. Only the entity's own resolver changes.
 - Resolve with a history replace, never a push, so the hop leaves no stop in the back button's history. Back from the resolved view returns to wherever the visitor actually came from, not to the bare entity URL.
 - A bare entity URL that is typed, pasted, or bookmarked still resolves the same way. It is a legitimate, stable link to "this entity, however it currently presents itself," not a broken or transitional state.
+- A child view URL the entity cannot serve, one naming a view this instance lacks or no view at all, resolves through the same replace to the entity's default rather than a dead end. When instances of one entity type offer different view sets, the entity's resolver absorbs the difference.
 - If an entity has exactly one child view and will only ever have one, that child collapses into the entity directly. There is no resolve-elsewhere hop, because there is nowhere else to go. The entity URL is the view.
 
 ## The Active Workspace Lives In The URL

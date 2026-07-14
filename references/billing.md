@@ -12,6 +12,8 @@ Match billing mode to the stage: test mode for local and staging, live mode only
 
 Show a hard ceiling only where it is load-bearing: near the ceiling, at the moment an action would cross it, or inside a settings or billing surface the user opens on purpose. Leave it out of routine, always-visible chrome, a list header, a persistent counter, while the account sits comfortably under it. A limit nobody is near is not information, it is a standing reminder of a ceiling that does not matter yet, and it reads as surveillance rather than help. A free tier should feel complete, not like a metered preview of a bigger product.
 
+The surface that blocks at the ceiling names the limit and offers only remedies that actually clear it. Sell an upgrade there only when a bigger plan truly raises that ceiling. When every plan shares the ceiling, the honest remedy is freeing capacity, and an upgrade button would be a lie.
+
 ## Seats As A Value Metric
 
 When a product's value scales with the size of a team rather than per-user usage, pricing on seats is one proven model (as many SaaS products do). It is a conditional choice, not a default: a product whose value scales on a different metric prices on that metric instead.
