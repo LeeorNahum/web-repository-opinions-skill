@@ -1,9 +1,9 @@
 ---
 name: "web-repository-opinions"
-description: "Opinionated defaults and standards for building TypeScript web products and any repo built on web technology, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only pieces of a web product, such as an API route, a reactive backend function, or a webhook handler, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
+description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, AI model routing, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, such as an API route, a reactive backend function, or a webhook handler, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.23.0"
+  version: "1.24.0"
 ---
 
 # Web Repository Opinions
@@ -29,7 +29,7 @@ Prefer these unless the product has a stronger reason not to. Swap the tool, kee
 - DNS: Cloudflare
 - Transactional email: Resend
 - Rich text: BlockNote or equivalent block JSON
-- LLM calls: Vercel AI SDK (model choice is product-specific, not a global default)
+- LLM calls: Vercel AI SDK over OpenRouter (production model pools are product-specific)
 
 ## Reference Loading
 
@@ -37,87 +37,88 @@ This skill's substance lives in its references. The map below only points to the
 
 Architecture:
 
-- Read `references/stack.md` when choosing or swapping tech building blocks.
-- Read `references/monorepo-layout.md` when creating or reorganizing apps and packages.
-- Read `references/naming.md` when naming folders, packages, slugs, surfaces, or workspace imports.
-- Read `references/modularity.md` when designing how systems connect, naming integration boundaries, or keeping flows swappable.
+- Read [references/stack.md](references/stack.md) when choosing or swapping tech building blocks.
+- Read [AI model routing guidance](references/ai-model-routing.md) when a product calls LLMs, chooses production models or providers, designs model fallback, or accounts for model cost.
+- Read [references/monorepo-layout.md](references/monorepo-layout.md) when creating or reorganizing apps and packages.
+- Read [references/naming.md](references/naming.md) when naming folders, packages, slugs, surfaces, or workspace imports.
+- Read [references/modularity.md](references/modularity.md) when designing how systems connect, naming integration boundaries, or keeping flows swappable.
 
 Rendering and feel:
 
-- Read `references/rendering.md` when choosing server rendering, static generation, or client rendering for a surface.
-- Read `references/spa-feel.md` when making a signed-in app feel app-like while keeping stable URLs.
-- Read `references/loading-states.md` when designing skeletons, boot sequences, splash screens, or a dispatcher route that forwards into the product.
+- Read [references/rendering.md](references/rendering.md) when choosing server rendering, static generation, or client rendering for a surface.
+- Read [references/spa-feel.md](references/spa-feel.md) when making a signed-in app feel app-like while keeping stable URLs.
+- Read [references/loading-states.md](references/loading-states.md) when designing skeletons, boot sequences, splash screens, or a dispatcher route that forwards into the product.
 
 Surfaces:
 
-- Read `references/marketing-site.md` when building the public site.
-- Read `references/app-surface.md` when building the signed-in product.
-- Read `references/seo.md` when handling SEO for public pages.
-- Read `references/public-discovery.md` when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
-- Read `references/legal-pages.md` when adding privacy, terms, or other trust pages required by providers.
+- Read [references/marketing-site.md](references/marketing-site.md) when building the public site.
+- Read [references/app-surface.md](references/app-surface.md) when building the signed-in product.
+- Read [references/seo.md](references/seo.md) when handling SEO for public pages.
+- Read [references/public-discovery.md](references/public-discovery.md) when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
+- Read [references/legal-pages.md](references/legal-pages.md) when adding privacy, terms, or other trust pages required by providers.
 
 Identity and URLs:
 
-- Read `references/routing.md` when designing route paths.
-- Read `references/query-state.md` when URL-addressing search, filters, sorting, views, pagination, or explicitly selected defaults.
-- Read `references/ids.md` when choosing URL identifiers for resources.
-- Read `references/domains.md` when laying out apex, subdomains, and the canonical host.
-- Read `references/origins.md` when generating links or callbacks across apps and stages.
-- Read `references/public-interfaces.md` when designing public APIs, MCP servers, Agent Skill adapters, OpenAPI contracts, protocol subdomains, CORS, caching, or rate limits.
+- Read [references/routing.md](references/routing.md) when designing route paths.
+- Read [references/query-state.md](references/query-state.md) when URL-addressing search, filters, sorting, views, pagination, or explicitly selected defaults.
+- Read [references/ids.md](references/ids.md) when choosing URL identifiers for resources.
+- Read [references/domains.md](references/domains.md) when laying out apex, subdomains, and the canonical host.
+- Read [references/origins.md](references/origins.md) when generating links or callbacks across apps and stages.
+- Read [references/public-interfaces.md](references/public-interfaces.md) when designing public APIs, MCP servers, Agent Skill adapters, OpenAPI contracts, protocol subdomains, CORS, caching, or rate limits.
 
 Runtime and environment:
 
-- Read `references/environment.md` when creating, auditing, or repairing env files and provider env separation.
-- Read `references/branches.md` when mapping branches to deployment stages and provider credential tiers.
-- Read `references/deployment.md` when configuring which branches deploy and how hosting is wired.
-- Read `references/dns.md` when creating DNS records, proxy settings, or record comments.
+- Read [references/environment.md](references/environment.md) when creating, auditing, or repairing env files and provider env separation.
+- Read [references/branches.md](references/branches.md) when mapping branches to deployment stages and provider credential tiers.
+- Read [references/deployment.md](references/deployment.md) when configuring which branches deploy and how hosting is wired.
+- Read [references/dns.md](references/dns.md) when creating DNS records, proxy settings, or record comments.
 
 Auth and data:
 
-- Read `references/auth.md` when wiring authentication and social sign-in posture.
-- Read `references/workspace-tenancy.md` when backing workspaces with the auth provider's organizations, shaping the home workspace, selecting a workspace over OAuth, or migrating existing workspaces onto organizations.
-- Read `references/bootstrap.md` when ensuring user, workspace, and membership exist on authenticated entry.
-- Read `references/data-model.md` when modeling entities, names, and value precedence.
-- Read `references/source-of-truth.md` when deciding which system owns which fact.
-- Read `references/live-data.md` when wiring a reactive backend so the UI updates live.
-- Read `references/search-indexing.md` when defining searchable fields, indexing fetched data, or running search migrations.
-- Read `references/external-sources.md` when importing, canonicalizing, checking, or recovering provider-owned resources.
-- Read `references/integration-onboarding.md` when a user connects their own external system through the product UI.
+- Read [references/auth.md](references/auth.md) when wiring authentication and social sign-in posture.
+- Read [references/workspace-tenancy.md](references/workspace-tenancy.md) when backing workspaces with the auth provider's organizations, shaping the home workspace, selecting a workspace over OAuth, or migrating existing workspaces onto organizations.
+- Read [references/bootstrap.md](references/bootstrap.md) when ensuring user, workspace, and membership exist on authenticated entry.
+- Read [references/data-model.md](references/data-model.md) when modeling entities, names, and value precedence.
+- Read [references/source-of-truth.md](references/source-of-truth.md) when deciding which system owns which fact.
+- Read [references/live-data.md](references/live-data.md) when wiring a reactive backend so the UI updates live.
+- Read [references/search-indexing.md](references/search-indexing.md) when defining searchable fields, indexing fetched data, or running search migrations.
+- Read [references/external-sources.md](references/external-sources.md) when importing, canonicalizing, checking, or recovering provider-owned resources.
+- Read [references/integration-onboarding.md](references/integration-onboarding.md) when a user connects their own external system through the product UI.
 
 Media and jobs:
 
-- Read `references/object-storage.md` when storing large files.
-- Read `references/uploads.md` when moving bytes from the browser to storage.
-- Read `references/background-jobs.md` when running provider-backed or long-running work.
-- Read `references/bulk-actions.md` when one user action processes multiple independent items or supports partial success.
-- Read `references/data-deletion.md` when one deletion operation must remove a dependent data graph across bounded steps.
-- Read `references/quota.md` when charging usage against limits.
-- Read `references/failure-and-retries.md` when handling failed work and retry behavior.
+- Read [references/object-storage.md](references/object-storage.md) when storing large files.
+- Read [references/uploads.md](references/uploads.md) when moving bytes from the browser to storage.
+- Read [references/background-jobs.md](references/background-jobs.md) when running provider-backed or long-running work.
+- Read [references/bulk-actions.md](references/bulk-actions.md) when one user action processes multiple independent items or supports partial success.
+- Read [references/data-deletion.md](references/data-deletion.md) when one deletion operation must remove a dependent data graph across bounded steps.
+- Read [references/quota.md](references/quota.md) when charging usage against limits.
+- Read [references/failure-and-retries.md](references/failure-and-retries.md) when handling failed work and retry behavior.
 
 Money and admin:
 
-- Read `references/billing.md` when implementing plans, subscriptions, and usage limits.
-- Read `references/admin.md` when adding internal admin surfaces and gates.
+- Read [references/billing.md](references/billing.md) when implementing plans, subscriptions, and usage limits.
+- Read [references/admin.md](references/admin.md) when adding internal admin surfaces and gates.
 
 Frontend and UI:
 
-- Read `references/responsive-layout.md` when building or reviewing any layout across viewports.
-- Read `references/font-loading.md` when choosing or loading fonts.
-- Read `references/product-ux.md` when shaping the primary path, states, and product-native language.
-- Read `references/path-display.md` when showing file paths, directory listings, breadcrumbs, or a browsable tree's root.
-- Read `references/interaction-feedback.md` when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
-- Read `references/user-facing-errors.md` when presenting failures from providers, frameworks, backend functions, validation, or unexpected exceptions.
-- Read `references/design-tokens.md` when defining a design token layer.
-- Read `references/social-metadata.md` when adding icons, favicons, and social embed metadata.
+- Read [references/responsive-layout.md](references/responsive-layout.md) when building or reviewing any layout across viewports.
+- Read [references/font-loading.md](references/font-loading.md) when choosing or loading fonts.
+- Read [references/product-ux.md](references/product-ux.md) when shaping the primary path, states, and product-native language.
+- Read [references/path-display.md](references/path-display.md) when showing file paths, directory listings, breadcrumbs, or a browsable tree's root.
+- Read [references/interaction-feedback.md](references/interaction-feedback.md) when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
+- Read [references/user-facing-errors.md](references/user-facing-errors.md) when presenting failures from providers, frameworks, backend functions, validation, or unexpected exceptions.
+- Read [references/design-tokens.md](references/design-tokens.md) when defining a design token layer.
+- Read [references/social-metadata.md](references/social-metadata.md) when adding icons, favicons, and social embed metadata.
 
 Operating philosophy:
 
-- Read `references/provider-setup.md` when configuring OAuth, webhooks, CORS, or allowed origins.
-- Read `references/runtime-truth.md` when deciding whether a change is actually complete.
-- Read `references/promotion.md` when promoting work between deployment stages.
-- Read `references/definition-of-done.md` before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.
-- Read `references/versioning.md` when bumping versions or keeping version mentions in sync.
-- Read `references/cleanup.md` when removing dead flows, stale docs, or temporary artifacts.
+- Read [references/provider-setup.md](references/provider-setup.md) when configuring OAuth, webhooks, CORS, or allowed origins.
+- Read [references/runtime-truth.md](references/runtime-truth.md) when deciding whether a change is actually complete.
+- Read [references/promotion.md](references/promotion.md) when promoting work between deployment stages.
+- Read [references/definition-of-done.md](references/definition-of-done.md) before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.
+- Read [references/versioning.md](references/versioning.md) when bumping versions or keeping version mentions in sync.
+- Read [references/cleanup.md](references/cleanup.md) when removing dead flows, stale docs, or temporary artifacts.
 
 ## Core Non-Negotiables
 
