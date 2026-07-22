@@ -17,7 +17,7 @@ Default building blocks for a serious web product. Swap any tool, keep the role 
 | DNS | Cloudflare | Registrar lock-in |
 | Email | Resend | An existing transactional provider |
 | Rich text | BlockNote or block JSON | Plain text or markdown is enough |
-| LLM calls | Vercel AI SDK over OpenRouter | A direct provider route is required for latency or contractual reasons |
+| LLM calls | Vercel AI SDK over a hosting-aware gateway | The product needs a different routing or provider path |
 
 Pick the role first, then the tool. Do not let a tool dictate architecture: the same product rules must hold if the tool changes.
 
