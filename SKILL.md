@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, AI model routing, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, such as an API route, a reactive backend function, or a webhook handler, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.25.0"
+  version: "1.26.0"
 ---
 
 # Web Repository Opinions

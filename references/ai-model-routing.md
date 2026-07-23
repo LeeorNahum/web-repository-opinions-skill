@@ -21,3 +21,14 @@ Keep broad dynamic model fallback chains out of production. A substitute model c
 Use free-tier routed models only for development and evaluation. Never send production traffic to them.
 
 Route usage-billed model work through a gateway or provider path that exposes an authoritative per-request cost record. Persist the requested route, actual served model and provider, gateway request or generation identifier, native token usage, latency, fallback data, and actual cost. Keep a charge pending for reconciliation if its authoritative cost arrives later. Published tariffs and token-derived estimates are admission, planning, and diagnostic inputs, never the final production billing ledger.
+
+## Usage Accounting
+
+Keep the billing-period entitlement and short-window availability as separate controls. The billing-period entitlement is the financial ceiling. The availability window limits fresh admissions during a shorter interval. Admit a request only when both controls can cover its estimate.
+
+- Snapshot the entitlement terms that admitted work, and attach each reservation to its exact billing period and availability window. Settle later provider cost into those historic records, even after a renewal, ownership change, or availability reset.
+- Use estimates only to reserve capacity, decide admission, plan spend, and diagnose variance. Write a customer model charge only from the authoritative provider cost record. Keep unavailable cost records pending and reconcile them through bounded, idempotent work.
+- Preserve settled usage as immutable history. Model released reservations, corrected provider data, and exceptional value as distinct append-only records with their own source and outcome instead of rewriting a prior charge.
+- Show the applicable allowance, remaining availability, and reset or expiry timestamps honestly. Customer-facing usage labels clearly distinguish included entitlement, purchased value, and exceptional support value without exposing provider cost details.
+- Represent support intervention as an auditable append-only grant or availability-window reset. Record its actor, target, scope, reason, timestamp, idempotency key, prior and resulting state, and per-target outcome. A support action can open future availability, but it cannot rewrite settled usage.
+- Process broad interventions as bounded jobs with independent per-target outcomes. Retain successful outcomes when another target fails, and retry only the failed targets.
