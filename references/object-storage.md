@@ -21,6 +21,12 @@ The database owns the mapping from a row to its object key, so the key itself ca
 - A flat key at the bucket root is a sound default when one bucket holds one asset class and the database holds the mapping.
 - Reach for a key prefix only when it earns its keep, such as per-owner lifecycle rules, expiry policies, or operator debugging. A prefix is a storage convention for those needs, not app structure, and the database stays the source of truth either way.
 
+## Delivery
+
+Ownership and delivery are separate decisions. The database owns the mapping and the bucket owns the bytes, and neither changes when delivery changes.
+
+Serve bytes straight from the bucket while callers are the product's own authenticated surfaces. Put a CDN or provider edge in front once delivery turns public, high-volume, or reachable by a caller the product did not choose. Egress from an origin bucket to an arbitrary public caller is metered per byte and can be driven arbitrarily high by anyone who can generate a request, while an edge built for that traffic absorbs the spike and flattens the cost. The edge in front is additive, never a replacement for the bucket's ownership.
+
 ## Orphans
 
 Plan for orphans. When a database row is created before bytes arrive, or bytes arrive before a row is finalized, define how unreferenced objects are detected and cleaned up. An object with no owning row is garbage; a row with a missing object is a failure to surface, not to hide.
