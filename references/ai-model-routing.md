@@ -24,11 +24,12 @@ Route usage-billed model work through a gateway or provider path that exposes an
 
 ## Usage Accounting
 
-Keep the billing-period entitlement and short-window availability as separate controls. The billing-period entitlement is the financial ceiling. The availability window limits fresh admissions during a shorter interval. Admit a request only when both controls can cover its estimate.
+Define admission cadence from the product's actual usage promise and economics. A product may use one repeating window, several independent controls, a purchased balance, or another explicit scope. Apply only the controls the product defines, and admit work only when every applicable control can cover its estimate.
 
-- Snapshot the entitlement terms that admitted work, and attach each reservation to its exact billing period and availability window. Settle later provider cost into those historic records, even after a renewal, ownership change, or availability reset.
+- Snapshot the terms and scopes that admitted work. Attach each reservation to the exact admission scope and any internal accounting bucket it must settle into. Settle later provider cost into those historic records, even after a renewal, ownership change, plan change, or availability reset.
+- Keep internal settlement and reporting periods separate from admission unless the product explicitly defines them as customer limits. An accounting bucket may cross a customer window boundary, and a customer window may cross an accounting boundary.
 - Use estimates only to reserve capacity, decide admission, plan spend, and diagnose variance. Write a customer model charge only from the authoritative provider cost record. Keep unavailable cost records pending and reconcile them through bounded, idempotent work.
 - Preserve settled usage as immutable history. Model released reservations, corrected provider data, and exceptional value as distinct append-only records with their own source and outcome instead of rewriting a prior charge.
-- Show the applicable allowance, remaining availability, and reset or expiry timestamps honestly. Customer-facing usage labels clearly distinguish included entitlement, purchased value, and exceptional support value without exposing provider cost details.
-- Represent support intervention as an auditable append-only grant or availability-window reset. Record its actor, target, scope, reason, timestamp, idempotency key, prior and resulting state, and per-target outcome. A support action can open future availability, but it cannot rewrite settled usage.
+- Show customers only the cadence, availability state, and reset or expiry information the product promises. Show amounts or percentages only when they are part of that customer contract and useful at the decision point. Keep provider costs and internal accounting periods private.
+- Represent support intervention as an auditable append-only grant or availability reset. Record its actor, target, scope, timestamp, idempotency key, prior and resulting state, and per-target outcome. Record a reason only when the product's support process requires one. An intervention can open future availability, but it cannot rewrite settled usage.
 - Process broad interventions as bounded jobs with independent per-target outcomes. Retain successful outcomes when another target fails, and retry only the failed targets.
