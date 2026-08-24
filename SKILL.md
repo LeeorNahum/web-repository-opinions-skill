@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, AI model routing, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, such as an API route, a reactive backend function, or a webhook handler, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.29.0"
+  version: "1.30.0"
 ---
 
 # Web Repository Opinions
@@ -56,6 +56,7 @@ Surfaces:
 - Read [references/seo.md](references/seo.md) when handling SEO for public pages.
 - Read [references/public-discovery.md](references/public-discovery.md) when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
 - Read [references/legal-pages.md](references/legal-pages.md) when adding privacy, terms, or other trust pages required by providers.
+- Read [references/contact-email.md](references/contact-email.md) when a page, manifest, or profile needs a contact address, or before any personal mailbox would appear on a public surface.
 
 Identity and URLs:
 
