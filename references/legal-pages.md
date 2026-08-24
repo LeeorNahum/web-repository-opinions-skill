@@ -17,3 +17,5 @@ Default routes, served at the site origin:
 Some providers, such as a Google OAuth consent screen, will not verify an app until a publicly reachable home page, privacy policy, and terms page exist and are linked. Create the routes early so sign-in works in testing, and fill real content before requesting verification.
 
 The privacy policy must describe what user data is accessed, how it is used, stored, and shared, and must state that use is limited to what is described.
+
+Both pages carry the product's contact alias in a Contact section; `references/contact-email.md` owns what that address is.
