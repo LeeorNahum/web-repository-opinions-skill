@@ -1,9 +1,9 @@
 ---
 name: "web-repository-opinions"
-description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, AI model routing, billing, admin, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, such as an API route, a reactive backend function, or a webhook handler, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
+description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, AI model routing, billing, admin, agent-facing tool surfaces, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.30.1"
+  version: "1.31.0"
 ---
 
 # Web Repository Opinions
@@ -57,6 +57,8 @@ Surfaces:
 - Read [references/public-discovery.md](references/public-discovery.md) when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
 - Read [references/legal-pages.md](references/legal-pages.md) when adding privacy, terms, or other trust pages required by providers.
 - Read [references/contact-email.md](references/contact-email.md) when a page, manifest, or profile needs a contact address, or before any personal mailbox would appear on a public surface.
+- Read [references/social-metadata.md](references/social-metadata.md) when building or reviewing any page a person can open without signing in, so it ships its favicon and the link preview card a pasted URL expands into.
+- Read [references/badges.md](references/badges.md) when a public resource should appear in a README or other Markdown as a badge, a small image with a link behind it, or when offering copyable snippets beside a share link.
 
 Identity and URLs:
 
@@ -65,7 +67,7 @@ Identity and URLs:
 - Read [references/ids.md](references/ids.md) when choosing URL identifiers for resources.
 - Read [references/domains.md](references/domains.md) when laying out apex, subdomains, and the canonical host.
 - Read [references/origins.md](references/origins.md) when generating links or callbacks across apps and stages.
-- Read [references/public-interfaces.md](references/public-interfaces.md) when designing public APIs, MCP servers, Agent Skill adapters, OpenAPI contracts, protocol subdomains, CORS, caching, or rate limits.
+- Read [references/public-interfaces.md](references/public-interfaces.md) when designing public APIs, MCP servers, agent-facing tool surfaces, Agent Skill adapters, OpenAPI contracts, protocol subdomains, CORS, caching, or rate limits.
 
 Runtime and environment:
 
@@ -110,8 +112,7 @@ Frontend and UI:
 - Read [references/path-display.md](references/path-display.md) when showing file paths, directory listings, breadcrumbs, or a browsable tree's root.
 - Read [references/interaction-feedback.md](references/interaction-feedback.md) when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
 - Read [references/user-facing-errors.md](references/user-facing-errors.md) when presenting failures from providers, frameworks, backend functions, validation, or unexpected exceptions.
-- Read [references/design-tokens.md](references/design-tokens.md) when defining a design token layer.
-- Read [references/social-metadata.md](references/social-metadata.md) when adding icons, favicons, and social embed metadata.
+- Read [references/design-tokens.md](references/design-tokens.md) when defining a design token layer, or when a surface leaves a large flat region of one color, which is where the product's ambient texture belongs.
 
 Operating philosophy:
 
@@ -147,7 +148,7 @@ Operating philosophy:
 
 When invoked to audit a web repo:
 
-1. Classify public versus signed-in surfaces and whether their rendering posture matches.
+1. Classify public versus signed-in surfaces, whether their rendering posture matches, and whether every publicly reachable page ships a favicon and a correct link preview card.
 2. Inspect URL IDs, route paths, query-state restoration, and link stability across reorganization.
 3. Check auth bootstrap, workspace creation, and permission-gated UI that hides unavailable actions.
 4. Confirm per-runtime env contracts, no root env clutter, and same key names across stages.

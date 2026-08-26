@@ -1,5 +1,13 @@
 # Path Display
 
+## Shortening Must Have A Floor
+
+A shortener that can return a bare ellipsis has failed at its one job. Give it a ladder with a floor: drop interior segments first, then shorten them, and keep the first and last segments whole to the end. If even that does not fit, the honest move is to give the path its own full-width line rather than to shred it, because a readable owner and leaf beat an unreadable full path.
+
+Never let an element's available width be derived from a box that the element's own content shrank. That measurement is circular: each pass hands back what the last pass gave up, and it converges on the element getting nothing, which is exactly how a path collapses to a single ellipsis while the same component elsewhere on the page renders fine. Measure siblings at their natural width, and decide the layout from that.
+
+When one surface shortens a path correctly and another does not, the difference is almost always that the working one gives the path a row to itself. Suspect the measurement, not the shortener.
+
 How a product shows remote or hierarchical file paths to a person. The location of an item is expressed in exactly one place; everything else names the item alone.
 
 ## One Location, Expressed Once
@@ -18,6 +26,12 @@ How a product shows remote or hierarchical file paths to a person. The location 
 - A directory-listing entry carries two fields with fixed meanings: `name` is the entry's own leaf (one path segment, no slashes), and `path` is the entry's full path from the product root. Clients navigate and act with `path` and display `name`; no client ever joins a parent onto a name.
 - Every path a tool returns is a product path a caller can pass straight back to another verb. Jailed absolute paths, provider mount prefixes, and doubled slashes never leak into results, errors, or URLs.
 - Search and recursive matches are the exception where a full path IS the display: a match list is location-first by nature, so it shows `path` (with line and column when relevant), like a code-search tool does.
+
+## Never Restyle The Case Of A Name
+
+The case a person sees on a name, filename, path segment, or identifier must be the case that is stored. A case transform applied to a value is a lie the reader cannot detect, and they may type back what they saw: `SKILL.md` styled uppercase reads as `SKILL.MD`, which a case-sensitive system then rejects.
+
+Whatever case styling a product uses on its own labels, it stops at the boundary of data. This is easy to introduce and hard to see, because one rule usually styles a label and the value beside it together.
 
 ## Failure Smells
 

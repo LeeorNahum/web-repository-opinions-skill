@@ -16,6 +16,14 @@ The database references object keys; object storage never becomes a second app d
 
 When two systems seem to hold the same fact, decide which one is authoritative and make the other a cache or a reference, not a competing source.
 
+## Documents Need An Owner Too
+
+The same rule applies to what the repository says about itself. A project usually ends up with a decision record and a shorter guide that a working agent actually reads, and the guide will drift, because decisions are made in the record and only later summarized.
+
+Say in the guide which one wins, in one sentence, at the top. Without it the two are peers, and an agent that reads the guide will refuse work the record has already settled, or implement something the record reversed, and it will be right to, because nothing told it otherwise. Naming the authority also turns a contradiction into a small, obvious repair: fix the digest, never the code.
+
+Treat a guide that contradicts the record exactly like a stale cache, because that is what it is.
+
 ## Derive, Do Not Store, A Computed Fact
 
 A fact that is a pure function of an owned fact is derived from that owner on read, not written as its own copy. A stored copy drifts from its source and needs a job to keep it in step; a derived one stays correct for free and changes the moment the source does. Compute coverage, capability, capacity, status, and display values from the plan, host, role, or record they follow, rather than stamping a flag that a later change can leave stale.

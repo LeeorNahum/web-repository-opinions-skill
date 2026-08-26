@@ -13,7 +13,7 @@ The opinions are paradigm-named and provider-stated: sections are named for what
 
 ## Coverage
 
-Architecture and identity, rendering and surfaces, URL state, runtime and deployment, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI, billing and administration, and release readiness.
+Architecture and identity, rendering and surfaces, link previews and badges, URL state, runtime and deployment, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI, billing and administration, and release readiness.
 
 ## Use
 

@@ -4,7 +4,7 @@ Design bulk work as independent per-item outcomes unless the operation is inhere
 
 ## Result Contract
 
-Return one structured result for every requested item. Include the stable input identity and a small product-level state such as completed, unchanged, or failed.
+Return one structured result for every requested item. Include the stable input identity and a small product-level state such as completed, unchanged, or failed. Where the result shape is typed, give each state its own variant carrying exactly the facts it promises, so a success without its identity or a failure without its reason cannot validate.
 
 - Preserve successful and unchanged results when sibling items fail.
 - Validate every item against the authorized scope at execution time.
