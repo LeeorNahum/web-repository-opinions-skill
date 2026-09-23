@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, AI model routing, billing, admin, agent-facing tool surfaces, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.31.0"
+  version: "1.32.0"
 ---
 
 # Web Repository Opinions
@@ -67,7 +67,7 @@ Identity and URLs:
 - Read [references/ids.md](references/ids.md) when choosing URL identifiers for resources.
 - Read [references/domains.md](references/domains.md) when laying out apex, subdomains, and the canonical host.
 - Read [references/origins.md](references/origins.md) when generating links or callbacks across apps and stages.
-- Read [references/public-interfaces.md](references/public-interfaces.md) when designing public APIs, MCP servers, agent-facing tool surfaces, Agent Skill adapters, OpenAPI contracts, protocol subdomains, CORS, caching, or rate limits.
+- Read [references/public-interfaces.md](references/public-interfaces.md) when designing public APIs, MCP servers and their authorization, agent-facing tool surfaces, Agent Skill adapters, OpenAPI contracts, protocol subdomains, CORS, caching, or rate limits.
 
 Runtime and environment:
 

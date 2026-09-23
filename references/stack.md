@@ -7,7 +7,7 @@ Default building blocks for a serious web product. Swap any tool, keep the role 
 | Monorepo | Turborepo + pnpm | A single deployable with no shared packages |
 | Rendered public or hybrid surface | Next.js App Router + TypeScript | Static-only site, or a non-React target |
 | Private client SPA | Vite + TypeScript | Server rendering or framework routing is required |
-| Protocol-only HTTP app | Hono + TypeScript | The runtime already provides an equally small standards-based router, or the protocol helper officially supports a different framework first |
+| Protocol-only HTTP app | Hono + TypeScript | The runtime already provides an equally small standards-based router |
 | Styling | Tailwind + shadcn/ui + lucide-react | A design system already exists |
 | App data + live sync | Convex | No realtime need, or an existing database |
 | Auth | Clerk | Enterprise SSO requirements Clerk cannot meet |
@@ -20,29 +20,6 @@ Default building blocks for a serious web product. Swap any tool, keep the role 
 | LLM calls | Vercel AI SDK over a hosting-aware gateway | The product needs a different routing or provider path |
 
 Pick the role first, then the tool. Do not let a tool dictate architecture: the same product rules must hold if the tool changes.
-
-Keep Hono as the default for HTTP APIs, OpenAPI surfaces, and edge-style protocol apps,
-including MCP servers. The MCP SDK's v2 split (`@modelcontextprotocol/server` and siblings;
-the old monolithic `@modelcontextprotocol/sdk` line ends at 1.30.0) hands you a
-`fetch(request)` handler, so Hono's raw request goes straight in with no Node adapter, and
-auth-provider verification runs directly against the provider's backend SDK rather than
-through framework-specific helpers. The earlier Express hedge existed for Clerk's Express
-helpers and is retired: the Hono shape is proven end to end against real hosts.
-
-Two MCP decisions to make deliberately rather than inherit:
-
-- **Revision policy.** Protocol revision 2026-07-28 removed the handshake and sessions.
-  Serving only the current revision is the cheapest server and the cleanest serverless fit
-  (json response mode, nothing streams, nothing held open), but host adoption lags by
-  months: measure what each target client actually puts on the wire, publish that matrix
-  where users will look, and accept that current-revision-only cuts off the laggards until
-  they ship. A caller-dependent tool catalog cannot work on a stateless transport (there is
-  no channel to announce a change), so keep the catalog static and authorize per call.
-- **Advertised equals enforced.** Whatever scopes and metadata the resource publishes, the
-  gate requires exactly, and the well-known documents are served with `no-store`, because
-  hosts persist dynamic client registrations against them. Never proxy the authorization
-  server's own metadata from the resource host: the issuer will not match the URL it came
-  from, and a conforming client must discard it.
 
 ## Independently Deploying Services Move In Backend Order
 
