@@ -1,9 +1,9 @@
 ---
 name: "web-repository-opinions"
-description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, branches, deployment, DNS, auth, data ownership, media, jobs, AI model routing, billing, admin, agent-facing tool surfaces, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
+description: "Opinionated defaults and standards for building TypeScript web products and web-technology repos, covering monorepo layout, rendering, surfaces, routing, IDs, key generation, domains, origins, env contracts, provider onboarding, branches, deployment, DNS, custom-domain email, auth, data ownership, media, jobs, AI model routing, billing, admin, agent-facing tool surfaces, responsive layout, fonts, product UX, and release operating philosophy. Load this skill early and keep it loaded for any web work: whenever planning, deciding, designing, scaffolding, auditing, naming, reviewing, or implementing anything in a web app, marketing site, signed-in app, SaaS, extension, desktop, or mobile surface built with HTML, CSS, JS, or TS. This includes backend-only web product pieces, since env contracts, auth, data ownership, and deployment are opinions this skill holds regardless of whether a given file renders UI. When unsure whether it applies, load it. Almost every decision in a web repo touches an opinion it holds."
 metadata:
   author: "Leeor Nahum"
-  version: "1.32.0"
+  version: "1.33.0"
 ---
 
 # Web Repository Opinions
@@ -57,6 +57,7 @@ Surfaces:
 - Read [references/public-discovery.md](references/public-discovery.md) when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
 - Read [references/legal-pages.md](references/legal-pages.md) when adding privacy, terms, or other trust pages required by providers.
 - Read [references/contact-email.md](references/contact-email.md) when a page, manifest, or profile needs a contact address, or before any personal mailbox would appear on a public surface.
+- Read [references/domain-mail.md](references/domain-mail.md) when setting up email for a domain: routing an alias to a monitored inbox, filtering routed mail, or sending and replying as the alias.
 - Read [references/social-metadata.md](references/social-metadata.md) when building or reviewing any page a person can open without signing in, so it ships its favicon and the link preview card a pasted URL expands into.
 - Read [references/badges.md](references/badges.md) when a public resource should appear in a README or other Markdown as a badge, a small image with a link behind it, or when offering copyable snippets beside a share link.
 
@@ -71,7 +72,7 @@ Identity and URLs:
 
 Runtime and environment:
 
-- Read [references/environment.md](references/environment.md) when creating, auditing, or repairing env files and provider env separation.
+- Read [references/environment.md](references/environment.md) when creating, auditing, repairing, or filling env files, deciding which store holds a value, or keeping provider env separated by stage.
 - Read [references/branches.md](references/branches.md) when mapping branches to deployment stages and provider credential tiers.
 - Read [references/deployment.md](references/deployment.md) when configuring which branches deploy and how hosting is wired.
 - Read [references/dns.md](references/dns.md) when creating DNS records, proxy settings, or record comments.
@@ -116,7 +117,7 @@ Frontend and UI:
 
 Operating philosophy:
 
-- Read [references/provider-setup.md](references/provider-setup.md) when configuring OAuth, webhooks, CORS, or allowed origins.
+- Read [references/provider-setup.md](references/provider-setup.md) when onboarding providers or standing up a stage, deciding the order providers are wired, or configuring OAuth, webhooks, CORS, or allowed origins.
 - Read [references/runtime-truth.md](references/runtime-truth.md) when deciding whether a change is actually complete.
 - Read [references/promotion.md](references/promotion.md) when promoting work between deployment stages.
 - Read [references/definition-of-done.md](references/definition-of-done.md) before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.

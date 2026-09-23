@@ -83,6 +83,21 @@ Values live in exactly one durable store per stage:
 
 Inspect local and example files without printing secrets. Use provider CLIs or dashboards when available and safe. Ask for values only when they cannot be found or accessed.
 
+## Filling Values
+
+The committed contracts are the spec. Read every `.env.example` and the code that reads env to learn the exact keys and which runtime owns each, then fill those keys without inventing or renaming any. Derive what the repo and filled stores already provide. A value that is not yet derivable is asked for or recorded as a deferral tied to the step that produces it, never a placeholder and never a silent blank.
+
+Fill `.env.local` as a one-to-one copy of its `.env.example` with real values. Values bound for a deployed store get their own copy-paste file in a folder outside every git repo, chosen at the start of setup, so filled secrets never sit in a git tree. Name each `.env.<destination>.tmp` so the env gitignore still catches it, and make it a one-to-one copy of the matching example filled for one destination, so it pastes in one action:
+
+```text
+.env.<backend>-dev.tmp                dev backend deployment
+.env.<backend>-prod.tmp               prod backend deployment
+.env.<host>-staging-<surface>.tmp     host project, staging scope
+.env.<host>-production-<surface>.tmp  host project, production scope
+```
+
+Delete the copy-paste files once their stage is set up.
+
 ## Public And Server-Only
 
 Treat `NEXT_PUBLIC_*`, `VITE_*`, and similar prefixes as browser-exposed. Never put a secret behind a public prefix. Shared packages used by client bundles may read only public env. Framework-magic keys can be real even when no direct read appears in source; do not delete provider or framework keys just because grep does not find them.
