@@ -12,7 +12,7 @@ Two provider stages exist, not three: dev/test and production.
 
 - Local and staging share dev/test resources (test billing mode, dev backend deployment, development auth instance, `*-dev` provider keys).
 - `main` alone uses production resources (live billing, prod backend deployment, production auth instance, `*-prod` keys).
-- Same env key names everywhere; values change by store.
+- Same env key names everywhere. Values change by store.
 - Staging differs from local mainly by origin URLs, not by a different set of API keys.
 
 Agent Git rules:
@@ -42,7 +42,5 @@ Regardless of the gate, treat preview as if the gate could be lifted:
 - Serve `Disallow: /` from `robots.txt` and a `noindex` on every page. A gate can be turned off for a debugging session and forgotten, and a preview host that gets indexed is a duplicate of the whole site competing with the canonical one.
 - Name no sitemap from a host that must not be crawled.
 - Keep the canonical tag pointing at the production origin from both hosts.
-
-The one carve-out is machine-facing surfaces. An API, MCP, or webhook project answers programmatic requests, and a browser-only gate turns every machine call into an auth failure the client cannot resolve. Those projects need a protection story their clients can actually satisfy, such as a token, rather than a browser session gate. `references/deployment.md` owns that case.
 
 Ask before pointing staging at production provider resources instead of the shared dev/test resources.

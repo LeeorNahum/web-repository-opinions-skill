@@ -1,11 +1,11 @@
 # Object Storage
 
-Large user files belong in object storage, not the database. Cloudflare R2 is the default; any S3-compatible store fills the role.
+Large user files belong in object storage, not the database. Cloudflare R2 is the default. Any S3-compatible store fills the role.
 
 The database is the source of truth for metadata, ownership, status, and permissions. It stores the object key and references the bytes. Object storage holds only the bytes.
 
 - Keep large media in object storage and store only its key and metadata in the database.
-- Treat the bucket as the byte layer; keep app state and relationships in the database.
+- Treat the bucket as the byte layer, and keep app state and relationships in the database.
 - Charge usage against durable database state, not against what happens to sit in a bucket.
 
 ## Buckets
@@ -37,39 +37,13 @@ Do not verify a download by confirming the action returned a URL or that the obj
 
 ## Orphans, And Why Deletion Needs A Write-Ahead Ledger
 
-Bytes travel outside any transaction, and that is the whole problem. An upload computes its key,
-begins its put, and lands whenever the network says so. Deletion, meanwhile, lists a prefix,
-removes what it saw, and removes the owning row. A put still in flight then lands as an object no
-row references, and no sweep can ever rediscover it, because every sweep finds its keys through
-the row that is gone. Logical access ends, physical erasure silently fails, and whatever the
-privacy policy promises about deletion is now false for that object. "Plan for orphans" is not a
-plan; this section is the plan.
+Bytes travel outside any transaction, and that is the whole problem. An upload computes its key, begins its put, and lands whenever the network says so. Deletion, meanwhile, lists a prefix, removes what it saw, and removes the owning row. A put still in flight then lands as an object no row references, and no sweep can ever rediscover it, because every sweep finds its keys through the row that is gone. Logical access ends, physical erasure silently fails, and whatever the privacy policy promises about deletion is now false for that object.
 
-**No stored byte may exist before the record that can destroy it.** Keep a write-ahead ledger of
-object writes, and hold these properties, each of which exists because a race defeats the version
-without it:
+**No stored byte may exist before the record that can destroy it.** Keep a write-ahead ledger of object writes, and hold these properties, each of which exists because a race defeats the version without it:
 
-- **Register, then write, without exception.** Every writer records the keys it is about to put,
-  in a database transaction, before the first byte moves. That transaction also rechecks that the
-  write is still allowed, the owner still open and the row still present, so a caller whose
-  account died mid-action is refused before the upload instead of stranding one.
-- **The ledger outlives everything it anchors.** Key the ledger by the object key alone, never by
-  the row or account being deleted, so cleanup can still find the byte after both are gone. The
-  anchor row then no longer has to be the last thing deleted, because it is no longer the only
-  thing that knows the byte exists.
-- **Drain by age, never by optimism.** Only rows older than the longest legitimate write are
-  candidates: by then the write landed or never will. Skip an object fresher than the window, since
-  every writer re-registers first and a fresh byte under an old row means a concurrent writer the
-  sweep outran. Clear a row only when its registration timestamp is unchanged, so a row a new
-  writer touched survives to anchor that writer's own write.
-- **Wire the drain into the scheduled sweep**, so the worst-case orphan life is the age window plus
-  one sweep interval, and check the deletion copy in the privacy policy against that bound rather
-  than assuming it.
+- **Register, then write, without exception.** Every writer records the keys it is about to put, in a database transaction, before the first byte moves. That transaction also rechecks that the write is still allowed, the owner still open and the row still present, so a caller whose account died mid-action is refused before the upload instead of stranding one.
+- **The ledger outlives everything it anchors.** Key the ledger by the object key alone, never by the row or account being deleted, so cleanup can still find the byte after both are gone. The anchor row then no longer has to be the last thing deleted, because it is no longer the only thing that knows the byte exists.
+- **Drain by age, never by optimism.** Only rows older than the longest legitimate write are candidates: by then the write landed or never will. Skip an object fresher than the window, since every writer re-registers first and a fresh byte under an old row means a concurrent writer the sweep outran. Clear a row only when its registration timestamp is unchanged, so a row a new writer touched survives to anchor that writer's own write.
+- **Wire the drain into the scheduled sweep**, so the worst-case orphan life is the age window plus one sweep interval, and check the deletion copy in the privacy policy against that bound rather than assuming it.
 
-**Lifecycle rules are for prefixes that are short-lived by construction**, staging areas and
-export downloads, where every object is garbage after a known age. Never put one on a prefix of
-content-addressed served objects: lifecycle conditions are age-since-upload, and age cannot tell a
-stranded byte from a served one, because a content-addressed object is uploaded once and then
-served unchanged for the life of its owner. A rule at any age eventually destroys live content,
-and a rule set long enough never to fire is not defense in depth, it is a delayed defect. The
-ledger is the mechanism; a lifecycle rule is only correct where age genuinely implies garbage.
+**Lifecycle rules are for prefixes that are short-lived by construction**, staging areas and export downloads, where every object is garbage after a known age. Never put one on a prefix of content-addressed served objects: lifecycle conditions are age-since-upload, and age cannot tell a stranded byte from a served one, because a content-addressed object is uploaded once and then served unchanged for the life of its owner. A rule at any age eventually destroys live content, and a rule set long enough never to fire is not defense in depth, it is a delayed defect. The ledger is the mechanism. A lifecycle rule is only correct where age genuinely implies garbage.

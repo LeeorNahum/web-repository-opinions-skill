@@ -13,7 +13,7 @@ Name by paradigm, not by provider. A thing is named for what it does so the name
 
 `site` is the default name for the primary web surface. Most web-technology repos either are a `site` or at least include one, so `site` is the safe default that stays accurate once a signed-in surface joins it.
 
-Use `app` for the signed-in product. Name additional surfaces by their role: `admin`, `dashboard`, `console`, `portal`, `studio`. The role word is the name; there is no need for generic suffixes.
+Use `app` for the signed-in product. Name additional surfaces by their role: `admin`, `dashboard`, `console`, `portal`, `studio`. The role word is the name, with no need for generic suffixes.
 
 Carry that role name through the whole surface. The app directory, package or deployable slug, hosting project suffix, and DNS subdomain should all identify the same role. A reader should be able to line up code, hosting, and DNS without memorizing aliases.
 
@@ -25,7 +25,7 @@ Package names state purpose. Use names like `backend`, `domain`, `config`, `ui`.
 
 ## Integration Names
 
-Name a module, function, or folder after the capability it provides, not the vendor behind it. Pick the most accurate word for what it does in this product rather than the provider's name or a vague catch-all. The vendor lives inside the adapter; the name stays true when the vendor changes.
+Name a module, function, or folder after the capability it provides, not the vendor behind it. Pick the most accurate word for what it does in this product rather than the provider's name or a vague catch-all. The vendor lives inside the adapter, so the name stays true when the vendor changes.
 
 ## Env Keys
 

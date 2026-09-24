@@ -2,7 +2,7 @@
 
 Use a managed auth provider so identity, sessions, and social sign-in are never hand-rolled. Clerk is the default. You never store or handle raw passwords or emails yourself. The provider owns credential security.
 
-Hold three postures throughout: least privilege, granting each caller the minimum scope it needs; defense in depth, re-verifying on the server even when the UI already hides an unavailable action; and zero trust, never trusting a request for where it came from, so every token is validated and every webhook signature is checked before its payload is believed.
+Hold three postures throughout. Least privilege grants each caller the minimum scope it needs. Defense in depth re-verifies on the server even when the UI already hides an unavailable action. Zero trust never trusts a request for where it came from, so every token is validated and every webhook signature is checked before its payload is believed.
 
 ## One Auth Route
 
@@ -50,7 +50,7 @@ Account deletion webhooks follow a strict contract:
 
 ## Verify A Token Against What The Provider Actually Mints
 
-Read a real token from your own provider before writing the check. Decode one, list its claims, and build the rule from that. The specification says what a token ought to carry; the provider decides what it does carry, and the gap between them is where a confident, wrong check gets written.
+Read a real token from your own provider before writing the check. Decode one, list its claims, and build the rule from that. The specification says what a token ought to carry. The provider decides what it does carry, and the gap between them is where a confident, wrong check gets written.
 
 Two failures come from skipping that step, and they fail in opposite directions.
 
@@ -70,57 +70,27 @@ Define what a request must look like instead: a secure origin, loopback where th
 
 Enforce authorization once, at the boundary every client crosses, so the MCP, the CLI, the raw API, and the UI all inherit the same rules instead of each re-implementing them. One gate keeps policy in one place and gives every surface the same answer. The gate is capability-granular: every action maps to a named capability, and access is the intersection of the caller's role, their per-resource allowlist, and, for a token or key, the token's own scope.
 
-Capabilities are assignable to roles and to individual members, so an admin can grant one verb while denying another on the same resource. Re-verify on the server even when the UI already hides an unavailable action, and fail closed when a capability is unknown or absent.
+Capabilities are assignable to roles and to individual members, so an admin can grant one verb while denying another on the same resource. Fail closed when a capability is unknown or absent.
 
 The gate scopes what a member or token may do. Keep it separate from what a plan sells. Whether any capability is also a paid feature is a billing decision, not a job for this gate.
 
 ## Gates Compose, Or They Leak
 
-Two gates that each hold on their own can still leak at their seam. A product grows one gate for
-who is acting and another for how an expensive read or write proceeds, and the defect class that
-survives both is a capability issued under one gate crossing a transaction or process boundary
-without the fact the other gate needed. A plan authorized while an account was open drains after
-it closes. A background job fetches a private resource for an owner whose account died between
-scheduling and running. The proof of each gate stays true while the product leaks.
+Two gates that each hold on their own can still leak at their seam. A product grows one gate for who is acting and another for how an expensive read or write proceeds, and the defect class that survives both is a capability issued under one gate crossing a transaction or process boundary without the fact the other gate needed. A plan authorized while an account was open drains after it closes. A background job fetches a private resource for an owner whose account died between scheduling and running. The proof of each gate stays true while the product leaks.
 
-- **Whatever crosses a boundary carries its principal.** A plan, job, or capability consumed in
-  later transactions has who it was issued for frozen inside it, and every consumer re-establishes
-  that principal's liveness in its own transaction, by stable ID. Serialization strips runtime
-  identity, so the recheck is what carries the guarantee across the wire.
-- **Background work has no caller, but it always has an owner**, and the owner check belongs in
-  every transaction that acts. A check at scheduling time is an optimization, never the guarantee,
-  because a closure can commit between scheduling and running.
-- **The last gate is where the result lands**, and some results land without a landing mutation: a
-  presigned URL, a sent message, a minted credential. Recheck the principal immediately before
-  releasing one, because nothing downstream will get another chance.
-- **Enumerating call sites fails.** A list of places to add the check is stale the day it is
-  written; the fix that holds is structural: one constructor or one module every path must cross,
-  with the alternatives deleted rather than deprecated so an unconverted caller is a compile error.
-- **Lint rules and type brands are hygiene, not the boundary**, and must say so where they are
-  written. A lint rule cannot see a property name computed at runtime or an object reached through
-  a parameter, and a type brand is erased and forgeable. Runtime identity for issued objects (a
-  module-private WeakSet) plus the per-transaction recheck are the boundary; everything else keeps
-  honest people honest.
+- **Whatever crosses a boundary carries its principal.** A plan, job, or capability consumed in later transactions has who it was issued for frozen inside it, and every consumer re-establishes that principal's liveness in its own transaction, by stable ID. Serialization strips runtime identity, so the recheck is what carries the guarantee across the wire.
+- **Background work has no caller, but it always has an owner**, and the owner check belongs in every transaction that acts. A check at scheduling time is an optimization, never the guarantee, because a closure can commit between scheduling and running.
+- **The last gate is where the result lands**, and some results land without a landing mutation: a presigned URL, a sent message, a minted credential. Recheck the principal immediately before releasing one, because nothing downstream will get another chance.
+- **Enumerating call sites fails.** A list of places to add the check is stale the day it is written. The fix that holds is structural: one constructor or one module every path must cross, with the alternatives deleted rather than deprecated so an unconverted caller is a compile error.
+- **Lint rules and type brands are hygiene, not the boundary**, and must say so where they are written. A lint rule cannot see a property name computed at runtime or an object reached through a parameter, and a type brand is erased and forgeable. Runtime identity for issued objects (a module-private WeakSet) plus the per-transaction recheck are the boundary. Everything else keeps honest people honest.
 
 ## Closure Is Permanent, And Retention Depends On Who Closed It
 
-When an account closes, keep a small record that outlives every row it owned: a one-way hash of
-the provider subject and when it closed. It exists because credentials issued before the closure
-verify by signature, not by asking the provider, so without it a lingering token quietly recreates
-an account that was just deleted. How long to keep it depends on who ended the account, and the
-two answers differ because the safety assumption differs:
+When an account closes, keep a small record that outlives every row it owned: a one-way hash of the provider subject and when it closed. It exists because credentials issued before the closure verify by signature, not by asking the provider, so without it a lingering token quietly recreates an account that was just deleted. How long to keep it depends on who ended the account, and the two answers differ because the safety assumption differs:
 
-- The provider deleted the identity and said so: the subject can never issue or refresh a
-  credential again, so the record is a tombstone kept comfortably past the longest credential
-  life, then dropped so this never becomes a permanent list of everyone who left.
-- The product closed the account while the provider identity still exists: that subject can still
-  sign in and still refresh, so the record must never expire, or the closure quietly ends on a
-  date. Retention only ever lengthens; a later provider event never puts an expiry back.
+- The provider deleted the identity and said so: the subject can never issue or refresh a credential again, so the record is a tombstone kept comfortably past the longest credential life, then dropped so this never becomes a permanent list of everyone who left.
+- The product closed the account while the provider identity still exists: that subject can still sign in and still refresh, so the record must never expire, or the closure quietly ends on a date. Retention only ever lengthens, and a later provider event never puts an expiry back.
 
-Make the origin a required argument with no default, because the safe answer differs and a default
-silently picks the unsafe one for the caller that most needs the other. And when permanence is
-encoded as an absent expiry field, every expiry scan must range only over records that have the
-field, because an absent value sorts before every real one in a typical index, and an unbounded
-range deletes exactly the refusals that must never be forgotten.
+Make the origin a required argument with no default, because the safe answer differs and a default silently picks the unsafe one for the caller that most needs the other. And when permanence is encoded as an absent expiry field, every expiry scan must range only over records that have the field, because an absent value sorts before every real one in a typical index, and an unbounded range deletes exactly the refusals that must never be forgotten.
 
 Ask before changing OAuth callback hosts or production auth settings.

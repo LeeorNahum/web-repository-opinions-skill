@@ -13,8 +13,8 @@ The opinions are paradigm-named and provider-stated: sections are named for what
 
 ## Coverage
 
-Architecture and identity, rendering and surfaces, link previews and badges, URL state, runtime and deployment, provider onboarding, custom-domain email, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI, billing and administration, and release readiness.
+Architecture and identity, rendering and surfaces, link previews and badges, URL state, physical commerce, HTTP APIs, MCP and agent packaging, runtime and deployment, provider onboarding, custom-domain email, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI, billing and administration, and release readiness.
 
 ## Use
 
-Auto-invokes on web-technology repo work, including backend-only pieces of a web product. Read `SKILL.md` first, then load only the references the task needs.
+Auto-invokes on web-technology repo work, including backend-only pieces of a web product. Read `SKILL.md` first, then read in full every reference that could touch the task, including the adjacent ones.

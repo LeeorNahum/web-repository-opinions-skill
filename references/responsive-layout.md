@@ -24,6 +24,17 @@ Fixed values belong only where size must never vary: icon assets at a declared s
 
 Use viewport media queries for page-level composition and container queries or measured fit for reusable components. Use input media features such as `hover` and `pointer` only for interaction capabilities, never as a proxy for a device category.
 
+## Display Scale
+
+Display scale is a runtime variable, not a build-time constant. Treat every scale the platform offers as reachable, and treat the current scale as changeable while the app is running: a settings change, a window dragged to a different monitor, a laptop display switching resolution modes.
+
+- Lay out in logical units and derive physical pixels from the current scale at the moment of use. A scale factor cached at startup, or a physical size computed once, is stale the first time the setting moves.
+- Re-derive everything that renders in physical pixels when the scale changes: canvas backing stores sized from `devicePixelRatio`, native window dimensions in desktop shells, and any coordinate math bridging native and web layers.
+- Watch `devicePixelRatio` through a `(resolution: <current>dppx)` media query listener that re-arms itself after each change, since the value has no change event of its own.
+- Treat scale-change notifications as an optimization, with the current scale queried at the point of use as the source of truth. Notification delivery varies by platform, window style, and framework, and a missed notification is silent: the only symptom is one layer still rendering at the old scale. In a desktop shell, reconcile the web content and the native window explicitly, and size the native window from the monitor's current scale every time it is shown rather than from a cached factor.
+
+Verify at more than one scale by exercising a real scale change, in both directions, while the app is running. Where the platform exposes display scale as a writable setting, as desktop operating systems do, change it, watch the running UI, and restore it afterwards. A layout that was only ever seen at one scale has not been verified.
+
 ## Typography And Reading
 
 Type stays readable at every viewport. Scale heading hierarchy gracefully on small screens, and constrain body line length to a comfortable reading measure on wide screens so text does not stretch across the full width.
@@ -48,7 +59,9 @@ When both the origin and destination matter, use an outside-in priority by defau
 
 Measure the final candidate against the real available width when font metrics, sibling controls, or container size affect the result. Continue evaluating later units after one candidate fails to fit. A later, shorter unit may still fit and carry more useful context.
 
-If the highest-priority endpoint units cannot both fit in full, abbreviate within those endpoints while preserving both sides for as long as the available width allows. Keep the complete value available through an accessible name and, when useful, a pointer tooltip.
+If the highest-priority endpoint units cannot both fit in full, abbreviate within those endpoints while preserving both sides for as long as the available width allows. Keep the complete value available through an accessible name and, when useful, a pointer tooltip. A shortener never returns a bare ellipsis. If even the abbreviated endpoints do not fit, give the value its own full-width line rather than shred it, because a readable owner and leaf beat an unreadable full value.
+
+Never derive an element's available width from a box that the element's own content shrank. That measurement is circular: each pass hands back what the last pass gave up, and it converges on the element getting nothing. Measure siblings at their natural width, and decide the layout from that. When one surface shortens a value correctly and another does not, the working one usually gives the value a row to itself. Suspect the measurement, not the shortener.
 
 Put the selection and compaction policy in a deterministic formatter that can be tested independently from rendering. Reserve CSS text overflow for final containment after the semantic truncation algorithm runs.
 
@@ -94,7 +107,7 @@ The cost is that the browser no longer restores scroll position on back or forwa
 
 - **Learn about the back before the router does.** A router that intercepts traversals through the Navigation API has already committed the new view by the time `popstate` fires, so a `popstate` listener decides too late and mis-attributes one navigation to the next. Take the traversal from the `navigate` event filtered to a traversal type, and keep `popstate` only as the fallback where that API does not exist. Inside `navigate` the location is still the old URL, so read the destination from the event.
 - **Restore only on a back or a forward.** A fresh navigation starts at the top, and a view entered any other way must also forget what an earlier visit to that URL left, or a position from two visits ago gets applied to this one. A reload starts at the top unless the browser itself says the navigation was a traversal.
-- **Wait for the height, do not assume it.** A region can only hold an offset once its content is that tall; assigning earlier clamps silently and lands at the top, which looks exactly like no restoration at all. Retry per animation frame until the region can reach the offset, then apply it once. Bound the wait from the user's keypress, not from the mount, since the route commit, the data, and the region existing at all have to fit inside it. Check that deadline only on a frame that found the region still too short, so a restore that becomes possible is taken and only a stalled wait is abandoned. That also makes a tab nobody is watching wait rather than give up, since a frame that is never painted cannot be late.
+- **Wait for the height, do not assume it.** A region can only hold an offset once its content is that tall. Assigning earlier clamps silently and lands at the top, which looks exactly like no restoration at all. Retry per animation frame until the region can reach the offset, then apply it once. Bound the wait from the user's keypress, not from the mount, since the route commit, the data, and the region existing at all have to fit inside it. Check that deadline only on a frame that found the region still too short, so a restore that becomes possible is taken and only a stalled wait is abandoned. That also makes a tab nobody is watching wait rather than give up, since a frame that is never painted cannot be late.
 - **Yield to the user immediately.** A wheel, a touch move, a pointer press on the region, or a scrolling key ends the attempt for good. A restore that arrives after the user has started scrolling is worse than no restore.
 - **Never animate it, and never restore part of the way.** An instant jump to a position the user already had is the only honest answer, and it owes nothing to reduced-motion preferences because nothing about it moves.
 - **Key it by the region and the path, not by the query, unless the query can be navigated back to.** Filter and dialog state written with a replace never creates a history entry, so including it only creates keys nothing can return to, and makes a closing dialog look like a new view.
@@ -125,9 +138,9 @@ A definite height is not a minimum height. A minimum leaves every percentage bas
 | Surface | Key constraint |
 | --- | --- |
 | Browser or web app | Full continuous range from the narrowest supported window upward |
-| Browser extension popup | Fixed-width container; overflow, scroll, and padding still apply |
-| React Native or Expo | No CSS breakpoints; mobile-first and fluid principles apply through platform layout APIs |
-| Server-rendered framework | Responsiveness is a layout concern, not a server concern; same rules apply |
+| Browser extension popup | Fixed-width container. Overflow, scroll, and padding still apply |
+| React Native or Expo | No CSS breakpoints. Mobile-first and fluid principles apply through platform layout APIs |
+| Server-rendered framework | Responsiveness is a layout concern, not a server concern. The same rules apply |
 | Electron | Resizable window with an explicit minimum size and continuous behavior above it |
 
 ## Verification

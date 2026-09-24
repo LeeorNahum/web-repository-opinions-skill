@@ -31,7 +31,7 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 
 ## Editing
 
-- Bump `metadata.version` with semver in the same change whenever behavior changes.
+- Bump `metadata.version` by the release-versioning skill's rules for skills.
 - Encode a default only when backed by user preference or real usage.
 - Treat criticism as evidence to reassess an opinion, not an automatic instruction to remove or preserve it.
 - Admit an opinion only when its scope is clear and it improves decisions across multiple unrelated web products. Keep a proven project pattern out of the skill when its generality is still uncertain.
@@ -62,4 +62,4 @@ Treat the current intended product contract as truth. Compatibility is never an 
 
 Add compatibility only when an explicit supported contract, deployed client, public integration, durable user data, or approved rollout requires it. Name the preserved contract, its consumers, its removal condition if temporary, and the verification that proves both old and new behavior remain intentional.
 
-Before finishing, confirm every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped if behavior changed, and the README layout matches the actual files.
+Before finishing, confirm every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped as the release-versioning skill requires, and the README layout matches the actual files.

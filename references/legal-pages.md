@@ -18,4 +18,4 @@ Some providers, such as a Google OAuth consent screen, will not verify an app un
 
 The privacy policy must describe what user data is accessed, how it is used, stored, and shared, and must state that use is limited to what is described.
 
-Both pages carry the product's contact alias in a Contact section; `references/contact-email.md` owns what that address is.
+Both pages carry the same product-domain contact alias in a Contact section.

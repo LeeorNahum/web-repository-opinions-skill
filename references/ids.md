@@ -17,7 +17,7 @@ Expose one app-facing URL ID field, named `id`. Keep database-native IDs for int
 
 Slugs are acceptable only when public SEO is the point of the page, such as a blog post or a docs article.
 
-A private link is shareable only as a deliberate product feature. A short ID in a URL is not the same as public sharing; sharing is designed, not a side effect of copying a link. Ask before making a private object publicly shareable.
+A private link is shareable only as a deliberate product feature. A short ID in a URL is not the same as public sharing. Sharing is designed, not a side effect of copying a link. Ask before making a private object publicly shareable.
 
 ## Credential IDs
 
@@ -26,4 +26,4 @@ For secret keys, webhook signing secrets, restricted keys, and any token that mu
 - A prefix identifies the credential type, and often its environment.
 - A long random body follows the prefix: a version 4 UUID with its dashes stripped, so the whole credential reads as one unbroken token. Mint it from the runtime's crypto UUID generator through one shared helper, never a hand-rolled random string. When a single UUID's entropy is not enough, concatenate more version 4 UUIDs in the same dashless form rather than switching to another alphabet.
 
-Prefixes belong here, and not on entity IDs, because credentials appear in env files, logs, and dashboards with no route path to give them context. The prefix lets a human or a tool tell key types apart at a glance and prevents passing one kind of credential where another is expected. Never reuse the short fixed-length entity format for a credential body; a credential needs full-length opaque randomness. A shared internal secret that lives only under a descriptive env key may skip the prefix, but its body still follows the same dashless UUID standard.
+Prefixes belong here, and not on entity IDs, because credentials appear in env files, logs, and dashboards with no route path to give them context. The prefix lets a human or a tool tell key types apart at a glance and prevents passing one kind of credential where another is expected. Never reuse the short fixed-length entity format for a credential body. A credential needs full-length opaque randomness. A shared internal secret that lives only under a descriptive env key may skip the prefix, but its body still follows the same dashless UUID standard.

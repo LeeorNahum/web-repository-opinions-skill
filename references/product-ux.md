@@ -1,6 +1,6 @@
 # Product UX
 
-Design every screen around a real human path, not a template average of nearby patterns. A product surface can be locally correct and globally incoherent; judge the whole, not just the parts.
+Design every screen around a real human path, not a template average of nearby patterns. A product surface can be locally correct and globally incoherent. Judge the whole, not just the parts.
 
 For each page, decide what the viewer should notice first, next, and last, then build to that order.
 
@@ -11,7 +11,7 @@ For each page, decide what the viewer should notice first, next, and last, then 
 - Never expose provider job IDs, raw webhook states, model names, or storage keys to users.
 - Keep public copy separate from internal implementation language.
 
-Fix structure before style. If the skeleton of a page is wrong, do not decorate it; reset the path first, then polish.
+Fix structure before style. If the skeleton of a page is wrong, do not decorate it. Reset the path first, then polish.
 
 Simulate the real interaction, not the static screenshot. A page that survives a skim can still break the moment someone tries to use it.
 

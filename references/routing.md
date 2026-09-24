@@ -58,8 +58,8 @@ The URL is the sole owner of which workspace (organization, team, account scope)
 
 - Every private route nests under the workspace prefix (`/[workspace]/...`), so any view is a shareable snapshot of exactly where it points, including the workspace.
 - The workspace switcher is navigation: switching links to the same surface under the other workspace's prefix. It does not mutate session state and reload.
-- When the auth provider carries its own active-organization session state, the app syncs that state to follow the URL segment on entry (activating the matching organization, or none for a personal workspace), then renders. A deep link into any workspace the user belongs to works from a cold session without bouncing through a chooser; the session follows the URL, never the other way around.
-- The server still authorizes by verified identity and membership. The URL selects among the workspaces the caller can already reach; it never grants access, and an unknown or unauthorized workspace segment fails to a clear product-owned screen.
+- When the auth provider carries its own active-organization session state, the app syncs that state to follow the URL segment on entry (activating the matching organization, or none for a personal workspace), then renders. A deep link into any workspace the user belongs to works from a cold session without bouncing through a chooser. The session follows the URL, never the other way around.
+- The server still authorizes by verified identity and membership. The URL selects among the workspaces the caller can already reach. It never grants access, and an unknown or unauthorized workspace segment fails to a clear product-owned screen.
 
 Owner-nest a public resource only when the owner is part of how people identify, browse, and verify it. In that case, the owner segment supplies meaningful public context rather than database lookup scope. Keep the child ID globally unique, give the resource one canonical owner-nested URL, and keep ownership stable for the lifetime of that URL.
 

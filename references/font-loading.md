@@ -10,16 +10,16 @@ With the default server-rendered framework, the framework font utility handles t
 | --- | --- | --- |
 | Next.js SSR | None with the framework font module | Fetches at build time, self-hosts, preloads before first paint. Custom fonts safe. |
 | Nuxt SSR | None with the framework font module | Same build-time model. Custom fonts safe. |
-| Remix or React Router | Low if handled | No font module; self-host and preload manually via route links. Avoid CDN. |
-| Astro or Gatsby SSG | Manageable | Static output; preload in the head. Self-hosting beats CDN. |
+| Remix or React Router | Low if handled | No font module. Self-host and preload manually via route links. Avoid CDN. |
+| Astro or Gatsby SSG | Manageable | Static output. Preload in the head. Self-hosting beats CDN. |
 | Vite, CRA, plain SPA | High | Fonts load after hydration, after first paint. System fonts unless FOUT is explicitly handled. |
 | Static HTML | Risk unless preloaded | Preload hints help. Self-hosted loads faster than CDN. |
 | Server-rendered PHP | Low if enqueued correctly | Preloading in the head template removes most risk. |
 | Browser extension popup or options | None | Fonts bundle as local assets and load instantly. Custom fonts safe. |
-| Injected content script | High | Runs in an unknown host page; host CSP may block fonts. System fonts only. |
+| Injected content script | High | Runs in an unknown host page, and host CSP may block fonts. System fonts only. |
 | Electron renderer | None | Assets are local to the bundle. Custom fonts safe. |
-| Email clients | Fragmented | Some clients support font-face; many strip it. Treat custom fonts as progressive enhancement. |
-| React Native or Expo | Different model | Async load must complete before text renders; unloaded fonts block render rather than flashing. |
+| Email clients | Fragmented | Some clients support font-face, and many strip it. Treat custom fonts as progressive enhancement. |
+| React Native or Expo | Different model | Async load must complete before text renders, and unloaded fonts block render rather than flashing. |
 
 ## Font Sources
 

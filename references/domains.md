@@ -2,7 +2,7 @@
 
 Lay out hosts around one canonical origin per surface, with the primary surface on the apex.
 
-- Primary site on the apex: `example.com`. This is the default home, and it may itself be signed-in capable; signing out returns the user to the signed-out view of the same surface.
+- Primary site on the apex: `example.com`. This is the default home. It may itself be signed-in capable, and signing out returns the user to the signed-out view of the same surface.
 - Signed-in app on its own subdomain: `app.example.com`.
 - Additional surfaces on their own role subdomain: `dashboard.example.com`, `admin.example.com`, `portal.example.com`.
 
@@ -20,10 +20,9 @@ Never serve the same content on two domains. Two live copies split search rankin
 
 Attach aliases to the same hosting project as the canonical origin rather than parking them at the registrar. One project means one certificate story and one redirect rule, and the alias inherits the canonical host's configuration instead of drifting from it.
 
-Two failures worth expecting, because both look like something else:
+One failure worth expecting, because it looks like something else:
 
 - **An alias cannot serve until its target can.** A redirect host has nothing to redirect to until the canonical origin has a successful production deployment. Before that, the alias may fail to complete a TLS handshake at all, which reads as a certificate or DNS fault and is neither. Deploy the canonical origin first, then judge the alias.
-- **Proxying breaks automatic certificates.** Where the DNS provider offers to proxy a record, leave alias and canonical records unproxied unless the host documents otherwise, or certificate issuance silently never completes.
 
 Verify an alias by requesting a path with a query string, not just the bare host. A redirect that drops the path looks correct on the home page and loses every real link.
 

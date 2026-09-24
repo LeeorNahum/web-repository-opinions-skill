@@ -1,6 +1,6 @@
 # Billing
 
-Use a managed billing provider for subscriptions and payments. Stripe is the default. The billing provider owns subscription and payment truth; the app reads it rather than mirroring it as the authority.
+Use a managed billing provider for subscriptions and payments. Stripe is the default. The billing provider owns subscription and payment truth. The app reads it rather than mirroring it as the authority.
 
 Plan names and quota constants live in code, not env. They are product decisions that should be reviewed in code and reflected in stored metadata, not silently changed by a dashboard value.
 
@@ -21,7 +21,7 @@ When a product's value scales with the size of a team rather than per-user usage
 When you do price on seats:
 
 - A free tier is solo: one member and no invites. With no shared organization to invite into, being solo is structural rather than a setting.
-- Creating and subscribing a shared organization is the upgrade. The owner pays; invited members are free, up to the plan's included seats.
+- Creating and subscribing a shared organization is the upgrade. The owner pays, and invited members are free, up to the plan's included seats.
 - Treat a plan's seats as an included batch at a flat price rather than a per-seat charge, so the entitlement's seat count comes from the plan, not a purchased quantity.
 - Enforce the seat count at the one place a member is admitted, so a member beyond the plan's seats is refused rather than silently absorbed. An existing member or a role change never consumes a new seat.
 

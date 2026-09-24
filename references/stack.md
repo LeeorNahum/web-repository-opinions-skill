@@ -1,42 +1,15 @@
 # Stack
 
-Default building blocks for a serious web product. Swap any tool, keep the role it fills.
-
-| Role | Default | Swap when |
-| --- | --- | --- |
-| Monorepo | Turborepo + pnpm | A single deployable with no shared packages |
-| Rendered public or hybrid surface | Next.js App Router + TypeScript | Static-only site, or a non-React target |
-| Private client SPA | Vite + TypeScript | Server rendering or framework routing is required |
-| Protocol-only HTTP app | Hono + TypeScript | The runtime already provides an equally small standards-based router |
-| Styling | Tailwind + shadcn/ui + lucide-react | A design system already exists |
-| App data + live sync | Convex | No realtime need, or an existing database |
-| Auth | Clerk | Enterprise SSO requirements Clerk cannot meet |
-| Billing | Stripe | A region or model Stripe does not serve |
-| Heavy media | Cloudflare R2 | Already standardized on S3 or another store |
-| Hosting | Vercel | A surface Vercel cannot host well |
-| DNS | Cloudflare | Registrar lock-in |
-| Email | Resend | An existing transactional provider |
-| Rich text | BlockNote or block JSON | Plain text or markdown is enough |
-| LLM calls | Vercel AI SDK over a hosting-aware gateway | The product needs a different routing or provider path |
-
 Pick the role first, then the tool. Do not let a tool dictate architecture: the same product rules must hold if the tool changes.
+
+Keep each protocol's transport, revision, caching, discovery, and capability rules in its owning interface contract rather than treating the framework choice as the protocol design.
 
 ## Independently Deploying Services Move In Backend Order
 
-When several services deploy independently but share one backend, a release that changes the
-backend contract can publish a service against a backend that does not serve it yet. Two
-disciplines close that:
+When several services deploy independently but share one backend, a release that changes the backend contract can publish a service against a backend that does not serve it yet. Two disciplines close that:
 
-- **A positive generation proof, fail-closed.** The backend exposes one unauthenticated
-  query returning an exact per-generation marker value from the same source file the
-  dependents pin. Each dependent's build preflight requires HTTP success, the exact success
-  envelope, and the exact value; any other status, body, parse failure, timeout, or
-  transport failure fails the build. Checking for the absence of an error message is not a
-  proof, it is a false pass waiting for a 500 that parses.
-- **Staged schema changes.** A schema store that validates every existing row on push cannot
-  deploy a newly required field over old rows. Ship the field optional with an explicit safe
-  reading for absence, backfill with a bounded resumable pass repeated to zero changes, and
-  tighten to required only in a later release carrying the zero-change evidence.
+- **A positive generation proof, fail-closed.** The backend exposes one unauthenticated query returning an exact per-generation marker value from the same source file the dependents pin. Each dependent's build preflight requires HTTP success, the exact success envelope, and the exact value. Any other status, body, parse failure, timeout, or transport failure fails the build. Checking for the absence of an error message is not a proof, it is a false pass waiting for a 500 that parses.
+- **Staged schema changes.** A schema store that validates every existing row on push cannot deploy a newly required field over old rows. Ship the field optional with an explicit safe reading for absence, backfill with a bounded resumable pass repeated to zero changes, and tighten to required only in a later release carrying the zero-change evidence.
 
 Keep the chosen tool out of paradigm names. A folder is `auth`, not `clerk`. A module is `origins`, not `vercel-origins`. Name by what it does, not who provides it.
 
@@ -48,6 +21,6 @@ Prefer the latest stable release of each tool, and follow its current convention
 
 Every dependency the browser executes is served from the product's own origin. No public CDN at runtime, for scripts, styles, fonts, or worker bundles.
 
-The cost of a runtime CDN is not only latency and an availability dependency you do not control. It hands a third party a request, and therefore an IP address and a referrer, from every user on every session that touches that feature. On a product that sells privacy, that is the product contradicting itself. It also silently defeats version pinning: a loader with a default CDN URL will fetch whatever version that URL names, so the version in the lockfile can be a version that never runs.
+The cost of a runtime CDN is not only latency and an availability dependency you do not control. It hands a third party a request, and therefore an IP address and a referrer, from every user on every session that touches that feature. It also silently defeats version pinning: a loader with a default CDN URL will fetch whatever version that URL names, so the version in the lockfile can be a version that never runs.
 
 Heavy editors and viewers are where this hides, because their loaders default to a CDN and work perfectly in development, so nothing ever fails. Check them specifically. Add the package as a real dependency, configure the loader at the product's own path, and verify in a browser's network panel that no third-party host is contacted. A dependency that is not in the manifest but appears in the network panel is the bug.

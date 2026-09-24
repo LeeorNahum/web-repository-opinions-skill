@@ -36,7 +36,7 @@ If a value changes product behavior and should be reviewed, prefer code. If it c
 
 ## Stages
 
-Three conceptual stages. Key names stay the same across all three; only the values change by store.
+Three conceptual stages. Key names stay the same across all three. Only the values change by store.
 
 - `local`: values in `.env.local`, used from the developer machine.
 - `staging`: deployed non-production values, in the hosting platform's staging scope and the dev/test tier of each provider.
@@ -100,7 +100,7 @@ Delete the copy-paste files once their stage is set up.
 
 ## Public And Server-Only
 
-Treat `NEXT_PUBLIC_*`, `VITE_*`, and similar prefixes as browser-exposed. Never put a secret behind a public prefix. Shared packages used by client bundles may read only public env. Framework-magic keys can be real even when no direct read appears in source; do not delete provider or framework keys just because grep does not find them.
+Treat `NEXT_PUBLIC_*`, `VITE_*`, and similar prefixes as browser-exposed. Never put a secret behind a public prefix. Shared packages used by client bundles may read only public env. Framework-magic keys can be real even when no direct read appears in source. Do not delete provider or framework keys just because grep does not find them.
 
 ## Cleanup Workflow
 

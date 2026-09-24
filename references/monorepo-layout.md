@@ -19,7 +19,7 @@ Apps are thin. They compose routes, layouts, runtime adapters, and env wiring. S
 
 Dependency direction is one way. Apps import packages. Packages never import apps. Backend packages never depend on UI packages.
 
-Each package has one clear purpose. Avoid catch-all names like `shared`, `common`, or `core`; they become junk drawers. Do not create `packages/ui` before real reusable primitives exist. Do not create `packages/types` when the types belong to `domain` or `backend`.
+Each package has one clear purpose. Avoid catch-all names like `shared`, `common`, or `core`, which become junk drawers. Do not create `packages/ui` before real reusable primitives exist. Do not create `packages/types` when the types belong to `domain` or `backend`.
 
 Declare workspace dependencies explicitly:
 

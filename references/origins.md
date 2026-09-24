@@ -25,7 +25,7 @@ Any UI that displays an origin, endpoint, base URL, example request, or copyable
 
 ## Shape
 
-The shared module exposes a canonical origin and a resolver per surface, plus an absolute-URL helper. One resolver exists for each surface the product actually has, named by the surface role, not hardcoded to a fixed pair. A product with only a site has one resolver; a product with site, app, and dashboard has three.
+The shared module exposes a canonical origin and a resolver per surface, plus an absolute-URL helper. One resolver exists for each surface the product actually has, named by the surface role, not hardcoded to a fixed pair. A product with only a site has one resolver, and a product with site, app, and dashboard has three.
 
 ```text
 CANONICAL_<SURFACE>_ORIGIN   one constant per real surface
@@ -34,11 +34,11 @@ resolve<Surface>Origin()     one resolver per real surface
 absoluteUrl(path, origin)    join a path to a resolved origin
 ```
 
-Env overrides use the same key names across stages; only the value changes by store. Staging differs from local mainly by these origin values.
+Env overrides use the same key names across stages. Only the value changes by store. Staging differs from local mainly by these origin values.
 
 ## Local Ports
 
-Local ports follow a stable ladder so links are predictable across surfaces. The primary public surface takes the default browser port, `3000`; every additional surface takes the next free port up.
+Local ports follow a stable ladder so links are predictable across surfaces. The primary public surface takes the default browser port, `3000`, and every additional surface takes the next free port up.
 
 Order the ladder by two rules, applied in that order:
 

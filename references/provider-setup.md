@@ -49,7 +49,7 @@ Adapt the order when a provider forces a different sequence.
 
 ## Advertised Capability Must Match Granted Capability
 
-When a product's integration relies on a client registering itself dynamically, the authorization server's advertised metadata is a promise that the client will hold it to. A host reads `scopes_supported`, requests everything advertised, and only then discovers that a dynamically registered client is not permitted to hold those scopes. The rejection lands after the user has already signed in, so the host cannot show it and reports something generic like "there was a problem connecting, try again later". The product looks broken, the logs look clean, and every endpoint returns 200.
+When a product's integration relies on a client registering itself dynamically, the authorization server's advertised metadata is a promise that the client will hold it to. A host reads `scopes_supported`, requests everything advertised, and only then discovers that a dynamically registered client is not permitted to hold those scopes. The rejection lands after the user has already signed in, so the host cannot show it and reports a generic connection error. The product looks broken, the logs look clean, and every endpoint returns 200.
 
 So make what the authorization server advertises match what a registered client can actually obtain. If the provider advertises instance-wide scopes that its dynamically registered clients cannot hold, that is the bug, and it is fixed in the provider's configuration rather than worked around in each host.
 

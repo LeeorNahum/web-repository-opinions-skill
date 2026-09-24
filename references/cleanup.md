@@ -2,7 +2,7 @@
 
 Treat the current intended product contract as truth. Prefer replacing wrong or unreleased behavior over layering shims on top of it.
 
-Before removing something, understand why it exists; remove it only once you can explain what it did and confirm the replacement covers it (Chesterton's fence). Leave each area you touch cleaner than you found it (the boy scout rule) without expanding into unrelated rewrites.
+Before removing something, understand why it exists. Remove it only once you can explain what it did and confirm the replacement covers it (Chesterton's fence). Leave each area you touch cleaner than you found it (the boy scout rule) without expanding into unrelated rewrites.
 
 A workaround is a debt, not a feature. When a stopgap, shim, fallback, flag, or temporary branch goes in to get past a blocker, record what will remove it, and remove it the moment the underlying problem is solved. Never let a temporary path harden into permanent behavior by neglect: a stopgap that outlives its reason becomes clutter that reads as intentional, and the next reader cannot tell the difference. Solving the real problem includes deleting the scaffolding that stood in for it.
 

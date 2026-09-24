@@ -9,7 +9,7 @@ Design every job around its failure point, not its happy path. Ask:
 - What if the user closes the tab between steps?
 - What if a retry starts while the previous run is still in flight?
 
-Keep raw provider responses behind an adapter. Do not spread a provider's response shape through the app. The app speaks the product's own job vocabulary; the adapter translates.
+Keep raw provider responses behind an adapter. Do not spread a provider's response shape through the app. The app speaks the product's own job vocabulary, and the adapter translates.
 
 User-facing job status stays coarse. Store the internal step and the raw provider detail as metadata for operators, and show the user a simple, honest state.
 

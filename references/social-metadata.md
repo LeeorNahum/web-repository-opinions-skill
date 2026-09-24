@@ -8,6 +8,8 @@ Every surface ships a favicon. Set it deliberately rather than leaving the frame
 
 First check whether a brand icon already exists in the repo or brand source, and reuse it. Prefer SVG, which scales cleanly. If none exists, create one from the brand identity. Use the canonical brand asset, never a placeholder or a redrawn copy.
 
+Every icon surface derives from that one asset by a script, never by hand: the favicon, the touch icon, the desktop or app bundle icons, and any in-page lockup that shows the icon rather than the bare mark. Surface variations exist, such as a padded chip or a square tile for a platform that applies its own mask, but they are parameters of the generator, not a second drawing, and a check fails the build when any generated copy drifts from the source. Icons that are drawn separately per surface always end up looking like different icons.
+
 For **Next.js App Router**, ship two files in `app/` and nothing else:
 
 - `app/icon.svg` - Next.js auto-generates `<link rel="icon">` and serves it at `/icon.svg`. Use `/icon.svg` for in-page references such as the site header logo and OG image renderer.
