@@ -15,7 +15,7 @@ Track near the runtime contract:
 - Storage lifecycle rules
 - Deployment branch settings
 
-When onboarding providers, work one provider or one small sub-step at a time. Explain what to click, write values into the correct store, confirm, then move on. Do not dump a full checklist into one message.
+When onboarding providers, work one provider or one small sub-step at a time: make the change, write values into the correct store, confirm, then move on. Where the user takes a step, give it to them one step at a time rather than as a full checklist in one message.
 
 Report missing or pasted values by key name and store location only. Never echo a secret value back after it is provided.
 
