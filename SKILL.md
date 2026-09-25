@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.34.1"
+  version: "1.34.2"
 ---
 
 # Web Repository Opinions
@@ -123,7 +123,7 @@ Frontend and UI:
 - Read [references/font-loading.md](references/font-loading.md) when choosing or loading fonts.
 - Read [references/product-ux.md](references/product-ux.md) when shaping the primary path, states, and product-native language.
 - Read [references/path-display.md](references/path-display.md) when showing file paths, directory listings, breadcrumbs, or a browsable tree's root.
-- Read [references/interaction-feedback.md](references/interaction-feedback.md) when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
+- Read [references/interaction-feedback.md](references/interaction-feedback.md) before building any confirmation that appears after an action, such as a copy button's "Copied", a saved or sent notice, a toast, or an inline status, because that feedback must never reflow or resize what surrounds it. Also read it when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
 - Read [references/user-facing-errors.md](references/user-facing-errors.md) when presenting failures from providers, frameworks, backend functions, validation, or unexpected exceptions.
 - Read [references/design-tokens.md](references/design-tokens.md) when defining a design token layer, or when a surface leaves a large flat region of one color, which is where the product's ambient texture belongs.
 
