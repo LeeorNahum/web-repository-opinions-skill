@@ -10,6 +10,18 @@ Web-derived means any environment whose layout model descends from HTML and CSS:
 
 Design from the smallest viable container outward. Each increase in available space is an opportunity to reveal labels, increase density, or change composition. Device identity does not determine which state is active. This is mobile-first generalized: start from the smallest viable container rather than a device class, and treat each gain in space as a chance to enhance.
 
+## One Design At Every Scale
+
+A very narrow or very wide viewport shows the same page at a different scale: the same identity, sections, order, arrangements, and actions, with about the same amount of content on each screen. Adapt an arrangement only where its content measurably cannot fit at a usable size.
+
+- Scale type, controls, illustrations, padding, and gaps together by one proportion, each with a readable or operable floor. On a phone, supporting copy sits around 13 to 15 CSS pixels, form inputs stay at 16 so focus does not zoom, headings step down until they wrap about as many lines as they do wide, buttons and their padding shrink with the type, and section spacing shrinks by the same proportion.
+- Keep a phone page's length in screens within about 1.3 times the desktop page's. When it runs longer, shrink type and spacing and restore side-by-side arrangements before accepting it.
+- Keep pairs and short groups side by side on a phone: paired actions, peer tiles, and short link groups. Give them an explicit column count, such as `repeat(2, minmax(0, 1fr))`, with compact padding, and let labels wrap inside each column. Use auto-fit grids with a minimum track width for open-ended collections only, and take that minimum from the smallest usable item.
+- Stack a row that pairs copy with an illustration when the illustration beside the copy would fall below a legible size, and give the stacked illustration the full column width.
+- For a full-screen hero, size the first-screen region, including navigation, to fill the initial visible viewport. On CSS surfaces, use the small viewport height as its minimum and let content grow. On native surfaces, use the available window height.
+- Scale each illustration, product mockup, or diagram as one unit inside a box that reserves its rendered dimensions. Use container-relative sizing or an SVG viewBox so the whole subject stays in frame.
+- Bound reading and marketing content with maximum widths and cap type and spacing. Let task workspaces use extra width when it reveals useful work.
+
 ## Fluid By Default
 
 Prefer continuous, fluid sizing over a few hard breakpoints. Layout should adapt at every width, not jump between two or three fixed designs.
@@ -43,13 +55,15 @@ Type stays readable at every viewport. Scale heading hierarchy gracefully on sma
 
 Interactive elements are large enough to activate reliably by touch, and remain comfortable with a mouse. This holds for browser apps, extension popups, React Native, Expo, and any touch-capable surface.
 
+On CSS surfaces, make every target at least 24 by 24 CSS pixels. On native surfaces, follow the platform's target sizes.
+
 ## Media
 
 Images and media stay bounded by their containers, never overflowing and never distorting. Serve appropriately sized assets when the environment supports it.
 
 ## Content Priority
 
-When space is constrained, decide what to show, defer, or hide, not only how to reflow. A wide navigation model may need a different constrained-space composition instead of a squeezed copy.
+When space is constrained, shrink first, reflow second, and keep every piece of content and every action reachable. Move persistent navigation into a drawer or disclosure when that gives the primary task usable space.
 
 ### Structured Text
 
@@ -146,6 +160,8 @@ A definite height is not a minimum height. A minimum leaves every percentage bas
 ## Verification
 
 Before a layout is complete, confirm no horizontal overflow and no broken hierarchy at the smallest target viewport, the largest, and a sweep of widths between. Resize continuously and watch for any width where the layout breaks, not just at named breakpoints. Exercise real interaction states, including selection, partial failure, dialogs, and long content.
+
+Capture the page one screen at a time at a phone width, at 320 CSS pixels, at a desktop width, and at a very wide width, then compare the images side by side against One Design At Every Scale. Recheck with enlarged text, which may reflow. A layout judged only from its CSS or its measurements has not been verified.
 
 For structured truncation, test the full value, several intermediate widths, a width where one candidate fails but a later candidate fits, and a width narrower than both endpoint units. Assert both the semantic order and the measured width.
 
