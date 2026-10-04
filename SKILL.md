@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.36.0"
+  version: "1.37.0"
 ---
 
 # Web Repository Opinions
@@ -121,6 +121,8 @@ Frontend and UI:
 
 - Read [references/responsive-layout.md](references/responsive-layout.md) when building or reviewing any layout across viewports, or when anything depends on display scale, DPI, or `devicePixelRatio`.
 - Read [references/font-loading.md](references/font-loading.md) when choosing or loading fonts.
+- Read [references/animation-runtime.md](references/animation-runtime.md) when building or reviewing any animation, transition, timed reveal, or scroll-triggered effect, so it plays at the right speed and survives toolbar resizes, slow or fast frame rates, hidden tabs, and pages restored from history on every engine.
+- Read [references/reduced-motion.md](references/reduced-motion.md) when a surface animates anything or honors a reduced-motion preference.
 - Read [references/product-ux.md](references/product-ux.md) when shaping the primary path, states, and product-native language.
 - Read [references/path-display.md](references/path-display.md) when showing file paths, directory listings, breadcrumbs, or a browsable tree's root.
 - Read [references/interaction-feedback.md](references/interaction-feedback.md) before building any confirmation that appears after an action, such as a copy button's "Copied", a saved or sent notice, a toast, or an inline status, because that feedback must never reflow or resize what surrounds it. Also read it when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.

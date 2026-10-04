@@ -6,14 +6,15 @@ Every surface declares its identity for browsers and for the link preview cards 
 
 Every surface ships a favicon. Set it deliberately rather than leaving the framework default.
 
-First check whether a brand icon already exists in the repo or brand source, and reuse it. Prefer SVG, which scales cleanly. If none exists, create one from the brand identity. Use the canonical brand asset, never a placeholder or a redrawn copy.
+First check whether a brand icon already exists in the repo or brand source, and reuse it. Prefer SVG, which scales cleanly, and pair it with a generated raster fallback, because search engines read raster formats only and otherwise show whichever icon they can read, often the touch icon, which is a different drawing. If none exists, create one from the brand identity. Use the canonical brand asset, never a placeholder or a redrawn copy.
 
 Every icon surface derives from that one asset by a script, never by hand: the favicon, the touch icon, the desktop or app bundle icons, and any in-page lockup that shows the icon rather than the bare mark. Surface variations exist, such as a padded chip or a square tile for a platform that applies its own mask, but they are parameters of the generator, not a second drawing, and a check fails the build when any generated copy drifts from the source. Icons that are drawn separately per surface always end up looking like different icons.
 
-For **Next.js App Router**, ship two files in `app/` and nothing else:
+For **Next.js App Router**, ship three files in `app/` and nothing else:
 
 - `app/icon.svg` - Next.js auto-generates `<link rel="icon">` and serves it at `/icon.svg`. Use `/icon.svg` for in-page references such as the site header logo and OG image renderer.
 - `app/apple-icon.png` - the same icon as a 180x180 PNG. Next.js auto-generates `<link rel="apple-touch-icon">` for iOS home screen bookmarks.
+- `app/favicon.ico` - the same icon rastered at 16, 32, and 48 for browsers and one size above 48 for search results. Next.js serves it at `/favicon.ico`, where crawlers also look, and links it beside the SVG.
 
 Do not add `metadata.icons` in `layout.tsx`. The files above handle it automatically with no configuration. Do not copy the icon into `public/` unless the product has additional brand assets beyond the favicon. Do not use `rel="shortcut icon"` - it is deprecated.
 
