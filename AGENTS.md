@@ -43,6 +43,7 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - Reserve Core Non-Negotiables for rules that should affect nearly every web repo. Keep narrower guidance in its owning reference.
 - Keep the repository audit balanced across architecture, runtime, data, UX, operations, and release readiness. Fold new checks into an existing category when they do not deserve a permanent top-level audit step.
 - Prefer deletion over caveats. More words is not better.
+- Write what an agent would not arrive at alone: an opinion, a decision, a trap, an order or dependency, or a faster or more direct way. Cut what a capable agent already knows or would find in a provider's documentation or console, such as console paths, file formats, sizes, and wait times. Give exact directions only where the exact way is itself the opinion.
 - One opinion per reference. When a new paradigm, way of thinking, service, or workflow is added, give it its own reference file and add it to the `SKILL.md` reference-loading map. Do not bolt a second unrelated concept onto an existing reference.
 - When an existing concept grows, refactor its reference rather than scattering the idea across several files.
 - **Opinionated and explicit.** State the preference clearly. This skill takes positions.

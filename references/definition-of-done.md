@@ -22,6 +22,7 @@ A feature is done only when its product contract, implementation, runtime, and v
 ## Runtime
 
 - Provider state, domains, webhooks, schedules, storage, and backend functions match the code.
+- Mail set up for a domain is finished at its mailbox provider: the product's picture, logo, and footer wherever they are the product's to set, and a send verified.
 - The target branch and target runtime contain the same intended change.
 - Deferred manual or approval-gated steps are named clearly.
 

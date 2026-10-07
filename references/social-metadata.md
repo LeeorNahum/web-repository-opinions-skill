@@ -20,6 +20,10 @@ Do not add `metadata.icons` in `layout.tsx`. The files above handle it automatic
 
 Keep the in-page path in a named constant so all callers stay in sync if the path ever changes.
 
+## Brand Image Formats
+
+Every brand image the product exports or uploads, to a provider's console or profile included, is an SVG, or a PNG where SVG is not accepted. Use another format only where a platform requires it.
+
 ## Link Preview Cards
 
 Every publicly reachable page produces a correct preview card when its URL is shared. Some tools call the card an unfurl. The tool builds it from the page's Open Graph tags and its platform-specific card tags, reading the initial HTML and running no script. Implement it as a first-class feature of every public page, not an afterthought.
