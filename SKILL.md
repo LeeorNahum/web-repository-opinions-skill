@@ -3,8 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.39.0"
----
+  version: "1.40.0"---
 
 # Web Repository Opinions
 
@@ -45,7 +44,7 @@ Architecture:
 - Read [references/stack.md](references/stack.md) when choosing or swapping tech building blocks.
 - Read [AI model routing guidance](references/ai-model-routing.md) when a product calls LLMs, chooses production models or providers, designs model fallback, or accounts for model cost.
 - Read [references/monorepo-layout.md](references/monorepo-layout.md) when creating or reorganizing apps and packages.
-- Read [references/naming.md](references/naming.md) when naming folders, packages, slugs, surfaces, or workspace imports.
+- Read [references/naming.md](references/naming.md) when naming folders, packages, slugs, surfaces, or workspace imports, or the publisher of a product that ships an installer.
 - Read [references/modularity.md](references/modularity.md) when designing how systems connect, naming integration boundaries, or keeping flows swappable.
 
 Rendering and feel:

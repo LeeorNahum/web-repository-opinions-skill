@@ -27,6 +27,10 @@ Package names state purpose. Use names like `backend`, `domain`, `config`, `ui`.
 
 Name a module, function, or folder after the capability it provides, not the vendor behind it. Pick the most accurate word for what it does in this product rather than the provider's name or a vague catch-all. The vendor lives inside the adapter, so the name stays true when the vendor changes.
 
+## Publisher Name
+
+A product that ships an installer names its publisher explicitly, and the name is the one on its code-signing certificate. Set it before the first public release. A bundler given no publisher derives one from the application identifier, the operating system lists that as the publisher of the installed product, and a package catalog requires its manifest to match what the operating system lists. A bundler may also name the place it keeps the installer's own records after the publisher, so changing the name once people have installed the product is a migration of those records, not a one-line edit.
+
 ## Env Keys
 
 Env keys keep the same name across every stage. The value changes by store, never the key. The stage is not encoded into the key name.
