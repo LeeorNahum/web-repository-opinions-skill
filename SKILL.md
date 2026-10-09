@@ -3,7 +3,8 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.40.0"---
+  version: "1.40.0"
+---
 
 # Web Repository Opinions
 
