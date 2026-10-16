@@ -2,7 +2,7 @@
 
 Lay out hosts around one canonical origin per surface, with the primary surface on the apex.
 
-- Primary site on the apex: `example.com`. This is the default home. It may itself be signed-in capable, and signing out returns the user to the signed-out view of the same surface.
+- Primary site on the apex: `example.com`. This is the default home. A product that pitches itself on a public site and does its work in a private signed-in workspace, which is nearly every SaaS, keeps the public site alone on the apex and the signed-in product on its role subdomain. The apex carries sign-in only when its public pages are the product itself, so a signed-out visitor uses the same surface a signed-in one does and signing in only adds to it.
 - Signed-in app on its own subdomain: `app.example.com`.
 - Additional surfaces on their own role subdomain: `dashboard.example.com`, `admin.example.com`, `portal.example.com`.
 
@@ -14,7 +14,7 @@ Use no `www`. Serve and link the apex directly. If a www host exists at the regi
 
 ## Every other domain you own is an alias, not a second home
 
-`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives.
+`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias.
 
 Point each one at the canonical origin with a permanent redirect that preserves path and query, so a deep link into an alias lands on the same page rather than the home page. Do it at DNS, hosting, CDN, or edge, never in app code, exactly as with `www`.
 

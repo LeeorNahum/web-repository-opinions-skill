@@ -61,6 +61,6 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 
 Treat the current intended product contract as truth. Compatibility is never an automatic courtesy for unreleased, internal, or mistaken behavior.
 
-Add compatibility only when an explicit supported contract, deployed client, public integration, durable user data, or approved rollout requires it. Name the preserved contract, its consumers, its removal condition if temporary, and the verification that proves both old and new behavior remain intentional.
+Add compatibility only when an explicit supported contract requires it: outside users depending on the old shape under terms someone can name, such as a deployed client the owner does not control, a public integration, durable user data, or an approved rollout. A product being live is not a contract. Name the preserved contract, its consumers, its removal condition if temporary, and the verification that proves both old and new behavior remain intentional.
 
 Before finishing, confirm every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped as the release-versioning skill requires, and the README layout matches the actual files.
