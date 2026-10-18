@@ -85,7 +85,7 @@ Runtime and environment:
 
 - Read [references/environment.md](references/environment.md) when creating, auditing, repairing, or filling env files, deciding which store holds a value, or keeping provider env separated by stage.
 - Read [references/branches.md](references/branches.md) when mapping branches to deployment stages and provider credential tiers.
-- Read [references/deployment.md](references/deployment.md) when configuring which branches deploy and how hosting is wired. Use the [deployment configuration asset](assets/vercel.json) when applying its branch-gating defaults.
+- Read [references/deployment.md](references/deployment.md) when creating a hosting project, configuring which branches deploy, or wiring how hosting runs. Use the [deployment configuration asset](assets/vercel.json) when applying its branch-gating defaults.
 - Read [references/continuous-integration.md](references/continuous-integration.md) when adding verification workflows, release automation, or checks required before promotion, or deciding which branches trigger artifact-building workflows.
 - Read [references/dns.md](references/dns.md) when creating DNS records, proxy settings, or record comments.
 
