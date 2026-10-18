@@ -1,6 +1,6 @@
 {
   "round": "1",
-  "recorded": "2026-10-17T21:20:17-04:00",
+  "recorded": "2026-10-17T21:29:27-04:00",
   "skill_commit": "738936d01659448e19e26243f5257f7e92a23041",
   "same_family_graded": [
     "1-account-wide-agent-grant-old-opus",
@@ -49,8 +49,8 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "1cb46008003edbaa75b9ebba53c440799f4429b4",
+        "skill": "90065190740b0fa1",
         "fixture": "fc59cabac6826db2",
         "base_fixture": "9a72a07420d785e3",
         "evals": "3ecf030566f1db17",
@@ -184,8 +184,8 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
+        "skill": "90065190740b0fa1",
         "fixture": "f43e39fe46e81e7a",
         "base_fixture": "9a72a07420d785e3",
         "evals": "87dc141e82a29f33",
@@ -323,8 +323,8 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
+        "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -401,8 +401,8 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
+        "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -485,8 +485,8 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
+        "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -571,8 +571,8 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
+        "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -653,8 +653,8 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "8db869a36facf8a25f04b96e5ec8bdf58d7549b3",
+        "skill": "90065190740b0fa1",
         "fixture": "420f572c4567fe9a",
         "base_fixture": "9a72a07420d785e3",
         "evals": "87dc141e82a29f33",
@@ -695,18 +695,18 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "A/project/docs/downgrade-policy.md:23 \"A book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.\" with a stable tiebreak at :75 \"active books ordered by `(createdAt, id)`... The id tiebreak keeps the order stable\". Data kept: :7 \"Nothing is deleted, locked, or rewritten because a plan ended.\" Refused with product message: :83 `book_frozen` and :96 \"A frozen book opens with its editing controls replaced by a short read-only note.\" Re-covered: :37 \"Trashing a covered book makes the oldest frozen book covered\" and :61 \"All 40 books editable again at once.\""
+              "e": "docs/downgrade-policy.md L23: \"A book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.\" L75: \"coverage is computed from the current plan and the account's active books ordered by `(createdAt, id)` ... The id tiebreak keeps the order stable\". Data kept: L7 \"Nothing is deleted, locked, or rewritten because a plan ended\"; refusal with product message: L83 `book_frozen`, L95-96 \"typed outcome codes, turned into product copy ... A frozen book opens with its editing controls replaced by a short read-only note\". Re-covered: L37 \"Trashing a covered book makes the oldest frozen book covered\"; L61 \"All 40 books editable again at once\"."
             }
           ]
         },
         "downgrade-overage-02": {
-          "v": "fail",
-          "graded_text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted, existing photos stay at least readable and deletable, alone or with their book, and storage cannot keep growing past the Free allowance while the account is over it.",
+          "v": "pass",
+          "graded_text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted by the system, existing photos stay at least readable, the user can remove any photo either on its own or by deleting the book that holds it, and storage cannot keep growing past the Free allowance while the account is over it.",
           "votes": [
             {
               "critic": "claude-fallback",
-              "v": "fail",
-              "e": "No deletion (:7 \"Nothing is deleted\") and no growth (:48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\") are stated, but photos in frozen books are not deletable alone: :31 \"Edit pages, layout, text, title, photo placement | Yes | No\" and :83 `assertBookEditable` runs in \"Every mutation that changes a book's content or metadata\". The only storage remedy given is whole-book deletion, :97 \"deleting from Trash permanently for storage\". A frozen-book photo can only be deleted along with its book, so the \"alone or with their book\" part fails for the 15 frozen books in the typical case."
+              "v": "pass",
+              "e": "docs/downgrade-policy.md No deletion: L7 \"Nothing is deleted, locked, or rewritten because a plan ended\"; L60 \"Data lost | None.\" Readable: L44 \"A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints\". Removal: L19 storage limit never touches \"Anything that keeps or removes bytes\"; L30 frozen books allow \"Move to Trash, restore from Trash, delete permanently | Yes | Yes\"; L48 \"Deleting from Trash permanently, or waiting for the purge, does [free space]\" (individual photo removal only in covered books, see blocking). No growth: L48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\"; L36 duplicate needs \"storage room for the copy\"."
             }
           ]
         },
@@ -717,7 +717,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "A/project/docs/downgrade-policy.md:18 \"40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size\"; :44 \"A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints\"; no rewriting at :7 \"Nothing is deleted, locked, or rewritten because a plan ended\"; :59 \"No new photo over 40 MB can be uploaded.\""
+              "e": "docs/downgrade-policy.md L18: \"40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size\"; L44: \"A photo stored under Pro (up to 120 MB) keeps working wherever it already is ... Replacing it counts as a new upload, so the replacement must be 40 MB or less.\"; L7 \"Nothing is deleted, locked, or rewritten\" (no recompression/resize); L59 \"All kept and usable ... No new photo over 40 MB can be uploaded.\""
             }
           ]
         },
@@ -728,7 +728,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "A/project/docs/downgrade-policy.md:48 \"Usage is the total size of every stored photo, **including photos in Trash**\"; :38 \"their bytes count toward storage until they are purged.\""
+              "e": "docs/downgrade-policy.md L48: \"Usage is the total size of every stored photo, **including photos in Trash**\"; L38: \"their bytes count toward storage until they are purged\"; L57 typical case uses 2.6 GB including Trash."
             }
           ]
         },
@@ -739,7 +739,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "A/project/docs/downgrade-policy.md:75 \"There is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan\"; :11 \"every gate reads the current plan on each request\"; :79 \"The browser app, public API, MCP server, and background jobs all go through those mutations\"."
+              "e": "docs/downgrade-policy.md L11: \"No job runs at that moment and no record is touched: every gate reads the current plan on each request\"; L75: \"There is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan\"; L79: \"All three checks live in the domain package and run inside the backend mutations. The browser app, public API, MCP server, and background jobs all go through those mutations\"."
             }
           ]
         },
@@ -750,17 +750,15 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "A/project/docs/downgrade-policy.md:36 \"**Creating or duplicating a book** needs fewer than 25 active books\"; :84 `assertCanAddBook(account)` on \"Create, duplicate\" refuses with `book_limit_reached`; :56 \"No new books until they have 24 or fewer active books.\""
+              "e": "docs/downgrade-policy.md L36: \"**Creating or duplicating a book** needs fewer than 25 active books\"; L84 `assertCanAddBook(account)` on \"Create, duplicate\" refuses `book_limit_reached`; L56: \"No new books until they have 24 or fewer active books.\""
             }
           ]
         }
       },
       "blocking": [
-        "[claude-fallback] The book limit can be got around by cycling through Trash: A/project/docs/downgrade-policy.md:106 \"**Restoring from Trash is always allowed**, even over the book limit\" together with :36 \"needs fewer than 25 active books\" lets an account at 25 trash one book, create one, then restore the first, ending at 26 active books. Repeating this grows the count without limit. Because :29 lets frozen books \"Order printed copies | Yes | Yes\", a Free account (including one that never paid) can build a book while it is covered, push it into frozen, still print it, and do this again for an unlimited number of books.",
-        "[claude-fallback] Photos in frozen books cannot be deleted one at a time, so freeing storage requires deleting a whole book: A/project/docs/downgrade-policy.md:31 bars \"photo placement\" edits on frozen books, :83 applies `assertBookEditable` to \"Every mutation that changes a book's content\", and :97 offers only \"deleting from Trash permanently for storage\". In the typical case, a user over 1.5 GB who wants to drop one 110 MB photo from one of the 15 frozen books would have to delete the entire book.",
-        "[claude-fallback] Upload checks trust the size the client declares: A/project/docs/downgrade-policy.md:89 \"the size and storage check runs when the client asks for upload permission, before any bytes move... Usage is recorded when the upload is finalized\". Nothing at finalize, and no signed content-length, confirms the stored object is no bigger than the size approved. A hostile client can request permission for 1 MB and then upload 120 MB, getting around both the 40 MB per-photo limit and the 1.5 GB total.",
-        "[claude-fallback] The storage and book-count checks race under concurrency: A/project/docs/downgrade-policy.md:48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\" compares against usage that :89 records only \"when the upload is finalized\", with no reservation. Parallel upload grants each pass against the same usage and together go over 1.5 GB. Likewise `assertCanAddBook` (:84) has no stated serialization, so two creates at 24 books can both succeed.",
-        "[claude-fallback] Uploads granted before the cutoff are exempt from the current-plan rule: A/project/docs/downgrade-policy.md:89 \"An upload granted while the user was Pro can be finalized after the period ends, as long as its signed grant hasn't expired.\" With no grant TTL given and no recheck at finalize, an account that is already over 1.5 GB keeps growing after it becomes Free. That conflicts with :11 \"every gate reads the current plan on each request\" and with the 'no new bytes' rule at :46."
+        "[claude-fallback] docs/downgrade-policy.md L89: \"the size and storage check runs when the client asks for upload permission, before any bytes move ... Usage is recorded when the upload is finalized.\" Outstanding grants are not reserved against usage, so several concurrent or sequential permission requests each see the same un-incremented usage and all pass; an account at 1.4 GB can be granted many uploads and finish well past 1.5 GB. Nothing says the signed grant pins content-length or that finalize re-checks the real object size, so a hostile client can declare a small size and upload up to whatever the bucket allows, which breaks both the 40 MB and 1.5 GB limits.",
+        "[claude-fallback] docs/downgrade-policy.md L36/L84: \"needs fewer than 25 active books\" via `assertCanAddBook` with no transaction, lock, or uniqueness guard named. Two concurrent creates at 24 active books both pass the count check and the account ends at 26. The same unguarded check-then-act applies to duplicate.",
+        "[claude-fallback] docs/downgrade-policy.md L7 promises Losing Pro \"never takes away the ability to see, export, print, or clean up what the user already made\", but L31-32 forbid photo edits and replacement in frozen books, and L83 runs `assertBookEditable` on \"Every mutation that changes a book's content\". So an over-storage user can't remove one oversized photo from a frozen book. Their only way to reclaim space there is to trash and permanently delete the whole book, which contradicts the stated principle. In the typical case the newest 15 books, likely holding the Pro-era 60-110 MB photos, are exactly the frozen ones."
       ],
       "minor": []
     },
@@ -775,8 +773,8 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
+        "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -902,8 +900,8 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
+        "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -1027,8 +1025,8 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
+        "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -1130,8 +1128,8 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "4171c1874df5e04b",
-        "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
+        "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3",
+        "skill": "4171c1874df5e04b"
       },
       "completed": true,
       "timed_out": false,
@@ -1232,8 +1230,8 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "9b723e3712137fdadfb0625eeab7023f9c8d3193",
+        "skill": "90065190740b0fa1",
         "fixture": "e90d67d597185779",
         "base_fixture": "9a72a07420d785e3",
         "evals": "87dc141e82a29f33",
@@ -1348,8 +1346,8 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
+        "skill": "90065190740b0fa1",
         "fixture": "d7ae70ba58a24853",
         "base_fixture": "9a72a07420d785e3",
         "evals": "d2eaa332a5543766",
@@ -1462,8 +1460,8 @@
       "requested_model": "gpt-6.1-sol",
       "cli": "codex-cli 0.162.1",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
+        "skill": "90065190740b0fa1",
         "fixture": "d7ae70ba58a24853",
         "base_fixture": "9a72a07420d785e3",
         "evals": "d2eaa332a5543766",
@@ -1581,8 +1579,8 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
+        "skill": "90065190740b0fa1",
         "fixture": "cf95ce9da7951479",
         "base_fixture": "9a72a07420d785e3",
         "evals": "3ecf030566f1db17",
@@ -1690,8 +1688,8 @@
       "requested_model": "gpt-6.1-sol",
       "cli": "codex-cli 0.162.1",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
+        "skill": "90065190740b0fa1",
         "fixture": "cf95ce9da7951479",
         "base_fixture": "9a72a07420d785e3",
         "evals": "3ecf030566f1db17",
@@ -1804,8 +1802,8 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "4171c1874df5e04b",
         "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
+        "skill": "90065190740b0fa1",
         "fixture": "438e6792903dbc11",
         "base_fixture": "9a72a07420d785e3",
         "evals": "3ecf030566f1db17",

@@ -161,7 +161,7 @@ def condensed(base, model, clip=400):
                     elif name == 'Edit':
                         lines.append(f"**Tool call `Edit`:** `{inp.get('file_path', '')}`\n\nReplaced:\n\n````text\n{_clip(inp.get('old_string', ''), 20000)}\n````\n\nWith:\n\n````text\n{_clip(inp.get('new_string', ''), 100000)}\n````\n")
                     else:
-                        lines.append(f"**Tool call `{name}`:** `{_clip(json.dumps(inp), clip)}`\n")
+                        lines.append(f"**Tool call `{name}`:** `{_clip(json.dumps(inp), 100000 if name == 'MultiEdit' else clip)}`\n")
         elif t == 'user':
             content = e.get('message', {}).get('content', [])
             for c in content if isinstance(content, list) else []:

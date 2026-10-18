@@ -179,7 +179,7 @@
     {
      "id": "downgrade-overage-02",
      "kind": "semantic",
-     "text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted, existing photos stay at least readable and deletable, alone or with their book, and storage cannot keep growing past the Free allowance while the account is over it."
+     "text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted by the system, existing photos stay at least readable, the user can remove any photo either on its own or by deleting the book that holds it, and storage cannot keep growing past the Free allowance while the account is over it."
     },
     {
      "id": "downgrade-overage-03",

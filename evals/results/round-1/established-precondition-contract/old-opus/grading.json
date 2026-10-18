@@ -9,8 +9,8 @@
   "requested_model": "opus",
   "cli": "2.1.302 (Claude Code)",
   "inputs": {
-    "skill": "4171c1874df5e04b",
     "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
+    "skill": "90065190740b0fa1",
     "fixture": "438e6792903dbc11",
     "base_fixture": "9a72a07420d785e3",
     "evals": "3ecf030566f1db17",

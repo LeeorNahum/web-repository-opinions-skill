@@ -9,8 +9,8 @@
   "requested_model": "gpt-6.1-sol",
   "cli": "codex-cli 0.162.1",
   "inputs": {
-    "skill": "4171c1874df5e04b",
     "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
+    "skill": "90065190740b0fa1",
     "fixture": "cf95ce9da7951479",
     "base_fixture": "9a72a07420d785e3",
     "evals": "3ecf030566f1db17",

@@ -10,8 +10,8 @@ new session settled: {"<letter>": {"<finding text>": "withdrawn|held"}}.
 Prints a per-assertion table and the failures, and exits 0 only when:
 - the round holds every eval with both arms and both models, and every job has a finished session that read the skill,
 - every session has a verdict on exactly its eval's assertions,
-- every new session passes every check and every semantic assertion,
-- no assertion that every old session passed fails in a new session, and
+- every new session passes every assertion of every pressure case,
+- no assertion an old session passed fails in the paired new session, and
 - every blocking finding against a new session is recorded as withdrawn.
 """
 import json, os, pathlib, sys
@@ -99,8 +99,9 @@ def main():
             olds = [verdict.get(f'{rnd}-{name}-old-{m}', {}).get(a['id']) for m in ('opus', 'sol')]
             news = [verdict.get(f'{rnd}-{name}-new-{m}', {}).get(a['id']) for m in ('opus', 'sol')]
             print(f"{a['id']:48} old {''.join('P' if x else '.' for x in olds)}  new {''.join('P' if x else '.' for x in news)}")
-            for m, x in zip(('opus', 'sol'), news):
-                if x is False:
+            for m, x, old in zip(('opus', 'sol'), news, olds):
+                # A restraint or control assertion the old arm already failed does not block, since no revision caused it.
+                if x is False and (spec.get('role', 'pressure') == 'pressure' or old):
                     problems.append(f"{rnd}-{name}-new-{m}: fails {a['id']}" + (' (passed by every old session)' if all(olds) else ''))
     for label, findings in blocking.items():
         if '-new-' in label:

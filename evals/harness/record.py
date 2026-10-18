@@ -72,7 +72,9 @@ def inputs(base, result):
     root = next((work / d / 'skills' for d in ('.claude', '.agents') if (work / d / 'skills').is_dir()), None)
     first = subprocess.run(['git', 'rev-list', '--max-parents=0', 'HEAD'], cwd=work, capture_output=True, text=True).stdout.strip()
     tree = subprocess.run(['git', 'rev-parse', f'{first}^{{tree}}'], cwd=work, capture_output=True, text=True).stdout.strip() if first else None
-    return {'skill': digest(root) if root else None, 'starting_tree': tree, **{k: v for k, v in (result.get('digests') or {}).items() if k != 'skill'}}
+    recorded = result.get('digests') or {}
+    # Prefer the hash run.py took before the session started. Recompute only for sessions that predate it.
+    return {'starting_tree': tree, **recorded, 'skill': recorded.get('skill') or (digest(root) if root else None)}
 
 
 def main():
@@ -132,12 +134,12 @@ def main():
     cols = [(s['arm'], s['model']) for s in sessions]
     cols = sorted(set(cols), key=cols.index)
     note = (["Sessions in the round's jobs file that are not recorded:", ''] + [f"- `{u['session']}`: {u['reason']}" for u in unfinished] + ['']) if unfinished else []
-    note += [f'Claude critics graded {len(same_family)} Claude-built sessions because Codex could not be reached. They need a Codex verdict before any comparison.', ''] if same_family else []
+    note += [f'Claude critics graded {len(same_family)} Claude-built sessions because Codex had reached its usage limit. They need a Codex verdict before any comparison.', ''] if same_family else []
     cases = {s['inputs'].get('case') or s['inputs'].get('evals') for s in sessions}
     if len(cases) > 1 or None in cases:
         note += ['Sessions in this round ran under more than one version of `evals.json`, and some before the case hash was recorded. Treat the round as a reference record: a before-and-after comparison reruns the old arm in the same round as the new one.', '']
     lines = [f'# Round {rnd}', '', f'Skill commit `{commit}`. One session per eval and column. P is a pass, F a fail, and a dash a missing verdict.', '', *note,
-             '| Assertion | ' + ' | '.join(f'{a} {m}' for a, m in cols) + ' |', '| --- |' + ' :---: |' * len(cols)]
+             '| Assertion | Role | ' + ' | '.join(f'{a} {m}' for a, m in cols) + ' |', '| --- | --- |' + ' :---: |' * len(cols)]
     by = {(s['eval'], s['arm'], s['model']): s for s in sessions}
     for name, spec in EVALS.items():
         if not any(s['eval'] == name for s in sessions):
@@ -147,7 +149,7 @@ def main():
             for arm, model in cols:
                 v = by.get((name, arm, model), {}).get('assertions', {}).get(a['id'], {}).get('v')
                 cells.append({'pass': 'P', 'fail': 'F'}.get(v, '-'))
-            lines.append(f"| `{a['id']}` | " + ' | '.join(cells) + ' |')
+            lines.append(f"| `{a['id']}` | {spec.get('role', 'pressure')} | " + ' | '.join(cells) + ' |')
     lines += ['', 'References read counts files whose opening and closing lines came back to the model. For Codex sessions it counts command output, which Codex may shorten before the model sees it, so treat those counts as an upper bound.',
               '', '| Session | Finished | Skill read | References read | Seconds |', '| --- | :---: | :---: | ---: | ---: |']
     lines += [f"| `{s['session']}` | {'yes' if s['completed'] else 'no'} | {'yes' if s['skill_read'] else 'no'} | {len(s['references_read']['full'])} | {s['seconds']} |" for s in sessions]

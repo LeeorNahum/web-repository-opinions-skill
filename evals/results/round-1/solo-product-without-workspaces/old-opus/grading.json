@@ -9,8 +9,8 @@
   "requested_model": "opus",
   "cli": null,
   "inputs": {
-    "skill": "4171c1874df5e04b",
-    "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
+    "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e",
+    "skill": "4171c1874df5e04b"
   },
   "completed": true,
   "timed_out": false,
