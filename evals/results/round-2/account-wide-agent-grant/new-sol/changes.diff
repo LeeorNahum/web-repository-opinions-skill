@@ -1,0 +1,169 @@
+
+--- new file: docs/workspace-access.md
+# Workspace access and MCP authorization
+
+[The product brief](brief.md) is the source of truth. This document fills in its open design decisions; assumptions below are proposed defaults, not additional owner commitments. The repository currently has no application or MCP implementation to verify against.
+
+## Decisions
+
+- Give an agent one **account-wide grant**, covering the person's current and future workspace memberships and documents shared directly with them. Scope it by capabilities, and evaluate current access on every call.
+- Open the library across all accessible documents. Workspace selection is a collection filter, never an ambient authorization or creation context.
+- Require a destination workspace ID for document creation. Reading and updating resolve the workspace from the stored document ID.
+- Put the same capability gate behind the UI, MCP, and any future API. Neither tool visibility nor a workspace selector grants permission.
+
+This matches freelancers working across clients: one connection and one library, with an explicit ownership decision whenever a document is created. An account-wide connection has a broad exposure surface; consent must explain that future memberships and shares become available without reconnecting.
+
+## Ownership and authoritative facts
+
+Every workspace, including the first created at sign-up, maps one-to-one to a managed-auth provider organization. The first workspace has no special permissions or billing semantics after creation. Bootstrap it idempotently on authenticated entry rather than depending on webhook timing.
+
+| Fact | Authority and representation |
+| --- | --- |
+| Signed-in person | Provider-verified stable subject, mapped to an app user ID; never an email supplied by a caller |
+| Workspace membership | Current provider organization membership, resolved through an identity adapter |
+| Product role | App authorization record: Owner, Editor, or Viewer; effective only while provider membership is active |
+| Workspace ownership | App workspace's single `ownerUserId`, which must have a corresponding provider administrator membership |
+| Document ownership | Stored, required `workspaceId`; document creator is attribution, not an independent permission grant |
+| Individual access | App document-share record bound to a verified recipient user ID, with role and revocation state |
+| Agent delegation | Provider-backed OAuth grant for a subject and client, with approved scopes and revocation state |
+| Storage allowance | Paying owner's current plan; usage aggregates across all workspaces that owner owns |
+
+Use stable, opaque app IDs for workspaces and documents. Keep provider organization IDs inside the identity adapter. Workspace names are labels and can collide; they are never lookup authority. A document belongs to exactly one workspace, and these tools cannot change that ownership.
+
+Map the Owner to provider administrator and Editor/Viewer to provider member, with finer capabilities enforced by the app. Provider administration alone must not silently grant document rights. Ownership transfer must maintain the single-owner invariant and billing attribution; it is outside this tool catalog.
+
+## Capabilities and roles
+
+| Capability | Owner | Editor | Viewer | Direct document Editor share | Direct document Viewer share |
+| --- | --- | --- | --- | --- | --- |
+| Discover member workspaces | Yes | Yes | Yes | No | No |
+| List/read documents | Whole workspace | Whole workspace | Whole workspace | Shared document only | Shared document only |
+| Create a document | Yes | Yes | No | No | No |
+| Update content | Yes | Yes | No | Shared document only | No |
+| Manage members, roles, shares | Yes | No | No | No | No |
+| Manage ownership and billing | Yes | No | No | No | No |
+
+The share roles and Owner-only sharing policy are assumptions. Default an email share to Viewer; the Owner must explicitly choose Editor to allow content changes. A share does not permit inviting people, resharing, creating siblings, listing workspace members, or reading other documents.
+
+Bind an invitation to a recipient only after the auth provider verifies that person's matching email. Pending invitations and a matching string in a tool argument grant nothing. Once accepted, resolve the share by stable user ID; changing a profile email does not transfer it. Sharing by email is authenticated access, not a public link.
+
+Membership and direct shares are independent access paths. For an existing document, allow a capability if **either** live path grants it, then intersect that result with the credential's scopes. Thus a workspace Viewer with an explicit Editor share can update that one document. Removing membership leaves an independently granted share effective; removing a share leaves membership rights effective. An Owner removing someone's access entirely must remove both paths, and the UI must explain any access that remains.
+
+Unknown roles or capabilities deny access. No per-member overrides are proposed for the initial product; any later overrides must live in this same gate.
+
+## Account-wide agent consent
+
+Use a single canonical MCP resource and endpoint for the product, not an endpoint or connection per workspace. The grant belongs to the person and client, not to the organization currently selected in a browser or present in one token claim.
+
+Proposed scopes:
+
+| Scope | Permits, subject to live resource access |
+| --- | --- |
+| `documents:read` | List and read accessible documents; discover workspaces the person belongs to |
+| `documents:create` | Create inside a workspace where the person has create permission |
+| `documents:update` | Update a document where the person has update permission |
+
+Offer read-only consent by default, with create and update separately selectable. A full editing connection can request all three. Write-only scopes do not implicitly grant discovery or reads; ordinary interactive clients should request read alongside their desired writes. No scope grants member administration, sharing, ownership transfer, billing, deletion, or cross-workspace moves.
+
+Consent copy must say, in substance:
+
+> Allow this agent to read documents across every workspace you belong to and documents shared with you, including workspaces you join and shares you receive later. If enabled, it can create and edit only where you have permission. You can revoke this connection at any time.
+
+Show the actual selected actions and client name alongside that explanation. Do not present a workspace picker implying a narrower grant. Joining a workspace or receiving a share expands the reachable resources, but never expands approved actions. Obtaining a new scope requires new consent.
+
+Users can inspect and revoke connections from account settings, independently of any workspace. Revoke the grant and refresh credentials together; existing access credentials must stop passing the product gate. Store and check a stable grant identifier or an equivalent provider revocation contract, rather than relying solely on token expiry.
+
+## Server enforcement
+
+All entry points call shared product operations such as list, read, create, and update. Those operations own authorization, validation, and storage accounting. MCP and UI adapters only translate requests and outcomes.
+
+For every call:
+
+1. Verify credentials using the provider's supported validation contract: issuer, signature or introspection, expiry, and intended audience. MCP tokens must explicitly include the canonical MCP resource audience; missing or wrong audience is rejected. Reject closed accounts and revoked grants.
+2. Require the exact scope for the operation. An absent or empty scope set grants nothing. Verify identity from trusted claims or provider userinfo, never from an unverified token body.
+3. Resolve the stored target document and its workspace, or the explicitly supplied creation workspace. A client-supplied ID selects a candidate; it proves no access.
+4. Resolve current provider membership and app role, and/or an active share for this exact document. An organization claim for workspace A cannot authorize workspace B. Verify any claimed membership separately for B.
+5. Evaluate the named capability, intersect with token scope, and apply separate quota/validation checks. Perform writes with authorization tied to the commit, so a concurrent app role/share revocation cannot pass a stale preflight check.
+6. Return only permitted fields and results. Record actor, grant/client, action, target, workspace, outcome, and time for mutations; do not log document content or credentials.
+
+Browser sessions use the same resource rules; OAuth scopes constrain delegated credentials. No browser active-organization setting, cookie, remembered workspace, or UI filter substitutes for steps 3–5.
+
+Recheck provider membership on each operation, including each page of a list. An asynchronously updated webhook mirror alone cannot promise immediate removal. If provider membership cannot be established, fail closed with a retryable availability outcome. Provider changes take effect on the next check after the provider reports them; bytes already returned cannot be recalled. App-controlled revocations must serialize against mutations, and protected content delivery must not bypass the gate through a shared cache or durable public URL.
+
+For lists, build the authorized resource set before searching, ranking, counting, generating snippets, and paginating. Deduplicate documents reachable by both membership and share. Recheck candidates before returning them. Bind opaque cursors to the principal, normalized query/filter, and sort; reject mismatches and never treat a cursor as stored authorization. Membership or share changes can alter later pages.
+
+## Tool contracts
+
+Keep the existing three tool names. Add `create_document` and a small `list_workspaces` discovery tool: without workspace discovery an agent cannot reliably choose an empty destination or distinguish identically named workspaces. Advertise a static catalog and authorize execution per call.
+
+| Tool | Input | Required scope and resource capability | Result and behavior |
+| --- | --- | --- | --- |
+| `list_workspaces` | `{ cursor? }` | `documents:read`; active membership | Paginated member workspaces with stable `id`, display `name`, and effective capabilities including `canCreateDocuments`. Include empty and read-only workspaces. No member directory, billing details, or workspaces known only through document shares. |
+| `list_documents` | `{ query?, cursor?, workspace_id? }` | `documents:read`; read on every returned document | With no filter, return all readable documents across memberships and direct shares. Optional `workspace_id` narrows to a workspace the person belongs to; it cannot widen access. A share-only recipient discovers their document in the unfiltered list. |
+| `read_document` | `{ id }` | `documents:read`; document read | Return the exact accessible document with content, version, and effective capabilities. Resolve ownership from storage. |
+| `update_document` | `{ id, content }` | `documents:update`; document update | Replace content of that existing document only. No upsert, workspace change, sharing change, or implicit create. Return committed identity and version. |
+| `create_document` | `{ workspace_id, title, content }` | `documents:create`; create in that workspace | Require an explicit stable workspace ID, title, and content; empty content may create a blank document. Return committed `id`, `workspace_id`, title, version, effective capabilities, and canonical URL. |
+
+Document list entries include stable `id`, title, last-change time, canonical URL, and effective capabilities. For members, include the owning workspace's ID and name. For share-only recipients, return the document and a “Shared with you” access label; omit workspace metadata and other members' identities. A read returns the same metadata plus content. Capability fields describe the intersection with this caller's credential, not the user's unrestricted role.
+
+List tools return `{ items, next_cursor }`, with a fixed page size of 50, deterministic newest-change ordering and ID tie-breaking. Workspace discovery sorts by name with ID tie-breaking. Validate query sizes and cursor format; bound work per call. Counts and empty pages must not reveal unauthorized resources.
+
+Creation has no fallback workspace, including when there is only one writable destination. A missing destination is `INVALID_INPUT`; a stale or unauthorized destination is `NOT_FOUND_OR_NO_ACCESS`. A known workspace with insufficient role yields `ACTION_NOT_ALLOWED`. Use `list_workspaces` to choose a destination, and disambiguate names by stable IDs. Never infer the destination from the most recently read document, the library filter, token organization claim, or the first workspace returned.
+
+`create_document` success means the document is durably stored. A transport timeout can leave the outcome unknown; the initial contract does not promise idempotent creation. Describe that retrying may create duplicates, and direct the agent to inspect recent documents before retrying. Do not deduplicate by matching title or content: identical documents may be intentional.
+
+For content replacement, retain a server-side read-version observation keyed by grant (or browser editing session) and document. Compare it atomically at update; refuse an unobserved, expired, or changed version with `CONFLICT_READ_REQUIRED`, asking for a fresh read. Return/update the observation after a successful write. The two-argument update contract serializes edits per grant/document; independent parallel editors need separate editing contexts or a future explicit precondition contract. Do not silently overwrite edits made since the observed version.
+
+Mark list/read tools read-only. Create mutates additively and is not idempotent; update can overwrite existing content and must be marked destructive. Annotations inform hosts but confer no authority. No tool requires a `confirm` flag or another mid-call human interaction.
+
+Use typed product errors: `INVALID_INPUT`, `NOT_FOUND_OR_NO_ACCESS`, `ACTION_NOT_ALLOWED`, `CONFLICT_READ_REQUIRED`, `STORAGE_LIMIT`, and `TEMPORARILY_UNAVAILABLE`. Unknown and inaccessible target IDs share the same outcome and reveal no target metadata. Missing/invalid authentication and insufficient token scope use the protocol's authentication/challenge path. Return role-specific explanations only once the caller is entitled to know the resource. Never expose raw provider errors.
+
+## Library workspace handling
+
+The default library is `/documents`, showing readable documents across all memberships and direct shares, newest changed first. This is the document collection, not a workspace dashboard. It lets a studio lead see changes across clients without switching contexts.
+
+- Provide search and a workspace filter, with **All documents** as the default and **Shared with you** for documents reached only by individual share. Member-workspace options include empty workspaces. A document reachable through membership appears under its workspace even if it also has a direct share.
+- Each member document row visibly names its workspace alongside the title and change time. Share-only rows show “Shared with you.” Keep this context visible in search results and on document pages.
+- Use URL state: `/documents?q=proposal&workspace=<id>` or `/documents?access=shared`. Omit untouched defaults; preserve explicit `workspace=all` if selected. `workspace` and `access=shared` are mutually exclusive. Parse and serialize centrally in `q`, `workspace`, `access` order. A filter narrows browsing only.
+- Do not restore a stale cookie or provider selection over a URL. Invalid filters show a clear error; a workspace whose membership was revoked shows an access state with a route back to All documents. Never silently substitute another workspace.
+- Use `/documents/<id>` as the one canonical document route. Resolve workspace ownership after authorization; an individual-share recipient opens this route without joining or activating the workspace. Workspace-specific settings use `/w/<id>/settings` and independently verify membership and management capability.
+
+**New document** opens a URL-addressable form at `/documents/new`. Its required Workspace field lists only destinations where the person can create. Start with no workspace selected, even if the library is filtered or there is only one option. This deliberate choice addresses the beta's wrong-workspace creations. Label the submit action with the chosen workspace, and keep that destination visible while saving and on the resulting document page.
+
+Only explicit selection in this form supplies `workspace_id`; search/filter state never supplies it. The server rechecks permission and storage at submission. If access disappears, keep the draft in the open form, show an actionable error, and require a new explicit selection. Do not redirect the draft to another workspace. Hide New document if there are no writable member workspaces; still show readable/shared documents and explain the empty state when appropriate.
+
+The library needs no active organization. If the provider SDK requires one for its own management UI, synchronize it to an explicitly addressed workspace for that screen only; do not use it to scope library queries or document operations. Share-only entry must work without membership in the document's organization.
+
+## Storage and membership limits
+
+Authorization and plan enforcement answer different questions. An Editor can have create permission and still hit the workspace owner's storage allowance. Charge storage to that owner across their workspaces, regardless of the creating/updating person or the agent client. A direct-share recipient does not pay for the shared document.
+
+Reserve growth atomically against that owner's allowance and finalize measured usage once after durable success; release failed reservations. When over the allowance, preserve reads and allow non-growing writes. Growth fails with a storage outcome naming a remedy for the owner. Do not sell upgrades to clear an unrelated member limit.
+
+The member cap is **25 on every plan**, including the Owner. Enforce admission and invitation capacity on the server and mirror the fixed cap to each provider organization. Count outstanding member invitations as reserved places to prevent oversubscription; accepting one converts its reservation rather than consuming another place. Changing roles does not consume a place. Individual document shares are not memberships and do not occupy member places; rate-limit share invitations separately for abuse. There is no plan-dependent unseating or seat paywall.
+
+## Assumptions and implementation follow-up
+
+Defaults chosen while the owner is away:
+
+- Each workspace has one paying Owner; an owner-level allowance spans their workspaces. No price, storage amount, or plan change is specified here.
+- Individual shares support Viewer and Editor, default to Viewer, and can be issued/revoked only by Owners. Independent access paths combine as described above.
+- Existing signatures are the intended starting contract; optional list filtering and workspace discovery can be added. There is no evidence of a published compatibility commitment in this repository.
+- Titles are explicit creation inputs. Content validation and size limits must use the editor's eventual document format; this design does not choose one.
+- Account-wide access is appropriate for this product. A customer requirement for tenant-isolated agent connections would need a separately specified narrower grant mode and consent; do not quietly impose workspace binding on this model.
+
+Before implementation ships, verify the chosen provider can issue audience-bound, scoped MCP credentials, expose current memberships and grant revocation, and represent every workspace as an organization. Test its actual token and consent behavior. If it cannot meet the contract, resolve that integration gap rather than weakening authorization. Choose and test MCP protocol revisions and client compatibility then; no provider configuration or protocol deployment was performed for this document.
+
+## Acceptance scenarios
+
+1. One agent grant lists documents in A and B and an individual share from C. It cannot enumerate C, C's members, or C's sibling documents. An empty writable D appears in workspace discovery.
+2. An agent with read scope and an Owner user cannot create or update. An Editor user with update scope cannot administer members or shares. Empty scopes deny all tools.
+3. A person joins B after consenting: existing credentials can reach B at the person's current role. Downgrading Editor to Viewer stops updates on the next check; removing membership removes that access path without reconnecting.
+4. Revoking the only share removes a document from search and denies a known-ID read/update with the same response as an unknown ID. If another live access path remains, access follows that path.
+5. Missing, guessed, mismatched, or unauthorized creation destinations never write. A direct Editor share permits updating that document but cannot create another in its workspace.
+6. A document ID resolves its own workspace regardless of URL filters, token organization claims, or provider active-organization state. Two browser tabs with different filters cannot redirect each other's creation destinations.
+7. Reusing a cursor with another user or filter fails. Revoked resources disappear from later pages, snippets, and counts. Provider membership lookup failure returns no protected data.
+8. Revoking an agent connection blocks its outstanding access tokens and refreshes. Wrong issuer, missing/wrong audience, expired credentials, and closed accounts fail authentication.
+9. A library deep link restores its filters; a shared document deep link works without workspace membership. Creating from a filtered library still requires a visible explicit destination choice.
+10. Concurrent creations cannot exceed the paying owner's storage allowance; failed writes charge no usage. A full 25-member workspace blocks additional invitations on every plan while existing members retain their role access.
+11. A concurrent role/share revocation cannot be bypassed by a preflight-authorized mutation. Concurrent content changes produce a conflict and preserve the newer content. A create timeout is reported as unknown until checked, never as a definite failure or safe automatic retry.

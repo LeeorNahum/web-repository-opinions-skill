@@ -1,0 +1,146 @@
+
+--- new file: docs/agent-access.md
+# Agent access for Harbor Ledger
+
+Status: design decision, 2026-10-18. [brief.md](brief.md) is the source of truth for owner decisions; this document supplies implementation choices and labels assumptions separately. This change designs access; it does not configure a provider or deploy an MCP server.
+
+## Decision and security boundary
+
+Each MCP connection is a delegation from one consultant to one agent client for exactly one firm workspace. A current Admin of that workspace must explicitly approve that connection before credentials can access workpapers. Membership in several firms never creates an account-wide agent grant.
+
+A grant binds an immutable tuple: `(provider issuer, user subject, workspace ID, OAuth client ID, connection ID, approved scopes)`. A connection ID identifies one logical agent installation/configuration, not the entire OAuth application. Multiple consultants or installations using the same client each need their own approval. The firm is part of the grant's authority, not a browsing preference.
+
+A consultant working for firms A and B connects twice, with independently approved credentials and clearly named entries such as “Harbor Ledger — Firm A” and “Harbor Ledger — Firm B.” A connection for A cannot list, read, annotate, or discover B's workpapers, even when the consultant is an Admin of B. Joining firm C later grants no agent access to C. Revoking A's connection leaves B's independent connection intact.
+
+Use one canonical MCP endpoint and OAuth resource, proposed as `https://mcp.<product-domain>/mcp`. The domain is a placeholder, not a deployment change. All firms use the same resource audience. Authorization selects the firm; do not create per-firm resource identifiers or MCP paths. Do not offer a `switch_workspace` tool or an account-wide credential.
+
+## Principals, ownership, and capabilities
+
+The managed identity provider owns authenticated identity and organization membership. Each firm workspace maps uniquely to its provider organization, as decided in the brief. Harbor Ledger owns grants, approvals, resource ownership, and product capability policy. Resolve organizations by stable IDs, never firm names or email domains. Keep the decided roles Admin, Preparer, and Reviewer; generic role or billing defaults do not override the brief.
+
+Effective permission on every operation is the intersection of:
+
+- A valid MCP access token and its scopes.
+- The active connection's immutable workspace and approved scopes.
+- The subject's current membership and current product capabilities in that workspace.
+- The workpaper's ownership and any existing workpaper restrictions.
+
+An approval never gives the agent more power than the consultant. An Admin approves access into their own firm only; approving another firm requires being its Admin and acting explicitly there. Plans and usage belong to the bound firm, not the consultant's account or whichever workspace their browser displays. Entitlement checks remain separate from authorization and cannot widen access.
+
+Proposed minimum role policy, pending owner confirmation: all three roles can read workpapers and add annotations they could add through the app; only Admin can approve and administratively revoke connections. Existing narrower workpaper rules still apply. No tool grants editing of workpaper contents, review sign-off, membership management, billing access, or approval authority.
+
+| Existing tool (arguments unchanged) | Required scope | Server behavior |
+| --- | --- | --- |
+| `list_workpapers { query?, cursor? }` | `workpapers:read` | Query only the grant's workspace and caller-visible workpapers, including search counts and pagination. |
+| `read_workpaper { id }` | `workpapers:read` | Look up the ID within the grant's workspace and enforce its read capability. |
+| `annotate_workpaper { id, note }` | `workpapers:annotate` | Check ownership and annotation capability; append a note attributed to the consultant and connection. |
+
+Request read access by default. Annotation access is an explicit option; for the first version it also requires read access. Admins may approve a narrower set, which is shown again to the consultant before activation. Never silently add scopes after approval. Advertise one static tool catalog; hiding a tool or a host confirmation is not an authorization check.
+
+## Request, firm approval, and connection
+
+1. The agent starts the managed OAuth authorization flow. The consultant signs in, sees the client identity and requested permissions, and explicitly chooses one workspace from their current memberships. Even a single eligible firm requires confirmation. A remembered selection or browser active organization can prefill nothing authoritative.
+2. Harbor Ledger creates an immutable pending connection request with the verified subject, chosen workspace, registered client identity, intended redirect URI, requested scopes, connection label, creation time, expiry, and consent-text version. Store it server-side. Client-supplied names are display hints, never identity evidence. The consultant sees “Waiting for a firm Admin.” No access token, refresh token, usable authorization code, or workpaper data is released while pending.
+3. In `/w/{workspaceId}/agent-connections`, an Admin reviews the specific request. Show firm, consultant, client identity and verification status, installation label, permissions and their effects, requested lifetime, and request time. Explicit copy: “Allow this agent connection to read [and annotate] workpapers in Firm A only.” Do not include other firms or their membership information.
+4. The Admin approves an exact permission set or rejects the request. Recheck the Admin's current membership and role at commit. Persist the approval snapshot and audit event atomically. Approval never approves every user of that client or the consultant's future installations. Proposed default: a requester who is also Admin needs a different current Admin to approve; a sole-Admin firm cannot connect until another Admin is available.
+5. Approval does not depend on keeping an OAuth browser round trip open. End the pending OAuth attempt with a supported denial/cancellation outcome and a first-party pending-status page. After approval, the consultant restarts Connect in the same agent configuration. The authorization page explicitly selects the approved request and matches subject, client, redirect URI, firm, and scopes. Perform a fresh OAuth transaction; never reuse an expired code, old state, or old PKCE challenge.
+6. At activation, recheck the subject's membership, request expiry, approval, allowed scopes, and that the approval has not already been consumed. Atomically bind one provider authorization/grant handle to this connection; credential release requires that durable binding and its audit record. One request activates one connection. Concurrent activation attempts cannot create two grants. If credential issuance fails, retries must reconcile the same binding rather than create another authorization.
+7. The host saves the credential under the chosen firm label. Refresh preserves the same subject, client, connection, workspace, scopes, and absolute expiry. Another firm, client, installation, or broader scope requires a new request and explicit firm approval.
+
+Proposed lifecycle: `pending -> approved -> active`, with `rejected`, `expired`, and `revoked` terminal states. Approved means awaiting activation, not usable access. Expire pending requests and unactivated approvals after seven days. An active grant expires 90 days after approval; request renewed consent and a new Admin approval before extending it. Never automatically reactivate a revoked or expired connection.
+
+## OAuth and MCP contract
+
+Use the managed provider's authorization server and supported consent/policy integration, with authorization code flow, PKCE S256, exact redirect validation, and transaction/CSRF binding. Use TLS; send bearer credentials in authorization headers, not tool arguments or URLs. Require access tokens targeted to the canonical MCP resource. Reject a missing or wrong audience, an invalid issuer, expired credentials, and credentials intended for the browser or another API. Publish protected-resource metadata and point it at the authorization server's actual metadata. These protocol controls follow the [MCP authorization specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-11-25/basic/authorization.mdx); this reference does not choose the eventual supported protocol revision.
+
+The provider must offer a trusted, immutable association between each issued access/refresh authorization and exactly one Harbor Ledger connection. Use verified token claims or authoritative introspection containing a provider grant handle, mapped server-side to the connection. A user subject, client ID, or organization claim alone is insufficient: two grants for that same user/client may belong to different firms. An unsigned `workspaceId`, request header, session cookie, or caller-selected connection ID cannot supply this binding. Unbound legacy credentials are refused.
+
+Use provider-managed refresh rotation and replay detection. Proposed access-token lifetime is ten minutes and refresh inactivity expiry is 30 days, always bounded by the grant's absolute expiry. Revocation is enforced by live grant checks, not by waiting ten minutes for a signed token to expire. Never pass a browser or upstream provider credential through MCP to another service.
+
+Advertise only implemented scopes, refresh behavior, client-registration mechanisms, and protocol revisions. Use provider-supported client registration; a public client's registered ID is identification, not proof of a physical installation. Verify actual supported host behavior for two connections to the same resource. If a host can retain only one credential per resource, support one firm at a time in that host with an explicit reconnect flow, or require a host supporting separate configurations. Never solve this limitation with an all-firm token or alternate per-firm endpoints.
+
+The repository does not identify the managed provider, its deployed metadata, or target agent hosts. Before implementation, prove audience issuance, per-authorization binding, Admin gating before credential release, refresh isolation, and revocation using real test credentials. Check native enterprise-managed authorization support at that point; enable it additively only if the provider supports it and it preserves this exact approval boundary. Enterprise SSO, client registration, or enterprise-managed authorization alone never substitutes for a firm Admin's connection approval. Do not build a custom token service to fill an unsupported provider feature; an incapable provider blocks rollout until a supported integration is chosen.
+
+## Enforcement on every call
+
+Keep one shared product authorization boundary used by MCP and all other adapters. Its MCP principal is constructed only from verified identity plus the authoritative grant binding. Tool handlers cannot choose or override the principal's workspace.
+
+For every tool invocation:
+
+1. Validate the provider token, resource audience, and required scopes; resolve its connection binding.
+2. Load the connection and approval. Require active status, matching tuple, and unexpired approval. Reject disabled accounts or workspaces.
+3. Re-establish the subject's live membership and role in the bound organization. Use authoritative provider reads, not token-embedded historic roles or an eventually consistent webhook mirror alone. On provider uncertainty or outage, refuse access. Use verified events for prompt local revocation and reconciliation as well.
+4. Apply the shared capability gate and workpaper restrictions. All database lookups, full-text searches, counts, cursors, caches, notes, attachments, and returned links carry the bound workspace. For an ID from another firm, use the same unavailable-workpaper result as a nonexistent ID; reveal no title, owner, existence, or matching search count.
+5. Enforce the bound firm's applicable plan and usage policies. Commit annotations with the consultant, connection, workpaper, and workspace attribution; persist the mutation's audit event in the same transaction.
+6. Recheck mutable local grant state at mutation commit and immediately before releasing protected read results or credentials. Any later transaction, job, or download path carries the original principal and reauthorizes rather than inheriting an earlier boolean check. Define the operation's authorization point explicitly: revocation committed before that point prevents the operation; already committed annotations remain in history.
+
+Scope queries before pagination, search, and aggregation. Bind opaque integrity-protected cursors to workspace, connection, and query; reject reuse on another connection. Key caches by workspace and applicable permission context, and reauthorize before serving cached results. Do not return transferable long-lived storage URLs that bypass live access checks; use authenticated delivery with the same boundary. Prevent returned workpaper links or references from acting as credentials.
+
+Do not add a workspace argument to the three existing tools. If a future interface explicitly accepts one, it must equal the immutable grant workspace; it cannot select another membership. No cross-firm fallback, federated search, or individual-share bypass is allowed on this connection.
+
+## Revocation and policy changes
+
+A firm Admin can revoke any connection in their workspace. A consultant can revoke their own connections, but cannot approve them. Either action atomically marks the local grant revoked and records the event, then requests provider token-family revocation with retry on failure. Local denial takes effect independently of provider revocation success. Check local status on every call and refresh/issuance path; do not cache an allow decision across requests.
+
+Membership removal, account closure, workspace closure, or an explicit agent-access ban terminates relevant grants. Rejoining never revives those grants. Provider membership checks and verified event processing must detect membership removal/re-addition as a changed membership instance, using a stable membership ID or authoritative lifecycle generation. If the provider cannot distinguish that lifecycle, this is an implementation blocker for the no-revival guarantee, not permission to trust a stale membership token.
+
+A role downgrade reduces capabilities immediately on the next authorization check. A later role upgrade can restore capabilities only inside the already approved scope ceiling. Expiry or revocation always needs a new grant. An approver later leaving the firm does not erase a valid historical approval; current Admins can inspect and revoke it. A plan change applies only the firm's existing entitlement policy and never moves a grant to another firm.
+
+On refresh, the authorization server integration must recheck connection state, expiry, membership lifecycle, and scope ceiling before releasing credentials. A copied access or refresh token has the original firm's authority only. This design cannot stop an authorized host from retaining previously returned content or a person from pasting it elsewhere; host isolation and data-handling terms remain separate controls.
+
+## Durable records and audit
+
+| Record | Minimum durable facts |
+| --- | --- |
+| Workspace | Stable app ID, unique provider organization ID, lifecycle state. |
+| Connection request | Request/connection ID, issuer and subject, membership instance, workspace, client identity, redirect URI, label, requested scopes, request time/expiry, consent version. |
+| Admin decision | Request ID and immutable snapshot, approving Admin subject and membership, decision and time, exact approved scopes, absolute grant expiry, optional reason. |
+| Agent grant | Connection ID, provider authorization handle, immutable tuple, activation time, state, expiry, revocation actor/time/reason, refresh-family reference when available. |
+| Audit event | Event ID, workspace, UTC timestamp, actor subject/type, connection and decision IDs, action, scope snapshot, target workpaper ID when authorized, outcome, safe reason code, correlation ID. |
+
+Keep tokens and secrets out of these records and logs. Store provider handles only where needed for binding or revocation and protect them as sensitive metadata. Do not log note bodies, workpaper contents, authorization codes, or cross-firm attempted target identifiers in firm-visible logs.
+
+Record request, approval, rejection, activation, expiry, renewal, refresh/replay failures, revocation, membership invalidation, and each workpaper access/annotation outcome. Attribute agent notes as “Consultant via Agent connection,” preserving both identities rather than pretending an Admin or service account wrote them. Approval decisions are immutable; corrections append events. Grant state and its audit event commit together. Durably record successful protected reads before releasing their results; fail closed if required audit persistence is unavailable.
+
+Admins can list, filter, and export their firm's connection history and decision evidence, including revoked/expired entries. Consultants see their own connection status; that view does not disclose another firm's approval evidence. Audit exports are themselves workspace-authorized and audited. Maintain append-only audit access controls and an independent integrity-protected retention/export mechanism; an ordinary application edit cannot rewrite an approval history. Retention follows each firm's contract; do not invent a legal retention period or delete evidence on consultant removal. Retention requirements must be resolved before production rollout.
+
+## Failure behavior
+
+| Situation | Product outcome and recovery |
+| --- | --- |
+| Pending or rejected approval | No credential issued; show the request status and a first-party link to the same firm's request. |
+| Invalid, expired, or revoked credential | Authentication challenge using the supported MCP/OAuth contract; reconnect, with new approval if the grant is terminal. |
+| Valid token missing required scope | Insufficient-scope response; request a new, explicitly approved connection for the additional permission. |
+| Current role lacks a capability | Permission refusal; reconnecting cannot increase the member's role. |
+| Foreign or unknown workpaper ID | “This workpaper is unavailable to this connection.” No cross-firm detail. |
+| Provider or required authorization/audit state unavailable | Temporary access failure, no protected result or write; retry later. |
+| Firm entitlement or quota failure | Apply existing firm policy with a clear remedy; never charge another firm or suggest switching the grant. |
+
+Do not expose provider exceptions or stack traces. Separate transport authentication failures from domain/tool failures according to the supported SDK revision. An annotation is additive and may duplicate if retried after an unknown outcome; do not automatically retry it. Record durable outcomes so support can reconcile an interrupted call.
+
+## Assumptions and owner follow-up
+
+These choices allow design work to proceed while the owner is away. They are not additions to the decided brief:
+
+- Scope covers all currently accessible workpapers within one firm, subject to existing restrictions. Per-workpaper allowlists and nonmember individual sharing are outside this first version.
+- All three roles may annotate if their app permissions allow it. Confirm the capability matrix before enabling writes.
+- A different Admin must approve even an Admin's own agent. Confirm whether sole-Admin firms need an explicit self-approval exception; the default remains blocked rather than silently granting one.
+- Every new logical installation/configuration needs approval; routine token refresh does not. OAuth cannot attest that a public client has not copied its credentials to another device. Confirm whether device attestation or an approved host list is contractually required.
+- Seven-day request expiry, 90-day grant expiry, ten-minute access tokens, and 30-day refresh inactivity expiry are proposed defaults. Shorter firm policy may narrow these values; renewal never silently extends approval.
+- No new agent pricing, seats, or plan entitlements are decided here. Use the bound firm's existing plan policy.
+- Provider, domain, target hosts, supported MCP revisions, and contractual audit retention are unspecified. Validate them before rollout; do not weaken firm isolation or Admin approval to accommodate a client or provider limitation.
+
+## Acceptance checks for implementation
+
+Use two firms, one consultant belonging to both, separate firm Admins, and two installations of the same OAuth client. Exercise the real provider and supported hosts as well as product boundary tests.
+
+1. Pending, rejected, expired, or revoked requests cannot mint usable credentials or access data. Removing the approver's Admin role before approval commit denies approval. Concurrent approval/activation attempts do not create duplicate grants.
+2. A's grant lists only A; B's workpaper ID, search terms, cursor, attachment, cached result, or link cannot reveal B through A. Repeat when the consultant is an Admin of both. Adding C membership does not change either existing grant.
+3. Browser workspace switching, forged workspace/connection headers, tampered token claims, another issuer/audience, missing audience, or an unbound token cannot change grant scope.
+4. A and B grants for the same subject/client remain distinct across consent, activation, refresh, reconnect, concurrent calls, and host restarts. A second installation requires a separate Admin decision. Prove the host does not overwrite or mix the two credentials.
+5. Read-only approval denies annotations; annotation approval cannot exceed the current member's capability. Broader scopes require new approval. The original three tool signatures remain usable.
+6. Admin or consultant revocation blocks an otherwise valid access token, refresh, cached result, and deferred work at the next authorization point. Membership removal and re-addition do not revive a connection. Provider failures fail closed.
+7. Approval/activation, mutation/revocation, and read/revocation races follow the documented authorization point. Revocation never removes previously landed annotations or audit evidence. Audit persistence failures cannot produce unaudited successful access.
+8. Each firm's Admin can export its exact approvals and access history, but cannot see another firm's evidence. Credential secrets and note contents never appear in logs. Retry and unknown-outcome behavior is clear for annotations.
+
+These are release criteria, not claims that code or provider behavior has been tested by this documentation change.

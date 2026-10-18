@@ -1,0 +1,118 @@
+{
+  "session": "2-downgrade-overage-new-sol",
+  "eval": "downgrade-overage",
+  "arm": "new",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": "codex-cli 0.162.1",
+  "inputs": {
+    "starting_tree": "8db869a36facf8a25f04b96e5ec8bdf58d7549b3",
+    "skill": "94950d76aa042c5d",
+    "fixture": "420f572c4567fe9a",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "bc6083fd96718a79",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 115.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "auth",
+      "background-jobs",
+      "billing",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "object-storage",
+      "quota",
+      "source-of-truth",
+      "uploads"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 181262,
+    "cached_input_tokens": 158336,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 4492,
+    "reasoning_output_tokens": 358
+  },
+  "changed": [
+    "docs/downgrade-policy.md"
+  ],
+  "assertions": {
+    "downgrade-overage-01": {
+      "v": "pass",
+      "graded_text": "A stable, deterministic order (such as oldest first) decides which 25 books stay covered. Books beyond that keep all their data, are refused gated operations with a clear product message rather than deleted, and become covered again as soon as the plan or freed capacity allows.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:19 \"Order all active (non-Trash, non-permanently-deleted) books by immutable server-assigned creation time ascending, then immutable book ID ascending to break ties. The first 25 are covered. Additional active books are retained but unavailable for ordinary use.\" The denial is a product message: line 64 \"Return stable reasons such as `BOOK_NOT_COVERED` ... with the applicable limit and remedy.\" Books regain coverage: line 21 \"Trashing a covered book immediately brings the next oldest active book into coverage\" and line 59 \"A verified renewal or resubscription restores coverage immediately ... without an unlock migration.\""
+        }
+      ]
+    },
+    "downgrade-overage-02": {
+      "v": "pass",
+      "graded_text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted by the system, existing photos stay at least readable, the user can remove any photo either on its own or by deleting the book that holds it, and storage cannot keep growing past the Free allowance while the account is over it.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:53 \"Never delete other books or photos automatically to make an operation fit.\" Line 44 \"Existing content in covered books remains readable, downloadable, exportable, and printable. Existing photos stay at their original quality.\" Line 46 \"Removal and operations that reduce or leave retained photo bytes unchanged remain allowed.\" Table line 31 \"Permanently delete | Yes ... | Yes ... | Yes\" for covered, uncovered and Trash books. Line 47 \"Any operation that increases retained photo bytes is refused.\""
+        }
+      ]
+    },
+    "downgrade-overage-03": {
+      "v": "pass",
+      "graded_text": "The policy states an explicit rule for existing photos above the new 40 MB single-photo limit: they are kept and stay readable, with no compression, resizing, or deletion, and new uploads must meet the 40 MB limit.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:49 \"An existing 60\u2013110 MB photo is grandfathered as that immutable stored object: it remains intact and can be served or reused within covered books. The new 40 MB limit never retroactively invalidates it. A replacement, re-upload, imported photo, or new stored copy must be at most 40 MB\". Line 7 rules out \"forced compression, or deletion of live content\"."
+        }
+      ]
+    },
+    "downgrade-overage-04": {
+      "v": "pass",
+      "graded_text": "Bytes held in Trash count toward the total storage allowance during the downgrade.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:13 \"Retained photo storage, including Trash | 1.5 GB | 4 GB\". Line 40 \"including unplaced photos and objects referenced by books in Trash\"."
+        }
+      ]
+    },
+    "downgrade-overage-05": {
+      "v": "pass",
+      "graded_text": "Coverage and limits are derived from the current plan when a request arrives and enforced on the server for the browser app, the API, and the MCP connection alike, rather than kept as a lock flag stamped on each book.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:19 \"Derive this selection from current data and the current plan on every gate; never store a `locked` flag or a cancellation-time selection.\" Line 60 \"Browser, public API, MCP, upload finalization, imports, exports, print submission, and background workers invoke the same domain service.\""
+        }
+      ]
+    },
+    "downgrade-overage-06": {
+      "v": "pass",
+      "graded_text": "A cancelled account cannot create a book while it holds 25 or more books.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:36 \"Creating, duplicating, or importing a book requires the resulting active-book count to be at most 25 ... This includes an empty book.\" Line 74 \"Trashing 15 active books leaves 25 active books ... Creating or restoring one then fails at 26.\""
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

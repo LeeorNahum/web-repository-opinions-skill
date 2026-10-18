@@ -1,0 +1,122 @@
+{
+  "session": "2-file-catalog-with-saved-data-new-sol",
+  "eval": "file-catalog-with-saved-data",
+  "arm": "new",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": "codex-cli 0.162.1",
+  "inputs": {
+    "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+    "skill": "5e6beca49f173a2b",
+    "fixture": "ec0103c05d29fd23",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2a29c6d1f69205b5",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 240.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-tool-design",
+      "auth",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "failure-and-retries",
+      "ids",
+      "model-context-protocol",
+      "modularity",
+      "object-storage",
+      "source-of-truth",
+      "uploads",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 287945,
+    "cached_input_tokens": 248576,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 11352,
+    "reasoning_output_tokens": 1720
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "file-catalog-with-saved-data-01": {
+      "v": "pass",
+      "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/mcp-tools.md: 'Use familiar file operations for site source, site settings, and saved entries... Each virtual saved-data file represents exactly one entry', with paths like `/data/rsvps/7qKp9Vm2.json`. `write_file`/`edit_file`/`delete_file` each cover 'one existing source file, settings document, or saved entry'. Assumptions: 'Use one-entry virtual JSON files and a generic file catalog rather than a second record CRUD interface.' The eleven tools in the schema bundle include no record or collection tool."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-02": {
+      "v": "pass",
+      "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/mcp-tools.md schema bundle: `write_file` requires only `[\"site_id\", \"path\", \"content\"]`, `edit_file` `[\"site_id\", \"path\", \"edits\"]`, `delete_file` `[\"site_id\", \"path\"]`, `delete_site` `[\"site_id\"]`, all with `additionalProperties: false`. Protection is server-side: '`read_file` captures a server-side baseline ... Compare it at commit time for **all** existing-target writes, edits, and deletes ... No force-write argument exists' and 'deliberately uses session state to avoid requiring agents to ferry revision tokens'. Also: 'No ... confirmation flags'."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-03": {
+      "v": "pass",
+      "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/mcp-tools.md: 'A change to this entry does [conflict], even if the agent only planned to fix one field.' and 'On conflict, change nothing and return `conflict`, the path, and an instruction to read the current file ... The agent must preserve visitor changes in its new edit rather than replaying an old whole-entry body.' Workflow 4: 'If the visitor changes the same entry first, reread after `conflict`, preserve their current attendance and guest count'."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-04": {
+      "v": "fail",
+      "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "fail",
+          "e": "C/project/docs/mcp-tools.md `delete_file` schema takes a single `\"path\": { \"$ref\": \"#/$defs/Path\" }` ('Delete exactly one source file or saved entry by its complete path'), not an explicit nonempty list of exact paths. The other clauses hold: `delete_site` is its own tool, 'Never delete a directory, prefix, collection, settings document, or whole site', 'Optional fields never change the scope of a destructive operation', `create_site` is the only site creator, and `write_file` will 'never create a missing target'. The required list shape is still missing."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-05": {
+      "v": "pass",
+      "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/mcp-tools.md: 'Each virtual saved-data file represents exactly one entry', so a whole-file write is a single-entry write. Each one is checked: 'Recheck current rules and ownership in the same transaction that commits each entry operation', 'Parse and validate the complete result of a write or edit before committing', 'Saved-entry create/write/edit | `data.write` for the collection/entry', and 'The agent acts for its authenticated user under the grant's capabilities; connecting MCP alone grants no owner powers.' A whole-file replace therefore cannot reach beyond one entry or beyond the person's rights."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-06": {
+      "v": "pass",
+      "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "C/project/docs/mcp-tools.md `create_site`: 'There is no title, description, favicon, or public-slug argument.' Site shape: 'Metadata is derived from the current `index.html` ... No independent metadata update tool exists.' Also '`/settings.json` owns access policy only. Title, description, and favicon remain in HTML.'"
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

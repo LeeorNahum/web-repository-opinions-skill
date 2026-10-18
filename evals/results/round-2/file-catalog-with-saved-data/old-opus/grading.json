@@ -1,0 +1,135 @@
+{
+  "session": "2-file-catalog-with-saved-data-old-opus",
+  "eval": "file-catalog-with-saved-data",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+    "skill": "4171c1874df5e04b",
+    "fixture": "ec0103c05d29fd23",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2a29c6d1f69205b5",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 205.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-skills",
+      "agent-tool-design",
+      "auth",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "domains",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "live-data",
+      "model-context-protocol",
+      "modularity",
+      "naming",
+      "object-storage",
+      "origins",
+      "quota",
+      "routing",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 54111,
+    "cache_read_input_tokens": 239482,
+    "output_tokens": 18292,
+    "total_cost_usd": 0.8466804000000001,
+    "num_turns": 11
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "file-catalog-with-saved-data-01": {
+      "v": "fail",
+      "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "D/project/docs/mcp-tools.md:66-72 define seven separate saved-data tools: `list_data_collections`, `list_data_entries`, `get_data_entry`, `add_data_entries`, `update_data_entries`, `delete_data_entries`, `clear_data_collection`. Saved data is entries keyed by `collection` + `key` (line 19), not file paths reached through read_file/write_files/edit_file/delete_files."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-02": {
+      "v": "fail",
+      "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "D/project/docs/mcp-tools.md:21 \"A tool that changes or removes existing saved data, or removes a file, requires the revision the agent last read.\" The schemas confirm it: line 268 `files: Array<{ path: string; revision: string }>`, line 377 `updates: Array<{ key: string; revision: string; value: JsonValue }>`, line 398 `entries: Array<{ key: string; revision: string }>`. These are required revision tokens."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-03": {
+      "v": "pass",
+      "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md:306 \"If a visitor changed the entry after the agent read it, the agent gets `conflict` with the current entry, re-reads it, reapplies its fix, and retries. A visitor's newer RSVP edit is never silently overwritten.\" Line 382: `{ key: string; status: \"conflict\"; entry: DataEntry }   // current entry, not changed`. The agent's write fails with a conflict. (The mechanism is a required revision, which fails assertion 02.)"
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-04": {
+      "v": "fail",
+      "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "D/project/docs/mcp-tools.md:268 `files: Array<{ path: string; revision: string }> /* max 50 */` sets a maximum but no nonempty minimum. Line 414 adds `clear_data_collection { siteId: string; collection: string }`, which deletes saved data with no list of exact items: \"Deletes every entry that existed when the call started\" (line 418). delete_site is its own tool (line 174), and create_site never touches an existing site (line 167). But deletion is not always an explicit nonempty list of exact paths."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-05": {
+      "v": "fail",
+      "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "D has no whole-file write of saved data. Entries change only through `update_data_entries` (line 377). Nothing in the doc says a bulk or whole replacement is checked entry by entry against declared write rules or validation. Line 295 says only \"The site's owner, meaning members of its workspace and their agents, may always do everything, so rules only limit visitors.\" Entry validation is size only (line 298: \"64 KB per entry value, 5 MB of saved data per site\"). The required guarantee isn't stated."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-06": {
+      "v": "pass",
+      "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md:129 \"`title`, `description`, and `faviconPath` are derived from `index.html` every time it changes. They aren't stored as separate settings, and no tool sets them. To change them, edit `index.html`.\" I checked every schema (lines 142-414): create_site takes only `files` (line 158)."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude-fallback] D/project/docs/mcp-tools.md:21 \"A tool that changes or removes existing saved data, or removes a file, requires the revision the agent last read.\" Every update and delete needs a client-carried revision token (lines 268, 377, 398). Retries and multi-step agents must carry and refresh these tokens, when the server could detect stale writes itself.",
+    "[claude-fallback] D/project/docs/mcp-tools.md:66-72 puts saved data behind seven record/collection tools (`update_data_entries`, `clear_data_collection`, ...) instead of the file tools. That gives agents a second, parallel vocabulary for the brief's 'read and occasionally fix saved data' tasks, and the catalog grows to 21 tools (line 74)."
+  ],
+  "minor": []
+}

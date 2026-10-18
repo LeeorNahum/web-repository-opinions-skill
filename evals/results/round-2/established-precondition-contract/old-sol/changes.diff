@@ -1,0 +1,126 @@
+
+--- new file: docs/row-updates.md
+# Single-row updates
+
+Proposed API addition. [brief.md](brief.md) remains the source of truth for owner decisions; the choices and assumptions below are this design's recommendations.
+
+## Decision
+
+Add `PATCH /v1/price-lists/{id}` to change fields on exactly one existing row. Require the **whole-document ETag** from `GET /v1/price-lists/{id}` in `If-Match`. Compare that validator and apply the change atomically.
+
+This reduces upload size while preserving the concurrency contract partners have used for two years. Existing GET and PUT routes, representations, and precondition behavior remain unchanged. A change to any row invalidates a previously fetched document ETag, including for a subsequent whole-document PUT. The new method is opt-in and stays in v1.
+
+The tradeoff is deliberate: simultaneous edits to different rows can still conflict. Row-scoped validators would require a separate concurrency design that also protects existing whole-document writers. They are outside this addition.
+
+## Request contract
+
+```http
+PATCH /v1/price-lists/list-123 HTTP/1.1
+Host: api.ledgerline.example
+Authorization: <existing partner authentication>
+Content-Type: application/vnd.ledgerline.row-update+json
+If-Match: "list-revision-41"
+
+{
+  "rowId": "row-456",
+  "changes": {
+    "price": 12.50
+  }
+}
+```
+
+The IDs, ETag, and `price` field above are illustrative. This is a product-specific patch format, not JSON Patch or JSON Merge Patch. Advertise its media type in `Accept-Patch` on the price-list resource and include PATCH in its supported methods.
+
+| Member | Meaning |
+| --- | --- |
+| `rowId` | Required, nonempty string identifying an existing row within this list. Exact, case-sensitive match against its stable ID. Never an array position or mutable display name. |
+| `changes` | Required, nonempty object mapping editable top-level row fields to their new values. |
+
+Reject unknown envelope members, duplicate JSON member names, unknown row fields, and attempts to change identity, ownership, or server-managed fields. Accept only fields already writable through the existing price-list schema. Reuse that schema's types, numeric precision, constraints, and nullability; introduce no new price or currency rules here.
+
+Omitted fields retain their current values. Explicit `null` assigns null only when the existing schema allows it; it never means delete. An object or array value replaces that field's entire value, with no recursive merge or dotted-path syntax. Validate the resulting row and all existing document-wide invariants before committing. Any invalid change rejects the entire request.
+
+This method cannot create, delete, reorder, or move rows, edit list metadata, or update multiple rows. Existing PUT remains available for whole-document replacement.
+
+## Preconditions and atomicity
+
+For this new method, require exactly one concrete, strong ETag in `If-Match`, obtained with the document the caller used to prepare its edit. Preserve quotes. Reject `*` and multiple tags with `400 invalid_precondition`; a weak tag cannot strongly match and yields `412 precondition_failed`. An absent header yields `428 precondition_required`. These rules add no new restrictions to existing PUT clients.
+
+All writes to a price list share one authoritative document revision, including PATCH, PUT, browser edits, imports, and internal jobs. Every committed change to the document changes its ETag. A revision cannot be reused after the document changes and later returns to earlier values. Preserve the existing ETag format and treat it as opaque to callers.
+
+The shared mutation capability must:
+
+1. Authenticate and authorize the caller using the existing price-list write policy; validate the request structure.
+2. In one transaction or equivalent compare-and-swap operation, load the current document and compare its ETag to `If-Match`.
+3. On mismatch, return `412` without applying any changes. Do this before looking up the target row in the current document.
+4. On a match, locate the row, validate the candidate document, and persist the document and its new revision together. A missing row returns `404 row_not_found`; it is never an upsert.
+5. Return the document and ETag from the same committed revision.
+
+A read followed by an unconditional write is insufficient. Two requests using the same ETag cannot both commit different changes. Browser writes must participate in the same conditional-write boundary; a stale browser save cannot overwrite a partner update. Adapter-specific logic must not bypass that boundary.
+
+If the requested values already equal the current values, still check `If-Match` first, then return `200` with the unchanged document and ETag. A stale no-op request still receives `412`.
+
+## Success and errors
+
+Return `200 OK`, `Content-Type: application/json`, the complete updated document in the existing GET representation, and its whole-document `ETag`. Returning the document lets clients establish their next baseline without another GET. The request is small; response-size optimization is outside this addition. Use the existing authenticated-document cache policy.
+
+Use the existing API error envelope if one exists. Otherwise adopt this proposed envelope for PATCH only:
+
+```json
+{
+  "error": {
+    "code": "precondition_failed",
+    "message": "The price list changed. Fetch it again and reconcile your edit."
+  }
+}
+```
+
+| Status | Code / behavior |
+| --- | --- |
+| `400` | `invalid_request` for malformed JSON/envelope, or `invalid_precondition` for unsupported header forms described above. |
+| `401`, `403` | Existing authentication and authorization behavior, including existing resource-concealment rules. |
+| `404` | `price_list_not_found`, or `row_not_found` after a matching precondition. |
+| `412` | `precondition_failed`; no mutation. Fetch the current document before reconciling. |
+| `413` | Existing request-size limit exceeded. |
+| `415` | `unsupported_media_type`; use the advertised patch media type. |
+| `422` | `invalid_changes`; a field, type, immutable field, or resulting document violates the schema. Include safe field-level details. |
+| `428` | `precondition_required`; GET the list and supply its ETag. |
+| `429`, `5xx` | Existing rate-limit and transient-failure conventions, including `Retry-After` where supported. |
+
+Failures commit no partial row changes. Do not expose another tenant's data or raw internal exceptions. A conflict response does not supply a replacement ETag for blind resubmission; clients obtain a consistent document/ETag pair with GET. Authentication and normal request validation may fail before precondition evaluation.
+
+## Concurrent writers and recovery
+
+Example: partner A and staff member B both read revision 41. A changes row X with PATCH and commits revision 42. B's PUT with revision 41 must receive `412`, even if B was editing row Y. Likewise, if B's PUT wins first, A's PATCH receives `412`. Two PATCH requests with revision 41 follow the same rule, even when they target different rows.
+
+Partners syncing unattended should retain their base document (or at least the complete target row) alongside its ETag and proposed edit:
+
+1. Submit the patch with that baseline's ETag.
+2. After `412`, GET the latest document and ETag. Never just replace the header and resend.
+3. If the target row is unchanged from the baseline, reapply the edit to the fresh document, revalidate, and retry using the fresh ETag. Changes elsewhere in the list are preserved.
+4. If the target row changed or disappeared, stop automatic reconciliation and surface a conflict. If the desired field values are already present, the caller may instead treat its desired state as satisfied, without claiming that its original request succeeded. Field-level automatic merging is outside this initial contract.
+5. Bound automatic reconciliation to three additional attempts with backoff and jitter. After that, record the conflict for operator review. A periodic sync must retain the unresolved conflict rather than silently overwriting it during the next cycle.
+
+For a timeout or connection loss after sending a request, the outcome is unknown. Fetch the current document and reconcile as above. Retrying the identical request with its original ETag cannot overwrite a later revision: it either applies once or fails its precondition. Do not attach a fresh ETag without reconciliation. This addition has no idempotency-key service or exactly-once delivery promise; do not infer billing or external side effects from a retry.
+
+## Assumptions and release checks
+
+The brief supplies no row schema, authentication details, implementation, or OpenAPI document. This repository currently contains no API implementation to verify. The following assumptions make the proposal concrete without changing the published contract:
+
+- Rows already have a stable, unique, immutable string identifier exposed in the existing document, called `id` here. Confirm its actual name and guarantees before publishing `rowId`. Do not retrofit required IDs into existing v1 documents or require old PUT clients to preserve a new field without an explicit compatibility plan. If no such identifier exists, settle an opt-in identity/migration contract first; positional addressing is not a safe fallback.
+- Existing writable fields and document validation can be reused for partial assignments. Confirm the precise schema and enumerate writable fields in OpenAPI; the price example does not establish a new schema.
+- Existing strong ETags cover all document changes and all writers can share atomic conditional writes. Verify both properties before release; if either fails, repair the shared write boundary while preserving partners' published behavior.
+- PATCH inherits existing authentication, list ownership, write permissions, request-size limits, and rate limiting. No new credential type, permission grant, public access, or infrastructure is needed.
+
+No owner response is needed to finish this proposal. The assumptions above are implementation/release checks, not claims that the owner has already made those decisions. Publish the method, media type, schema, headers, examples, and typed errors in the API's OpenAPI contract before partner rollout. If browser CORS configuration enumerates methods/headers, add PATCH and its media type while retaining `If-Match` request support and exposing `ETag` to the existing allowed origins.
+
+Before rollout, verify these acceptance cases against the shared mutation boundary:
+
+- A matching PATCH changes only the named row fields and returns a GET-compatible document plus the matching ETag; no-op and invalid-input behavior match this proposal.
+- PATCH followed by a stale PUT fails with `412`; PUT followed by a stale PATCH also fails. Concurrent PATCH requests, including to different rows, cannot both commit against one revision.
+- Browser and internal writes invalidate old ETags and cannot unconditionally overwrite concurrent partner edits.
+- Missing, stale, weak, wildcard, and multiple validators produce the documented PATCH outcomes; existing PUT contract checks remain unchanged.
+- Missing rows, duplicate JSON members, immutable fields, nulls, nested replacements, cross-row invariants, and unauthorized requests fail without partial changes or information leaks.
+- Conflict recovery preserves unrelated edits, detects target-row changes/deletion, and handles a lost success response without blind overwrite.
+
+Ship as an additive method, initially exercised by staff and an opting-in partner. Observe conflict, validation, and error rates without logging price-list payloads. Disabling PATCH during rollout must leave existing GET/PUT clients operational.

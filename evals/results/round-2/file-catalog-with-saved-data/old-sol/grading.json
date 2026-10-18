@@ -1,0 +1,129 @@
+{
+  "session": "2-file-catalog-with-saved-data-old-sol",
+  "eval": "file-catalog-with-saved-data",
+  "arm": "old",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": "codex-cli 0.162.1",
+  "inputs": {
+    "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+    "skill": "4171c1874df5e04b",
+    "fixture": "ec0103c05d29fd23",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2a29c6d1f69205b5",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 160.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-tool-design",
+      "auth",
+      "background-jobs",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "live-data",
+      "model-context-protocol",
+      "modularity",
+      "naming",
+      "object-storage",
+      "source-of-truth",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 213117,
+    "cached_input_tokens": 183680,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 7304,
+    "reasoning_output_tokens": 550
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "file-catalog-with-saved-data-01": {
+      "v": "fail",
+      "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "fail",
+          "e": "B/project/docs/mcp-tools.md has a separate record API: '## Saved data: entry operations' with `fernpage_list_entries`, `fernpage_get_entry`, `fernpage_create_entry`, `fernpage_patch_entry`, `fernpage_delete_entry`, and states 'Files and saved data are separate resources' and 'Saved-data collections are logical namespaces, not files.' Saved data is not reached through the file tools."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-02": {
+      "v": "fail",
+      "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "fail",
+          "e": "B/project/docs/mcp-tools.md: 'Every mutating input includes `requestId`.' and 'Every existing-resource mutation requires `expectedRevision`.' Signatures such as `fernpage_edit_file({ siteId: Id, fileId: Id, expectedRevision: Revision, edits: MatchEdit[], requestId: RequestId })` make both an idempotency key and a revision token required arguments."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-03": {
+      "v": "pass",
+      "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md workflow 3: 'If a visitor edits it concurrently, the patch fails without changing anything. Get the entry again, reconcile the correction against current values'; and 'A mismatch returns `REVISION_CONFLICT` and changes nothing.' The agent's later write fails with a conflict rather than last-writer-wins."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-04": {
+      "v": "fail",
+      "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "fail",
+          "e": "B/project/docs/mcp-tools.md: `fernpage_delete_file({ siteId: Id, fileId: Id, expectedRevision: Revision, requestId: RequestId })` deletes 'exactly one file' by opaque file ID, not an explicit nonempty list of exact paths. The other clauses hold: site deletion is its own tool (`fernpage_trash_site`), 'No directory, prefix, recursive, or omitted-target deletion', and replace_file says 'absence never creates a file'. The required list-of-paths shape is still missing."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-05": {
+      "v": "fail",
+      "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "fail",
+          "e": "B/project/docs/mcp-tools.md: 'There is deliberately no tool that reads and writes the entire saved-data object.' No saved-data file exists that could be written whole. Rules are only per-collection CRUD presets ('Rules do not supply initial values, validate an application-specific value schema'). The document never shows a whole-file write being checked entry by entry."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-06": {
+      "v": "pass",
+      "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md: 'Title, description, and favicon are derived from the current `index.html`, never writable through site settings.' `fernpage_create_site({ workspaceId: Id, requestId: RequestId })` has no title argument, and workflow 6 says 'If it is a title/description/favicon, edit `index.html`.'"
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude] B/project/docs/mcp-tools.md adds a second, parallel data surface ('## Saved data: entry operations' with five `fernpage_*_entry` tools, plus `fernpage_update_collection_rules`) instead of exposing saved data through the file tools. Agents have to learn two editing models: `edit_file` exact-match for source and `patch_entry` set/remove for data.",
+    "[claude] B/project/docs/mcp-tools.md pushes concurrency and retry bookkeeping onto the agent through required arguments: 'Every mutating input includes `requestId`' and 'Every existing-resource mutation requires `expectedRevision`'. The server cannot enforce stale-write protection on its own, and an agent that sends a stale or fabricated revision token gets the failure mode the design is meant to prevent.",
+    "[claude] B/project/docs/mcp-tools.md: 'Runtime SDK writes use the same revision discipline and data operations' (also 'all entry writers, including the visitor SDK, use optimistic revision checks'). This changes the visitor runtime SDK, which the brief describes only as writing 'one entry at a time'. Two visitors ticking the same shared checklist item would now see a conflict, and the brief never asked for that."
+  ],
+  "minor": []
+}

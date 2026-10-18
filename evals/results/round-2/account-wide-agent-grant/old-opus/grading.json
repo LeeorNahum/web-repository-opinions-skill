@@ -1,0 +1,150 @@
+{
+  "session": "2-account-wide-agent-grant-old-opus",
+  "eval": "account-wide-agent-grant",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
+    "skill": "4171c1874df5e04b",
+    "fixture": "f43e39fe46e81e7a",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "03cac50f5cf2fdb3",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 165.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-tool-design",
+      "app-surface",
+      "auth",
+      "billing",
+      "bootstrap",
+      "bulk-actions",
+      "data-model",
+      "ids",
+      "model-context-protocol",
+      "product-ux",
+      "query-state",
+      "quota",
+      "routing",
+      "source-of-truth",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 42730,
+    "cache_read_input_tokens": 141051,
+    "output_tokens": 13423,
+    "total_cost_usd": 0.6385502,
+    "num_turns": 8
+  },
+  "changed": [
+    "docs/workspace-access.md"
+  ],
+  "assertions": {
+    "account-wide-agent-grant-01": {
+      "v": "pass",
+      "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, and does not make the person pick one organization per connection.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:13 \"A connected agent acts as the person across every workspace they belong to, plus documents shared with them ... Nobody reconnects per client.\"; line 24 Agent grant \"does not carry a workspace\"; line 73 \"The token names a person, never a workspace.\" Because the grant is per person, workspaces joined later are covered."
+        }
+      ]
+    },
+    "account-wide-agent-grant-02": {
+      "v": "pass",
+      "graded_text": "Every tool call resolves the target workspace or document and checks live membership, role, and individual share on the server at call time. A single organization claim in a token is not treated as proof of access to any other workspace.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:56 \"`authorize(principal, capability, resource)` ... Every backend function that touches documents calls it inside the same transaction\"; line 74 \"Resolve the person by subject id ... Then pass the verified subject to backend functions, which run the gate\"; line 73 \"If the provider's consent flow insists on choosing an organization, we ignore that claim for scoping, and scoping comes from the resource on every call.\" Membership is read from a webhook mirror at call time (line 63)."
+        }
+      ]
+    },
+    "account-wide-agent-grant-03": {
+      "v": "pass",
+      "graded_text": "The create tool takes an explicit destination workspace ID, and the server verifies the caller may create in that workspace before creating. The design does not say a client-supplied workspace ID must never be used.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:97 \"`create_document` | `{ workspaceId, title, content? }` | `document.create` in `workspaceId`\"; line 103 \"requires `workspaceId`, with no default\"; line 34 \"`document.create` (in workspace W) | Owner or Editor of W.\" Nothing forbids using a client ID; the closest line, 151 \"A workspace or document id in a URL never grants access, because the gate decides\", still allows the ID to be used."
+        }
+      ]
+    },
+    "account-wide-agent-grant-04": {
+      "v": "pass",
+      "graded_text": "Removing a membership or an individual share takes effect for an already connected agent without reconnecting.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:64 \"Removing a member deletes their mirror row. Their next call is refused, whether it comes from the app or from an agent token issued before the removal. The only lag is webhook delivery.\"; line 129 \"Revoking a share takes effect on the next call.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-05": {
+      "v": "pass",
+      "graded_text": "An individually shared document gives access to that document only, never to its workspace's other documents or member list, through the UI and the agent alike.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:128 \"A sharee sees that one document ... They don't see its workspace's other documents, its member list, or (beyond its name, on the document) the workspace itself.\"; line 34 \"A share never grants create\"; line 151 an unreachable workspace id gets a \"You don't have access to this workspace\" screen."
+        }
+      ]
+    },
+    "account-wide-agent-grant-06": {
+      "v": "pass",
+      "graded_text": "The library shows documents from every workspace the person belongs to by default, with workspace and shared filters held in URL query state, filters only narrow what is shown, and no active-workspace session state is introduced as an authority for browsing or for the agent connection.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:143 \"/documents  library: everything you can read, across workspaces\"; line 159 \"`workspace` is a workspace id, or `shared` ... It is omitted when unfiltered\"; line 169 \"It filters the list only, and changes nothing else about the app\"; line 152 \"The provider's active-organization session state is never an authority ... nothing else reads it.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-07": {
+      "v": "pass",
+      "graded_text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:120 \"**Member cap: 25 per workspace, the same on every plan** (from the brief) ... The limit isn't plan-derived\"; line 113 \"Plans are priced by storage per paying owner\". Checked docs/workspace-access.md and answer.txt: they contain no per-seat price or seat gate."
+        }
+      ]
+    },
+    "account-wide-agent-grant-08": {
+      "v": "fail",
+      "graded_text": "The design says the consent screen states the connection's scope, including workspaces joined later.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "B/project/docs/workspace-access.md:72 \"The consent copy ... says that the agent can read and, with write scope, edit documents in **every workspace you belong to and documents shared with you**, limited by your role in each.\" The consent copy never says the grant covers workspaces joined later, so a person consenting would read it as their current workspaces."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude-fallback] Concurrent human edits are silently overwritten. docs/workspace-access.md:107 \"**`update_document`** is unchanged in shape\" and line 188 \"adding an optional `revision` later, to catch overwrites of concurrent human edits, is fine. Recommended as a follow-up.\" read_document returns `revision` (line 102), but update ignores it, so an agent's whole-content replace clobbers a teammate's edit. That protection is deferred, not chosen.",
+    "[claude-fallback] Revocation depends on webhook delivery, and the agent path has no reconciliation. Line 63 \"The database mirror is updated from ... webhooks, and bootstrap reconciles it again on each app entry\" and line 64 \"The only lag is webhook delivery.\" A removed member's agent never triggers app bootstrap, so a delayed or dropped webhook leaves the agent with access and nothing bounds the lag (assumption 9 at line 189 accepts this)."
+  ],
+  "minor": []
+}

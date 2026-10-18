@@ -1,0 +1,83 @@
+
+--- new file: docs/downgrade-policy.md
+# Pro cancellation and downgrade policy
+
+`docs/brief.md` is the source of truth for owner decisions. This document fills its gaps with the explicit assumptions below. It specifies required backend behavior; this repository does not yet contain a backend implementing it.
+
+## When the rules change
+
+Cancelling renewal keeps Pro through the paid period. At the provider-confirmed paid-through instant `T`, access becomes Free: Pro applies while server time is `< T`; Free applies at `>= T`. Cancellation is neither account deletion nor a request to delete content. There is no additional grace period, automatic overage charge, forced compression, or deletion of live content for exceeding Free allowances.
+
+| Allowance | Free after T | Pro before T |
+| --- | ---: | ---: |
+| Active books | 25 | 60 |
+| Each newly uploaded photo | 40 MB | 120 MB |
+| Retained photo storage, including Trash | 1.5 GB | 4 GB |
+
+Limits are constants in code. For this policy, MB and GB are decimal: 1 MB = 1,000,000 bytes and 1 GB = 1,000,000,000 bytes. Equality fits; exceeding a limit does not. Billing-provider records own subscription truth, including the paid-through time. Browser state, API keys, MCP sessions, and queued requests cannot extend Pro.
+
+## Which existing books Free covers
+
+Order all active (non-Trash, non-permanently-deleted) books by immutable server-assigned creation time ascending, then immutable book ID ascending to break ties. The first 25 are covered. Additional active books are retained but unavailable for ordinary use. Derive this selection from current data and the current plan on every gate; never store a `locked` flag or a cancellation-time selection.
+
+Renaming, editing, opening, and changing a client timestamp cannot change the order. A duplicate gets its own new creation time. The user cannot choose a different set of 25. Trashing a covered book immediately brings the next oldest active book into coverage; permanently deleting an uncovered book does not change the covered set. Trash does not consume an active-book slot, but its retained bytes consume storage.
+
+| Action after the paid period | Covered active book | Uncovered active book | Book in Trash |
+| --- | --- | --- | --- |
+| List title, ID, creation time, status, and retained size | Yes | Yes, with an explanation when opened | Yes, with expiry time |
+| Open pages, preview photos, or download existing originals/book exports | Yes | No | No |
+| Edit title, text, layout, page order, or existing photo placements | Yes, subject to storage rules below | No | No |
+| Add or replace uploaded photos | Only if current upload and storage limits pass | No | No |
+| Generate an export or place a new print order | Yes | No | No |
+| Move to Trash | Yes | Yes | Already there; does not reset expiry |
+| Permanently delete | Yes, with explicit confirmation | Yes, with explicit confirmation | Yes, with explicit confirmation |
+| Restore from Trash | Not applicable | Not applicable | Only if resulting active-book count is at most 25 |
+
+Listing unavailable books exposes management metadata only, without page content, photo thumbnails, or download links. An old content URL is not an exception to the coverage gate. Cleanup operations remain available regardless of coverage or storage overage. Permanent deletion is irreversible; moving to Trash is recoverable for 14 days from the deletion instant. At expiry the book cannot be restored, and cleanup proceeds even if the account is over quota or has no subscription. Cancellation never resets or shortens that clock.
+
+Creating, duplicating, or importing a book requires the resulting active-book count to be at most 25, as well as any applicable storage checks. This includes an empty book. Being over the count does not block editing covered books. Restoring retained content adds no bytes but must pass the book-count check; use its original creation time to recompute coverage. A successful Free restoration leaves at most 25 active books, so all are covered; restoration cannot be used to swap books into an already-over-limit active collection.
+
+## Storage and oversized photos
+
+Count the exact bytes of all retained user photo objects, including unplaced photos and objects referenced by books in Trash. A physical object shared within an account counts once; releasing one reference does not release its bytes while another retained reference exists. Removing a placement alone does not delete the photo. Count logical user-owned copies separately when they have separate stored objects. Server-generated thumbnails, render caches, and temporary exports do not consume the advertised photo allowance; bound and clean them separately.
+
+When retained storage exceeds 1.5 GB:
+
+- Existing content in covered books remains readable, downloadable, exportable, and printable. Existing photos stay at their original quality.
+- Text/layout edits and reusing an already-retained photo without creating another stored object remain allowed. Metadata and page text do not consume the photo-byte allowance.
+- Removal and operations that reduce or leave retained photo bytes unchanged remain allowed. Do not freeze all writes because of aggregate overage.
+- Any operation that increases retained photo bytes is refused. Once usage is at or below the allowance, growth is allowed only if the resulting usage, including concurrent reservations, is at most 1.5 GB. At exactly 1.5 GB there is no room for another byte.
+
+An existing 60–110 MB photo is grandfathered as that immutable stored object: it remains intact and can be served or reused within covered books. The new 40 MB limit never retroactively invalidates it. A replacement, re-upload, imported photo, or new stored copy must be at most 40 MB, even if it replaces an older oversized photo or would reduce total storage. Referencing the same retained object creates no new upload and does not trigger the per-upload limit. Editing crop/placement metadata leaves the original unchanged; saving a new photo file is a new upload.
+
+A replacement is one atomic logical change. It may proceed while over storage if the new file is at most 40 MB and committed retained bytes do not increase. Credit the old bytes only if the old object actually loses its last retained reference. Keep the old photo on failure. Temporary staging is separately bounded, private, and expires; it is not reusable retained storage or a way around quota.
+
+Moving a book to Trash frees its active slot immediately but frees no storage. Permanent deletion frees only bytes no longer retained anywhere. Release quota exactly once after durable deletion of those objects; until cleanup succeeds they still count. Show cleanup as pending rather than claiming space that has not been released. Never delete other books or photos automatically to make an operation fit.
+
+Print charges are separate from the subscription. New print orders require a currently covered book and the usual checkout. A print order durably accepted before T continues from its immutable order snapshot even if its source book later falls outside coverage. A draft cart or queued, unaccepted order gets no such exception. New renders may use transient storage while over quota, but saving additional user photo bytes must pass the same storage gate.
+
+## Backend enforcement contract
+
+1. **Resolve current entitlement.** A billing adapter verifies webhook signatures, deduplicates events, and reconciles current provider subscription state rather than trusting delivery order. Any local subscription record is a reconciled cache, not an independent authority. Persist the provider-confirmed T so a delayed end-of-period webhook cannot extend access: an active-looking cache expires at T. At T, use Free unless renewed Pro coverage has been verified. On provider uncertainty, preserve reads and cleanup under the last verified interval/current Free rules; refuse operations requiring unverified Pro with a retryable billing-state error. A verified renewal or resubscription restores coverage immediately, subject to that plan's limits, without an unlock migration.
+2. **Use one shared capability gate.** Browser, public API, MCP, upload finalization, imports, exports, print submission, and background workers invoke the same domain service. Authenticate, validate ownership and token scopes, derive the current plan and book rank, then evaluate the requested capability and projected usage. Knowing a book ID or hiding a button grants nothing. Management listing and deletion are explicit exceptions to book coverage, never exceptions to ownership checks. Jobs carry the owner's stable ID and recheck eligibility when they execute and before committing results; accepted print-order fulfillment is its own snapshot capability.
+3. **Serialize capacity changes per account.** Check active-book count and reserve new slots atomically for creation/import/restore. For storage growth, reserve positive projected bytes against committed usage plus outstanding reservations before issuing upload permission or starting expensive work. Concurrent requests cannot each spend the same capacity. A known replacement reserves its proposed change with an exclusive claim on any credited old object; another request cannot spend that credit. Unknown sizes require a bounded declared maximum. Reservations have expiries and idempotency keys; failure/abandonment releases them. A reservation is not a promise of the old plan.
+4. **Validate again at durable commit.** Verify actual object size from storage, ownership, unchanged replacement references, plan, coverage, book count, and projected usage in the committing transaction. Charge measured bytes only after durable success, once per operation. A pre-T upload that finalizes after T must fit Free, including 40 MB per new photo; otherwise discard staging and keep existing content unchanged. Re-evaluate or cancel outstanding reservations when limits shrink so they cannot authorize overage. Retried requests cannot duplicate books, charges, quota, or print orders.
+5. **Keep bytes private.** Mint short-lived download/upload permissions only after authorization, with upload size constraints where supported. Do not expose permanent public object URLs or treat possession of an object key as permission. Content delivery checks current coverage, including at download time for outstanding links; use an authenticated delivery gate when an otherwise valid signed URL could outlive T or a coverage change. Downloads already completed cannot be revoked. Staged bytes cannot become readable retained photos until finalization passes. Track staged object keys durably before writing and clean abandoned/rejected uploads.
+6. **Make cleanup resumable and errors actionable.** Trash expiry and explicit permanent deletion use bounded, idempotent cleanup with accurate counters, retained-reference checks, and retryable object deletion. Return stable reasons such as `BOOK_NOT_COVERED`, `BOOK_LIMIT`, `PHOTO_TOO_LARGE`, `STORAGE_LIMIT`, and `BILLING_STATE_UNAVAILABLE`, with the applicable limit and remedy. A direct API or MCP call receives the same denial as the browser. Bulk operations return each item's outcome and count only successful commits; an atomic replacement never partially removes its old content.
+
+## Check against the typical cancelling user
+
+Assume the brief's 40 books are active, with any trashed books additional; the brief does not give a Trash book count or the distribution of photos between books. At T:
+
+- The oldest 25 active books remain usable; the other 15 remain listed and deletable but cannot be opened, edited, exported, or newly printed. No book is destroyed by the downgrade.
+- All 2.6 GB remains stored, including 300 MB in Trash. The account is 1.1 GB over Free. Covered books can still receive text/layout edits, reuse retained photos, export, and print, but no retained-byte growth is allowed.
+- The fifteen 60–110 MB photos remain intact. Those accessible through covered books can still be viewed, downloaded, reused, exported, and printed. Photos reachable only through uncovered or trashed books remain retained but unavailable for content access. New files over 40 MB fail even after storage has been reduced.
+- Purging the entire 300 MB in Trash, assuming none remains referenced elsewhere, leaves 2.3 GB: still 800 MB over Free. Simply moving more books to Trash frees no bytes. Another 800 MB must be permanently released to reach exactly 1.5 GB, and more must be freed to admit a positive-size upload.
+- Trashing 15 active books leaves 25 active books, all covered, but does not fix storage overage. Creating or restoring one then fails at 26. With 24 active books, one empty creation or retained-content restoration may succeed despite storage overage; a creation that adds photo bytes still fails.
+- Resubscribing to Pro covers all 40 active books and 2.6 GB under the 60-book/4-GB allowances. Each existing large photo is also below Pro's 120 MB upload limit. Pending deletions and Trash expiry are not reversed.
+
+Implementation acceptance checks must include equal-to-limit versus one-byte-over, the exact T boundary, tied creation times, promotion after trashing, restoration at 24 versus 25 active books, storage-neutral edits while over quota, oversized grandfathered objects versus replacements, shared-object deletion, concurrent creates/uploads, late upload finalization, stale/out-of-order billing events, and direct API/MCP/job attempts to bypass the gate. These are required checks for implementation, not tests already run in this documentation-only repository.
+
+## Assumptions made while the owner is away
+
+The brief explicitly fixes plan prices/allowances, end-of-paid-period cancellation, 14-day Trash retention, provider ownership of subscription truth, and code-owned limits. The following are product choices made here rather than prior owner decisions: decimal units; per-account allowances; active-only book counts; oldest-first coverage without user selection; content-access restrictions on excess books with metadata/deletion exceptions; no overage deletion or charge; photo-byte accounting with derived assets excluded; storage-neutral editing and atomic replacement rules; grandfathering existing large objects; restoration retaining original creation order; separate print checkout and accepted-order fulfillment. No other paid-only feature is assumed. These choices are ready for review and do not change live billing or existing backend behavior.

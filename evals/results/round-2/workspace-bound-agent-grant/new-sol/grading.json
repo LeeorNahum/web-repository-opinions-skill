@@ -1,0 +1,91 @@
+{
+  "session": "2-workspace-bound-agent-grant-new-sol",
+  "eval": "workspace-bound-agent-grant",
+  "arm": "new",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": "codex-cli 0.162.1",
+  "inputs": {
+    "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73",
+    "skill": "94950d76aa042c5d",
+    "fixture": "5663e426cf9ad166",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "7eb434b8639989fb",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 160.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "auth",
+      "billing",
+      "bootstrap",
+      "data-model",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "integration-onboarding",
+      "model-context-protocol",
+      "modularity",
+      "product-ux",
+      "routing",
+      "source-of-truth",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 234542,
+    "cached_input_tokens": 197120,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 5759,
+    "reasoning_output_tokens": 403
+  },
+  "changed": [
+    "docs/agent-access.md"
+  ],
+  "assertions": {
+    "workspace-bound-agent-grant-01": {
+      "v": "pass",
+      "graded_text": "Each agent connection is bound to one firm workspace chosen at consent and approved by that firm's Admin, and a consultant who works for several firms makes a separate connection for each.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "B/project/docs/agent-access.md:7 \"Each MCP connection is a delegation from one consultant to one agent client for exactly one firm workspace. A current Admin of that workspace must explicitly approve that connection before credentials can access workpapers.\"; :40 \"explicitly chooses one workspace from their current memberships\"; :11 \"A consultant working for firms A and B connects twice, with independently approved credentials\"; :41 \"No access token, refresh token, usable authorization code, or workpaper data is released while pending.\""
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-02": {
+      "v": "pass",
+      "graded_text": "The server checks on every call that the target belongs to the connection's bound workspace and that the consultant's membership and role are still live, so removal from a firm cuts off an existing connection.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "B/project/docs/agent-access.md:66-71 \"For every tool invocation: ... 3. Re-establish the subject's live membership and role in the bound organization. Use authoritative provider reads, not token-embedded historic roles ... On provider uncertainty or outage, refuse access. 4. ... All database lookups, full-text searches, counts, cursors, caches ... carry the bound workspace.\"; :33 \"Look up the ID within the grant's workspace\"; :83 \"Membership removal, account closure, workspace closure, or an explicit agent-access ban terminates relevant grants. Rejoining never revives those grants.\""
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-03": {
+      "v": "pass",
+      "graded_text": "The design offers no connection whose scope spans more than one firm.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "Checked B/project/docs/agent-access.md, B/answer.txt, B/diff.txt (only change is the new doc). :13 \"Do not offer a `switch_workspace` tool or an account-wide credential.\"; :77 \"No cross-firm fallback, federated search, or individual-share bypass is allowed on this connection.\" Closest to breaking it, :58 \"If a host can retain only one credential per resource, support one firm at a time in that host with an explicit reconnect flow ... Never solve this limitation with an all-firm token or alternate per-firm endpoints.\" That still gives one firm per connection."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

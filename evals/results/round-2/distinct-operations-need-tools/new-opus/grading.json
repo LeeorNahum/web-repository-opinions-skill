@@ -1,0 +1,103 @@
+{
+  "session": "2-distinct-operations-need-tools-new-opus",
+  "eval": "distinct-operations-need-tools",
+  "arm": "new",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3",
+    "skill": "94950d76aa042c5d",
+    "fixture": "707eb5cd840fd63d",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2c20ba5c4be18228",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 75.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "failure-and-retries",
+      "model-context-protocol",
+      "physical-commerce",
+      "search-indexing"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 20824,
+    "cache_read_input_tokens": 116620,
+    "output_tokens": 3413,
+    "total_cost_usd": 0.258216,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "distinct-operations-need-tools-01": {
+      "v": "pass",
+      "graded_text": "Agents can search page content across the workspace in one call, through a dedicated search tool or a content query on a listing tool, with explicit scope and pagination, instead of reading pages one by one. The query uses familiar text-search semantics (plain text, phrase, or regular expression) rather than a bespoke query language.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md: \"`search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page content and titles for a text phrase. Read-only. Matching is case-insensitive and literal, with whitespace runs normalized ... Scope is the whole workspace, or `folder` and its subfolders. ... Results are ordered by path. Default 20 per page, maximum 100.\" This is one call over the whole workspace, with explicit scope, cursor pagination, and plain literal phrase semantics."
+        }
+      ]
+    },
+    "distinct-operations-need-tools-02": {
+      "v": "pass",
+      "graded_text": "Placing a print order is its own tool, not a file write, a special path, or a flag on an existing tool, because it charges money and ships goods.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md: \"`order_prints` | `{ paths[], copies, ship_to, idempotency_key }` | Orders printed, bound copies of the listed pages and charges the workspace's card on file. Ships a physical package. Editors only.\" It is a dedicated tool, not a write_page path or a flag on another tool."
+        }
+      ]
+    },
+    "distinct-operations-need-tools-03": {
+      "v": "pass",
+      "graded_text": "A retried print-order call after a timeout cannot charge twice: the design states an idempotency key, a single-use quote or order ID, or an equivalent server-side guard.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md: \"Retrying with the same `idempotency_key` and arguments returns the original order without charging again. Reusing a key with different arguments is refused.\" Also, under Assumptions: \"The idempotency key is required ... Keys are scoped to the workspace and kept for at least 24 hours.\""
+        }
+      ]
+    },
+    "distinct-operations-need-tools-04": {
+      "v": "pass",
+      "graded_text": "The catalog adds no generic execute, run, or action tool.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "I checked B/project/docs/mcp-tools.md (the only changed file per B/diff.txt and diff -r). The catalog is list_pages, read_page, search_pages, write_page, edit_page, delete_pages, order_prints. Closest line: \"`order_prints` | ... Orders printed, bound copies\", which is a specific operation, not a generic execute/run/action tool."
+        }
+      ]
+    },
+    "distinct-operations-need-tools-05": {
+      "v": "pass",
+      "graded_text": "The existing five file tools keep their names, and each behaves as before for calls that use only its current arguments.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/diff.txt only adds lines (+search_pages, +order_prints, +Assumptions). The five original rows are unchanged, for example \"| `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. |\" and \"| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |\" in B/project/docs/mcp-tools.md."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

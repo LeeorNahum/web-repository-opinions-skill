@@ -1,0 +1,119 @@
+{
+  "session": "2-quota-reservation-under-concurrency-old-sol",
+  "eval": "quota-reservation-under-concurrency",
+  "arm": "old",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": "codex-cli 0.162.1",
+  "inputs": {
+    "starting_tree": "9b723e3712137fdadfb0625eeab7023f9c8d3193",
+    "skill": "4171c1874df5e04b",
+    "fixture": "e90d67d597185779",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "b63909859c680ed6",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 310.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "ai-model-routing",
+      "auth",
+      "background-jobs",
+      "billing",
+      "data-deletion",
+      "data-model",
+      "definition-of-done",
+      "failure-and-retries",
+      "modularity",
+      "object-storage",
+      "quota",
+      "runtime-truth",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 468805,
+    "cached_input_tokens": 398976,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 18021,
+    "reasoning_output_tokens": 2000
+  },
+  "changed": [
+    "docs/quota-accounting.md",
+    "packages/backend/.gitignore",
+    "packages/backend/package.json",
+    "packages/backend/src/ctx.ts",
+    "packages/backend/src/errors.ts",
+    "packages/backend/src/uploads.ts",
+    "packages/backend/test/uploads.test.mjs"
+  ],
+  "assertions": {
+    "quota-reservation-under-concurrency-01": {
+      "v": "pass",
+      "graded_text": "Starting an upload atomically reserves its declared size against remaining capacity, counting other open reservations, so parallel uploads cannot together pass the cap. A check of used plus size alone is identified as insufficient.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:21 `account.used + account.reserved <= account.cap`; :30 \"An account row lock or equivalent serializable conflict detection must serialize admissions; a process-local mutex or separate read/patch operations is insufficient across servers.\"; :44 \"Eight concurrent starts contend on the same account ledger; only those that fit commit.\" Code packages/backend/src/uploads.ts:22 `if (bytes > account.cap - account.used - account.reserved) throw new QuotaExceeded();` then :23 increments reserved inside the start transaction (:39-54). The doc never names the old `used + size` check; the closest it comes is the 'separate read/patch operations is insufficient' line."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-02": {
+      "v": "pass",
+      "graded_text": "Finalize commits usage from the verified stored size and turns the reservation into usage, and a failed, abandoned, or expired upload releases its reservation through a stated cleanup path.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:48 \"moves `size` from reserved to used; pins the object version\". The code charges only after verifying the stored size: uploads.ts:73 `if (object.size !== upload.size) throw new UploadError(\"size_mismatch\");` then :82 `used: account.used + current.size, reserved: account.reserved - current.size`. Cleanup: doc :68 \"Cancel/expire of an uploading row releases its full reservation ... Repeated close calls do not refund twice\" and :70 \"An expiry sweep selects a bounded indexed batch and invokes `closeUpload(reason: expire)`\"; code closeUpload uploads.ts:146-166 releases `upload.reserved`."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-03": {
+      "v": "pass",
+      "graded_text": "A retried finalize counts the upload's size once, not twice, in both the design and the changed code.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:48 \"Repeated or concurrent finalize calls return ready without changing counters or scheduling again.\" Code uploads.ts:67 `if (upload.status === \"ready\") return ...` and :76 `if (current.status === \"ready\") return ...` inside the second serializable transaction before the patch; the outbox key `summary:${upload.id}:${upload.summaryAttempt}` (:27) is unique per ctx.ts:37."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-04": {
+      "v": "pass",
+      "graded_text": "The user's storage quota is kept separate from the model provider's cost: the design says a failed summary can still cost the product money and records or bounds that cost, rather than promising failed work is free.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:64 \"Storage bytes are **not an AI spending budget** ... add independent per-account and global provider spend admission/reservations, finite input/output limits ... Reserve estimated cost before dispatch and settle authoritative provider cost separately; deleting a document or releasing storage must not refund already incurred provider spend.\" and :60 \"A worker crash after claiming has an ambiguous paid outcome. Do not automatically call the provider again.\" Cost is bounded by :56 \"Bound input tokens, output tokens, request duration\" and :11 \"No automatic retries of paid provider calls\"."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-05": {
+      "v": "pass",
+      "graded_text": "Finalize compares the actual stored size with the reserved size and refuses or corrects a mismatch, so a client cannot reserve a small size and store a large object.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:47 \"Missing objects and size mismatches never charge usage or queue summaries.\"; code uploads.ts:73 `if (object.size !== upload.size) throw new UploadError(\"size_mismatch\");` (exact match required, refusing both larger and smaller). ctx.ts:45 requires an \"Exact size ... create-only PUT\"."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

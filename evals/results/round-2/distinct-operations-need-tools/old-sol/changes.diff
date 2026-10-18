@@ -1,0 +1,84 @@
+diff --git a/docs/mcp-tools.md b/docs/mcp-tools.md
+index 1425075..6d86be7 100644
+--- a/docs/mcp-tools.md
++++ b/docs/mcp-tools.md
+@@ -3,7 +3,78 @@
+ | Tool | Arguments | Behavior |
+ | --- | --- | --- |
+ | `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |
+-| `read_page` | `{ path }` | Returns the page's Markdown. |
++| `read_page` | `{ path }` | Returns the page's Markdown, stable `id`, and immutable `revision`. |
+ | `write_page` | `{ path, content }` | Creates or replaces one page. |
+ | `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. |
+ | `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |
++| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches readable pages by Markdown content. Returns bounded matching snippets and page identities; see below. |
++| `order_prints` | `{ pages, copies, shipping_address, max_total, idempotency_key }` | Orders printed, bound copies of one ordered page collection, charges the workspace card, and ships through the print partner. Editors only. |
++| `read_print_order` | `{ idempotency_key }` | Retrieves the durable print order and its current payment and fulfillment status, including after a timeout. Editors only; no side effects. |
++
++## Shared rules
++
++The authenticated session selects the workspace; arguments cannot select another workspace. Enforce membership, token permissions, and resource access in the shared server-side product boundary on every call. Advertise a static catalog to all callers, including Viewers; visibility and MCP annotations do not grant permission.
++
++For the new tools, publish these explicit MCP annotation hints:
++
++| Tool | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
++| --- | --- | --- | --- | --- |
++| `search_pages` | true | false | true | false |
++| `order_prints` | false | true | true | true |
++| `read_print_order` | true | false | true | false |
++
++Ordering is destructive because it spends money and dispatches a physical package. Its idempotent hint depends on the durable contract below, not on the host avoiding retries. No confirmation flag or interactive approval step is part of the tool schema.
++
++## Content search
++
++- `query`: nonblank text, at most 500 characters. Match all whitespace-separated terms, case-insensitively, as literal substrings of Markdown content; no regex or query language. Titles are returned for navigation but are not independently searched.
++- `folder`: optional workspace-relative folder, including descendants; omission searches the readable workspace. Reject invalid paths rather than widening scope.
++- `limit`: integer 1â€“100, default 20. `cursor`: opaque continuation token bound to the workspace, query, folder, and result ordering. Reject mismatched or expired cursors with an instruction to restart the search.
++- Return `{ matches: [{ id, revision, path, title, snippet }], next_cursor }`. Each page appears once; snippets contain at most 500 characters of matching context. `next_cursor` is null at the end. Order by stable page ID for predictable traversal. Use `read_page` for full content; do not return whole pages or an unbounded match count.
++- Use a server-side content index that supports these match semantics across 50,000 pages, with bounded query work rather than reading every page per request. Index existing pages as well as new writes and edits. Keep the index synchronized with replacement, moves, Trash, and deletion; exclude Trash. Recheck current read access before returning any hit or snippet, even if the index is stale.
++- An empty result is a successful search. An unavailable or incomplete index returns `search_unavailable`, not an apparently complete empty result. Concurrent edits may change results between cursor pages; an agent needing a fresh view restarts the search.
++
++## Print ordering
++
++### Inputs and admission
++
++- `pages`: ordered, nonempty array of at most 100 distinct `{ page_id, revision }` entries. Obtain these identities from `search_pages` or `read_page`. IDs survive renames; revisions identify exact content. Every page must be readable, outside Trash, and still at the supplied revision when the order is admitted. Refuse the whole order on any invalid, inaccessible, or changed page. Freeze the content and input order durably before dispatch; later edits cannot change the printed material.
++- `copies`: integer 1â€“1,000; each copy is one bound volume containing all selected pages in input order. This is one atomic order, not independent per-page purchases.
++- `shipping_address`: `{ recipient, line1, line2?, city, region?, postal_code, country_code }`, with an ISO two-letter country code. Validate the complete address and partner destination support before charging. Send only fulfillment-required content and address data to the partner.
++- `max_total`: `{ amount_minor, currency }`, where `amount_minor` is a positive integer in the currency's minor units and `currency` is a supported three-letter currency code. This is a caller-supplied spending ceiling, not a quoted price. Compute and freeze the actual per-copy price, shipping, tax, and total server-side before charging. Refuse unsupported currency or a total above the ceiling, returning the calculated breakdown when available. Never silently increase the ceiling or substitute a currency; a later price increase requires a new explicit order request.
++- `idempotency_key`: caller-generated UUID created and saved before the first attempt. Reuse it with exactly the same arguments for every retry of that intended order. A new key denotes a new purchase, even when the other arguments are identical.
++
++Require Editor permission and read access to every page at admission, and recheck the initiating principal's authority immediately before the irreversible external action. Viewers cannot order or retrieve orders. Validate card availability, content eligibility, destination, and price before any charge or dispatch. Any admission failure has no financial or shipping effect.
++
++### Durable duplicate protection
++
++Atomically reserve `(workspace, idempotency_key)` and persist the canonical request fingerprint, immutable content snapshot, price, and stable order `id` before external effects. Concurrent identical calls join the same order; they cannot run separate purchases. The fingerprint covers every purchase input, including page order, revisions, copies, address, currency, and ceiling.
++
++For an existing key, authenticate and authorize first, then compare the request before checking live page revisions or recalculating price. Identical arguments return that order's current record, even if pages have subsequently changed. Different arguments return `idempotency_conflict` without creating or changing an order. Retain a durable deduplication record for every reserved key; archival must never make an old key eligible to purchase again.
++
++Use the stable order identity for idempotency at every external charge and fulfillment boundary, with durable progress for each step. Local deduplication alone does not cover a crash after the partner accepts an order. Reconcile an uncertain charge or shipment by provider identity before resuming. Never blindly repeat an external purchase or charge after a timeout, including after a provider's deduplication window expires. If the partner cannot deduplicate or look up an uncertain request, keep the order unresolved for operator reconciliation and block redispatch.
++
++### Outcomes and recovery
++
++Both print tools return the same product-owned order record: `{ id, idempotency_key, status, pages, copies, price, payment_status, fulfillment_status, tracking?, error? }`. `price` contains currency and integer minor-unit amounts for unit price, copies subtotal, shipping, tax, and total. Return recorded amounts rather than a new estimate.
++
++- `status`: `pending`, `submitted`, `shipped`, `completed`, `failed`, or `needs_reconciliation`. Pending means durably admitted, not yet purchased. Submitted means the partner has acknowledged fulfillment. Completed means delivery is confirmed.
++- `payment_status`: `not_charged`, `pending`, `charged`, `refunded`, or `unknown`.
++- `fulfillment_status`: `not_submitted`, `pending`, `accepted`, `shipped`, `delivered`, `failed`, or `unknown`.
++- `error`, when present: `{ code, message, next_action }` with product-owned instructions, never raw provider errors. Report a charge even when fulfillment fails; expose any pending refund or required reconciliation through the status and next action. Do not label an uncertain outcome as a clean failure.
++
++`order_prints` may return `pending` while durable background work continues. Transport success proves only the state returned, never that printing or shipping completed. Poll `read_print_order` using the original key after a timeout, including when no order ID was received. An unknown key returns `order_not_found` and has no side effect; resend the original order with the same key if necessary, since the first call may still be in flight.
++
++Repeating `order_prints` retrieves the existing outcome; it does not restart a failed order. Do not generate a new key to recover an unknown outcome. A fresh purchase after a confirmed terminal failure requires explicit purchase intent and a new key; unresolved charge or fulfillment states must be reconciled first. Durable workers may resume only steps proven not to duplicate an external effect. Charge-without-fulfillment failures remain visible for operator reconciliation or refund rather than disappearing as generic failures.
++
++## Assumptions and catalog size
++
++These are provisional design choices where `brief.md` leaves details open:
++
++- Content search uses literal, case-insensitive AND matching, recursive folders, stable ID ordering, and the bounds above. There is no semantic search, regex, title-only search, or separate indexing tool.
++- One print order produces identical bound volumes using one product-defined standard format and one destination. The page and copy bounds are adapter limits to validate against the chosen partner before implementation.
++- The caller supplies the destination and spending ceiling. There is no workspace address default, separate quote workflow, or configurable print format in this initial catalog. Charge only the actual all-inclusive total within the ceiling.
++- Editors may retrieve workspace orders; Viewers may not, since order records contain purchase and delivery information. This extends the brief's explicit restriction on placing orders.
++- The print partner and payment path must support durable duplicate protection or reconciliation. Their concrete capabilities are not established by the brief; implementation must verify them before enabling ordering.
++
++Three new tools cover discovery, purchase, and recovery. Search has a distinct read-only contract from listing. Ordering has an explicit financial effect and required retry identity. Status lookup is independently read-only and remains usable without reconstructing a purchase payload. No generic action-dispatch tool, bulk-order tool, quote tool, cancellation tool, or new payment-management surface is needed for the two requests.

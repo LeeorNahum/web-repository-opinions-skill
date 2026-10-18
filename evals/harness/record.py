@@ -135,8 +135,11 @@ def main():
     cols = sorted(set(cols), key=cols.index)
     note = (["Sessions in the round's jobs file that are not recorded:", ''] + [f"- `{u['session']}`: {u['reason']}" for u in unfinished] + ['']) if unfinished else []
     note += [f'Claude critics graded {len(same_family)} Claude-built sessions because Codex had reached its usage limit. They need a Codex verdict before any comparison.', ''] if same_family else []
-    cases = {s['inputs'].get('case') or s['inputs'].get('evals') for s in sessions}
-    if len(cases) > 1 or None in cases:
+    # Each case has its own hash, so versions are compared within one eval, never across evals.
+    versions = {}
+    for s in sessions:
+        versions.setdefault(s['eval'], set()).add(s['inputs'].get('case') or s['inputs'].get('evals'))
+    if any(len(v) > 1 or None in v for v in versions.values()):
         note += ['Sessions in this round ran under more than one version of `evals.json`, and some before the case hash was recorded. Treat the round as a reference record: a before-and-after comparison reruns the old arm in the same round as the new one.', '']
     lines = [f'# Round {rnd}', '', f'Skill commit `{commit}`. One session per eval and column. P is a pass, F a fail, and a dash a missing verdict.', '', *note,
              '| Assertion | Role | ' + ' | '.join(f'{a} {m}' for a, m in cols) + ' |', '| --- | --- |' + ' :---: |' * len(cols)]

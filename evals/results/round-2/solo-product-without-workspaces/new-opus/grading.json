@@ -1,0 +1,92 @@
+{
+  "session": "2-solo-product-without-workspaces-new-opus",
+  "eval": "solo-product-without-workspaces",
+  "arm": "new",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e",
+    "skill": "94950d76aa042c5d",
+    "fixture": "f7b569d3bda7a250",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "62e08624dc55ceb0",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 190.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "admin",
+      "app-surface",
+      "auth",
+      "billing",
+      "bootstrap",
+      "data-deletion",
+      "data-model",
+      "domains",
+      "environment",
+      "ids",
+      "legal-pages",
+      "live-data",
+      "loading-states",
+      "monorepo-layout",
+      "naming",
+      "origins",
+      "product-ux",
+      "provider-setup",
+      "query-state",
+      "rendering",
+      "routing",
+      "search-indexing",
+      "source-of-truth",
+      "spa-feel",
+      "stack",
+      "test-identities",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 55865,
+    "cache_read_input_tokens": 233508,
+    "output_tokens": 15477,
+    "total_cost_usd": 0.8032176,
+    "num_turns": 9
+  },
+  "changed": [
+    "docs/architecture.md"
+  ],
+  "assertions": {
+    "solo-product-without-workspaces-01": {
+      "v": "pass",
+      "graded_text": "Journal data is owned by the user account directly, with no workspace, organization, team, or membership layer, and the auth provider's organization feature is not used.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/architecture.md:144 \"**No workspaces, no organizations, no membership table.** Nothing needs them, and the brief rules out every future use for them.\"; line 58 \"**Organizations off entirely.** ... There is no organization switcher, organization role, or organization claim anywhere.\"; line 111 \"Every row that holds user data has an `ownerId`, and every index starts with it.\" with `ownerId -> users` in entries and billingAccounts."
+        }
+      ]
+    },
+    "solo-product-without-workspaces-02": {
+      "v": "pass",
+      "graded_text": "Signed-in routes are not nested under a workspace, organization, or account-scope segment.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/architecture.md:179 \"With no tenancy unit there's no scope prefix: every private route sits at the top level, and ownership comes from the session, never from the URL.\"; route table lines 183-193 are all top-level (`/today`, `/entries`, `/entries/new`, `/entries/[id]`, `/search`, `/settings/*`, `/auth`). Checked B/project/docs/architecture.md, B/diff.txt (only new file) and B/answer.txt; closest line is `/settings/account`, a settings child, not a scope segment."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

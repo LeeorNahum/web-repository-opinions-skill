@@ -1,0 +1,76 @@
+
+--- new file: docs/downgrade-policy.md
+# Pro cancellation and downgrade policy
+
+`docs/brief.md` is the source of truth for owner decisions. This document specifies the remaining policy choices made while the owner is away; those choices are assumptions listed below. It is a backend implementation contract, not a claim that enforcement already exists: this repository currently has no application backend.
+
+## When cancellation takes effect
+
+Cancelling keeps Pro through the paid-through instant reported by the billing provider. At that instant, the account becomes Free: 25 books, 40 MB per uploaded photo, and 1.5 GB total storage, instead of Pro's 60 books, 120 MB per photo, and 4 GB. The interval is exclusive at its end: a request at exactly the paid-through timestamp uses Free limits. Use server time and UTC timestamps.
+
+Cancellation alone deletes nothing, compresses nothing, and does not start a retention countdown. Books, pages, photos, placements, and history remain stored, including content Free cannot currently access. Existing Trash deadlines still apply: a book is permanently removed 14 days after it was trashed. A downgrade neither restarts nor pauses that clock. There is no extra grace period after the paid period ends.
+
+## What remains available
+
+Coverage is derived from the current plan and current resources on each operation. There are no permanent locks or grandfathered Pro entitlements.
+
+**Books:** Sort non-Trash, non-deleting books by immutable creation timestamp ascending, then immutable book ID ascending. Free covers the first 25; Pro covers the first 60. Renaming, editing, or opening a book cannot change this order. Users cannot nominate a different set. Trashing a covered book immediately makes the next oldest eligible book covered. Restoring preserves the original creation timestamp.
+
+**Photos:** The per-photo limit applies to existing photos as well as new uploads. An original larger than 40 MB remains stored on Free but is not covered. A smaller thumbnail or render does not make that original covered. A photo of exactly 40 MB is covered. Book and photo coverage are independent: an oversized photo does not lock every other page or photo in an otherwise covered book.
+
+**Storage:** Exceeding total storage blocks growth, not all use of covered content. It does not arbitrarily select photos to hide or make the entire account inaccessible. All retained originals count, including photos in uncovered books and Trash. Count each retained original once per account even if placed on multiple pages or books. Thumbnails, generated previews, temporary uploads, and print/export artifacts are service overhead, excluded from the customer storage allowance.
+
+| Action after Pro expires | Rule |
+| --- | --- |
+| Sign in; view billing, usage, book list, and Trash list | Allowed. Lists include titles, dates, sizes, and coverage reasons for all owned books; uncovered content gets a generic placeholder, not a content preview. |
+| Open, read, edit, or rename an existing book | Allowed only for a covered active book. Oversized photos appear as placeholders; the editor must preserve their references and layout unless explicitly removed. Text, layout, and covered-photo edits remain available even while total storage is over limit. |
+| View, download, place, crop, or otherwise use a stored photo | Allowed only for a covered photo through a covered active book. No original, thumbnail, cached preview, or alternate API route may bypass either gate. Removing an oversized photo's placement from a covered book is allowed. |
+| Open, edit, duplicate, export, or order a new print of an uncovered book | Blocked. Its data and history remain intact. Listing metadata and deleting it remain available. |
+| Export a covered book or order a new print | Allowed only if every included photo is covered and available. Fail the whole operation with a reason identifying affected photos; never silently omit them or print placeholders. Total storage overage alone does not block it. |
+| Create, import, or duplicate a book | Allowed only if the resulting active count is at most the current book limit. Copies receive new IDs and creation times. Any new retained bytes must also pass photo and storage limits. Metadata-only copies add no storage bytes. |
+| Upload or import a new photo | Each original must fit the current per-photo limit, and resulting stored bytes, including concurrent reservations, must fit total storage. Being over either unrelated book count or total storage must not prevent cleanup operations. |
+| Replace an existing photo | A new original must fit the current per-photo limit. Allow an atomic replacement that strictly reduces stored bytes even if the account remains over total storage; otherwise require the resulting total to fit. If another placement, book, or Trash entry still needs the old original, retain and count it: this is an addition, not a storage reduction. |
+| Trash a book, including an uncovered book | Allowed. Frees an active-book slot, but frees no storage. It starts the normal 14-day Trash period. |
+| Restore a book | Allowed before its Trash deadline only if the resulting active count fits the current book limit. Restore adds no bytes because Trash already counts. Oversized photos remain unavailable after restoration. No partial restore. |
+| Browse a trashed book's contents or use its photos | Blocked until restoration. Trash metadata, restore, and permanent deletion remain available. |
+| Permanently delete a book, empty Trash, or remove an unused photo | Allowed regardless of plan coverage or overage, with explicit destructive-action confirmation. Preserve originals still referenced elsewhere. Storage is freed only when the last retained reference is removed and physical deletion is confirmed. |
+| Use an export already downloaded | Unaffected; the service cannot revoke a local file. A hosted export download must pass current book and photo coverage again. |
+| Receive a print already paid for and accepted | Fulfill its immutable order snapshot despite later cancellation or source-book deletion. The original accepted order is not a route to new copies; another purchase is a new gated order. |
+
+An upgrade restores access immediately when provider-confirmed entitlements cover the resource; no unlock job is needed. Deletion can also restore coverage or capacity. Re-subscribing cannot recover something already permanently deleted.
+
+## Backend enforcement contract
+
+1. **Resolve identity and entitlements on the server.** Authenticate every UI, public API, and MCP request and verify ownership and action permissions. Compose those checks with one shared domain policy gate for the named operation. Clients cannot supply trusted plans, byte counts, coverage flags, or ownership. Internal jobs call the same policy logic with a persisted owner identity.
+2. **Keep the billing provider authoritative.** Use verified provider state to derive paid-through and effective plan; keep limits as code constants. A local billing snapshot is a cache, never an independent subscription authority. Verify webhook signatures, deduplicate events, and reconcile with the provider so delayed or out-of-order events cannot resurrect an expired period. Never treat `cancel_at_period_end` as an immediate downgrade or a stale `active` value as indefinite Pro. Refresh at the known boundary and on reactivation. If current entitlement cannot be established, return a retryable billing-unavailable outcome for entitlement-dependent work; permit metadata listing and cleanup without granting speculative Pro access.
+3. **Derive coverage at the gate.** Query the ordered active books and authoritative original sizes. Do not persist `locked`, `grandfathered`, or `isFreeBook` flags. Recompute after trashing, restoring, deletion, or a provider-confirmed plan change. Database metadata owns references, usage, and jobs; private object storage owns bytes.
+4. **Serialize capacity decisions.** In a transaction or equivalent serialized account operation, validate projected book count and byte usage, including outstanding reservations, then reserve capacity before issuing an upload permission or starting expensive work. Reservations expire and release on failure; they are not committed usage. Verify actual object sizes and type server-side, recheck the current plan and capacity at finalization, and commit usage only with durable success. Concurrent requests cannot each spend the same headroom. An upload begun on Pro but finalized on Free must satisfy Free. Reject and clean staged bytes when it cannot; preserve the existing photo on failed replacement.
+5. **Recheck across time and process boundaries.** Jobs carry owner ID, resource IDs, and versions. Recheck ownership, coverage, and current plan when executing, before costly work, and before committing or releasing output. Queued exports lose permission at expiry even if queued under Pro. Stop or discard unauthorized output without publishing it. Only already accepted, paid print orders use their immutable fulfillment snapshot instead of current plan gates. Use idempotency keys so retries cannot duplicate charges, orders, or capacity consumption.
+6. **Gate byte delivery too.** Keep originals, thumbnails, previews, and hosted exports private. All download/render paths authorize current book and photo coverage. Do not expose permanent public object URLs. For known expiry, any issued signed URL must expire no later than paid-through; use an authenticated delivery gateway where immediate revocation is needed for changing book coverage. Recheck before issuing URLs. Already downloaded or browser-cached bytes cannot be recalled, but the server must grant no new access after coverage ends.
+7. **Make cleanup recoverable.** Trash and hard deletion use idempotent, bounded cleanup jobs with durable progress. Maintain reference counts and pending-deletion byte accounting without subtracting the same object twice. Keep bytes charged until deletion succeeds; show pending cleanup separately so capacity claims are honest. Failed cleanup retries internally and never restores content access. The 14-day deadline ends restorability even if physical cleanup is delayed. Do not delete content merely because it exceeds Free limits.
+8. **Return consistent outcomes.** Return typed reasons such as `BOOK_NOT_COVERED`, `PHOTO_TOO_LARGE_FOR_PLAN`, `BOOK_LIMIT`, `STORAGE_LIMIT`, and `BILLING_UNAVAILABLE` across browser, API, MCP, and jobs. Include applicable limits and usage in authorized responses. For multiple failures, report all actionable reasons. Example: “Free covers your 25 oldest books. Trash an earlier book or return to Pro to open this book.” For storage, explain that Trash still counts and permanent deletion must finish. Show the block at the attempted action; listing an account must not fail because it is over a limit.
+
+## Check against the brief's typical cancellation
+
+Assume the 40 books are active and the additional Trash content is already included in the stated 2.6 GB. Before expiry all 40 books and all fifteen 60–110 MB photos fit Pro, and 2.6 GB is below 4 GB.
+
+At expiry:
+
+- The oldest 25 active books are covered; the other 15 retain their data but cannot be opened, edited, exported, or newly printed. All 40 remain listed and can be trashed or permanently deleted.
+- All fifteen 60–110 MB originals exceed Free's 40 MB limit. They remain stored and counted, but cannot be viewed, downloaded, placed, or used in a new export or print. In covered books their placements appear as placeholders. The brief does not say which books contain them, so it cannot establish how many of the 25 books can be exported or printed unchanged.
+- Storage is 2.6 GB against 1.5 GB: 1.1 GB over. Covered books can still be edited without adding bytes. New uploads are blocked; qualifying smaller atomic replacements and cleanup remain possible.
+- Emptying the existing 300 MB of Trash, once deletion completes and assuming those bytes have no other references, leaves 2.3 GB: still 800 MB over. Merely moving more books to Trash frees slots but no bytes. Additional permanent cleanup of at least 800 MB reaches 1.5 GB; a new upload needs further headroom equal to its size.
+- Trashing one of the oldest 25 promotes the next oldest book, leaving 39 active. Creating or restoring a book is still blocked. Reducing to 25 active permits neither one more creation nor restore; reducing to 24 permits one. Storage and photo gates still apply independently.
+- Returning to Pro covers all 40 books and all fifteen originals again, provided they were retained; 2.6 GB fits Pro's storage allowance.
+
+## Assumptions made while the owner is away
+
+These are concrete policy choices for review, not additional decisions attributed to the brief:
+
+- Limits apply per owning account across all clients. MB and GB are decimal bytes: 1 MB = 1,000,000 bytes and 1 GB = 1,000,000,000 bytes. Comparisons use exact bytes, not rounded UI values.
+- Book slots count active books, not Trash. The oldest-first ordering is fixed and users cannot manually pick covered books. Restore requires an available slot.
+- Existing oversized photos and excess books lose content access, including downloads; they receive no read-only or export exemption. Metadata and cleanup remain available. Storage overage alone blocks growth and permits the strictly reducing replacement exception.
+- Originals are the customer storage measure; shared references count once, Trash counts, and capacity is released after confirmed deletion. There is no cancellation-specific automatic purge or retention deadline for active content.
+- Exports are treated as an existing-content operation if supported; this document does not add an export feature. Previously accepted paid prints fulfill their saved snapshot. Payment failure, refunds, account closure, and other subscription transitions need separate policies.
+
+Implementation acceptance checks must cover the exact expiry instant, delayed and duplicate billing events, oldest-order ties and promotion, all client entry points and media routes, oversized-photo derivatives, Trash restoration and cleanup retries, concurrent uploads/creates, replacement with shared originals, Pro-to-Free finalization, queued exports crossing expiry, and accepted-print fulfillment. No runtime checks were possible here because no backend exists yet.

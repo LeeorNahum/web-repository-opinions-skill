@@ -1,0 +1,686 @@
+diff --git a/packages/backend/package.json b/packages/backend/package.json
+index 41480a9..c433dba 100644
+--- a/packages/backend/package.json
++++ b/packages/backend/package.json
+@@ -1,5 +1,9 @@
+ {
+   "name": "@lanternfold/backend",
+   "private": true,
+-  "type": "module"
++  "type": "module",
++  "scripts": {
++    "typecheck": "tsc --noEmit --strict --target ES2022 --module NodeNext --moduleResolution NodeNext src/ctx.ts src/errors.ts src/uploads.ts",
++    "test": "tsc --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir .test-build src/ctx.ts src/errors.ts src/uploads.ts && node --test test/uploads.test.mjs"
++  }
+ }
+diff --git a/packages/backend/src/ctx.ts b/packages/backend/src/ctx.ts
+index b02cd8b..10a68ba 100644
+--- a/packages/backend/src/ctx.ts
++++ b/packages/backend/src/ctx.ts
+@@ -1,6 +1,50 @@
++export type Account = { id: string; used: number; reserved: number; cap: number };
++
++export type Upload = {
++  id: string;
++  accountId: string;
++  requestId: string;
++  name: string;
++  size: number;
++  reserved: number;
++  expiresAt: number;
++  status: "uploading" | "ready" | "canceled" | "expired" | "deleted";
++  objectVersion?: string;
++  summaryStatus: "pending" | "running" | "complete" | "failed" | "canceled";
++  summaryAttempt: number;
++  summaryText?: string;
++  summaryBytes: number;
++};
++
++// All methods operate on the SAME serializable database transaction. Adapters
++// must retry serialization conflicts, enforce UNIQUE(accountId, requestId), and
++// reject operations for missing/closed accounts on every transaction.
++export type Transaction = {
++  accounts: {
++    get(id: string): Promise<Account>;
++    patch(id: string, patch: Partial<Account>): Promise<void>;
++  };
++  uploads: {
++    get(id: string): Promise<Upload | null>;
++    findRequest(accountId: string, requestId: string): Promise<Upload | null>;
++    insert(upload: Omit<Upload, "id">): Promise<Upload>;
++    patch(id: string, patch: Partial<Upload>): Promise<void>;
++  };
++  summaryRetries: {
++    find(uploadId: string, requestId: string): Promise<number | null>;
++    insert(uploadId: string, requestId: string, attempt: number): Promise<void>;
++  };
++  // Durable outbox insertion, NOT a call to an external queue. The key is unique.
++  enqueue(key: string, name: "summarize" | "deleteObject", payload: unknown): Promise<void>;
++};
++
+ export type Ctx = {
+   accountId: string;
+-  db: any;
+-  storage: { signPut(uploadId: string): Promise<string> };
+-  jobs: { enqueue(name: string, payload: unknown): Promise<void> };
++  db: { transaction<T>(body: (tx: Transaction) => Promise<T>): Promise<T> };
++  storage: {
++    // Exact size, fixed absolute expiry, create-only PUT. Re-signing never extends it.
++    signPut(uploadId: string, options: { size: number; expiresAt: number }): Promise<string>;
++    // Returns an immutable version; summary/download workers read that exact version.
++    inspect(uploadId: string): Promise<{ size: number; version: string } | null>;
++  };
+ };
+diff --git a/packages/backend/src/errors.ts b/packages/backend/src/errors.ts
+index 5849133..3a59351 100644
+--- a/packages/backend/src/errors.ts
++++ b/packages/backend/src/errors.ts
+@@ -1 +1,9 @@
+ export class QuotaExceeded extends Error {}
++
++export class UploadError extends Error {
++  constructor(public readonly code:
++    | "invalid_input" | "not_found" | "request_conflict" | "upload_closed"
++    | "object_missing" | "size_mismatch" | "summary_too_large" | "summary_state") {
++    super(code);
++  }
++}
+diff --git a/packages/backend/src/uploads.ts b/packages/backend/src/uploads.ts
+index 9460cf6..17bdca5 100644
+--- a/packages/backend/src/uploads.ts
++++ b/packages/backend/src/uploads.ts
+@@ -1,17 +1,167 @@
+-import type { Ctx } from "./ctx";
+-import { QuotaExceeded } from "./errors";
++import type { Ctx, Transaction, Upload } from "./ctx.js";
++import { QuotaExceeded, UploadError } from "./errors.js";
+ 
+-export async function startUpload(ctx: Ctx, input: { name: string; size: number }) {
+-  const account = await ctx.db.accounts.get(ctx.accountId);
+-  if (account.used + input.size > account.cap) throw new QuotaExceeded();
+-  const upload = await ctx.db.uploads.insert({ accountId: ctx.accountId, name: input.name, size: input.size });
+-  return { uploadId: upload.id, url: await ctx.storage.signPut(upload.id) };
++export const SUMMARY_MAX_BYTES = 64 * 1024;
++export const UPLOAD_TTL_MS = 60 * 60 * 1000;
++
++function validateRequestId(requestId: string) {
++  if (typeof requestId !== "string" || requestId.length < 1 || requestId.length > 128) {
++    throw new UploadError("invalid_input");
++  }
++}
++
++async function owned(tx: Transaction, ctx: Ctx, id: string) {
++  const upload = await tx.uploads.get(id);
++  if (!upload || upload.accountId !== ctx.accountId) throw new UploadError("not_found");
++  return upload;
++}
++
++async function admit(tx: Transaction, accountId: string, bytes: number) {
++  const account = await tx.accounts.get(accountId);
++  // Subtraction avoids overflowing safe integer addition on untrusted sizes.
++  if (bytes > account.cap - account.used - account.reserved) throw new QuotaExceeded();
++  await tx.accounts.patch(accountId, { reserved: account.reserved + bytes });
++}
++
++async function queueSummary(tx: Transaction, upload: Upload) {
++  await tx.enqueue(`summary:${upload.id}:${upload.summaryAttempt}`, "summarize", {
++    accountId: upload.accountId, uploadId: upload.id, attempt: upload.summaryAttempt,
++  });
++}
++
++export async function startUpload(ctx: Ctx, input: { name: string; size: number; requestId: string }) {
++  validateRequestId(input.requestId);
++  if (typeof input.name !== "string" || !input.name.trim() || input.name.length > 1024 ||
++      !Number.isSafeInteger(input.size) || input.size < 0 ||
++      input.size > Number.MAX_SAFE_INTEGER - SUMMARY_MAX_BYTES) {
++    throw new UploadError("invalid_input");
++  }
++  const upload = await ctx.db.transaction(async tx => {
++    const existing = await tx.uploads.findRequest(ctx.accountId, input.requestId);
++    if (existing) {
++      if (existing.name !== input.name || existing.size !== input.size) {
++        throw new UploadError("request_conflict");
++      }
++      return existing;
++    }
++    const reserved = input.size + SUMMARY_MAX_BYTES;
++    await admit(tx, ctx.accountId, reserved);
++    return tx.uploads.insert({
++      accountId: ctx.accountId, name: input.name, size: input.size, requestId: input.requestId, reserved,
++      expiresAt: Date.now() + UPLOAD_TTL_MS, status: "uploading",
++      summaryStatus: "pending", summaryAttempt: 1, summaryBytes: 0,
++    });
++  });
++  if (upload.status === "ready") return { uploadId: upload.id, status: upload.status };
++  if (upload.status !== "uploading" || upload.expiresAt <= Date.now()) {
++    throw new UploadError("upload_closed");
++  }
++  // Outside the transaction: a signing error leaves a recoverable reservation.
++  const url = await ctx.storage.signPut(upload.id, { size: upload.size, expiresAt: upload.expiresAt });
++  return { uploadId: upload.id, status: upload.status, url, expiresAt: upload.expiresAt };
+ }
+ 
+ export async function finalizeUpload(ctx: Ctx, input: { uploadId: string }) {
+-  const upload = await ctx.db.uploads.get(input.uploadId);
+-  const account = await ctx.db.accounts.get(upload.accountId);
+-  await ctx.db.accounts.patch(account.id, { used: account.used + upload.size });
+-  await ctx.db.uploads.patch(upload.id, { status: "ready" });
+-  await ctx.jobs.enqueue("summarize", { uploadId: upload.id });
++  // Authorize before touching storage; recheck after inspect to fence closure.
++  const upload = await ctx.db.transaction(tx => owned(tx, ctx, input.uploadId));
++  if (upload.status === "ready") return { uploadId: upload.id, status: "ready" as const };
++  if (upload.status !== "uploading" || upload.expiresAt <= Date.now()) {
++    throw new UploadError("upload_closed");
++  }
++  const object = await ctx.storage.inspect(upload.id);
++  if (!object) throw new UploadError("object_missing");
++  if (object.size !== upload.size) throw new UploadError("size_mismatch");
++  return ctx.db.transaction(async tx => {
++    const current = await owned(tx, ctx, input.uploadId);
++    if (current.status === "ready") return { uploadId: current.id, status: "ready" as const };
++    if (current.status !== "uploading" || current.expiresAt <= Date.now()) {
++      throw new UploadError("upload_closed");
++    }
++    const account = await tx.accounts.get(ctx.accountId);
++    await tx.accounts.patch(account.id, {
++      used: account.used + current.size, reserved: account.reserved - current.size,
++    });
++    await tx.uploads.patch(current.id, {
++      status: "ready", objectVersion: object.version, reserved: SUMMARY_MAX_BYTES,
++    });
++    await queueSummary(tx, current);
++    return { uploadId: current.id, status: "ready" as const };
++  });
++}
++
++// Internal worker context uses the accountId from the outbox. Only a successful
++// claimant may call the paid provider, once, without automatic provider retries.
++export async function claimSummary(ctx: Ctx, input: { uploadId: string; attempt: number }) {
++  return ctx.db.transaction(async tx => {
++    const upload = await owned(tx, ctx, input.uploadId);
++    if (upload.status !== "ready" || upload.summaryAttempt !== input.attempt ||
++        upload.summaryStatus !== "pending") return null;
++    await tx.uploads.patch(upload.id, { summaryStatus: "running" });
++    return { objectVersion: upload.objectVersion!, maxBytes: SUMMARY_MAX_BYTES };
++  });
++}
++
++// text=null records failure/ambiguous outcome. Timeouts use this same transition
++// after fencing the worker; they must never reissue the paid call automatically.
++export async function finishSummary(ctx: Ctx, input: { uploadId: string; attempt: number; text: string | null }) {
++  const bytes = input.text === null ? 0 : new TextEncoder().encode(input.text).byteLength;
++  if (bytes > SUMMARY_MAX_BYTES) throw new UploadError("summary_too_large");
++  return ctx.db.transaction(async tx => {
++    const upload = await owned(tx, ctx, input.uploadId);
++    if (upload.status !== "ready" || upload.summaryAttempt !== input.attempt ||
++        upload.summaryStatus !== "running") return;
++    const account = await tx.accounts.get(ctx.accountId);
++    await tx.accounts.patch(account.id, {
++      used: account.used + bytes, reserved: account.reserved - upload.reserved,
++    });
++    await tx.uploads.patch(upload.id, {
++      reserved: 0, summaryStatus: input.text === null ? "failed" : "complete",
++      summaryText: input.text ?? undefined, summaryBytes: bytes,
++    });
++  });
++}
++
++export async function retrySummary(ctx: Ctx, input: { uploadId: string; requestId: string }) {
++  validateRequestId(input.requestId);
++  return ctx.db.transaction(async tx => {
++    const upload = await owned(tx, ctx, input.uploadId);
++    const previousAttempt = await tx.summaryRetries.find(upload.id, input.requestId);
++    if (previousAttempt !== null) return { attempt: previousAttempt };
++    if (upload.status !== "ready" || upload.summaryStatus !== "failed") {
++      throw new UploadError("summary_state");
++    }
++    await admit(tx, ctx.accountId, SUMMARY_MAX_BYTES);
++    const next = { ...upload, reserved: SUMMARY_MAX_BYTES, summaryStatus: "pending" as const,
++      summaryAttempt: upload.summaryAttempt + 1 };
++    await tx.summaryRetries.insert(upload.id, input.requestId, next.summaryAttempt);
++    await tx.uploads.patch(upload.id, {
++      reserved: next.reserved, summaryStatus: next.summaryStatus, summaryAttempt: next.summaryAttempt,
++    });
++    await queueSummary(tx, next);
++    return { attempt: next.summaryAttempt };
++  });
++}
++
++// Also used by a bounded expiry sweep (with the owning account context).
++export async function closeUpload(ctx: Ctx, input: { uploadId: string; reason: "cancel" | "expire" | "delete" }) {
++  return ctx.db.transaction(async tx => {
++    const upload = await owned(tx, ctx, input.uploadId);
++    if (["canceled", "expired", "deleted"].includes(upload.status)) return;
++    if (input.reason === "expire" && (upload.status !== "uploading" || upload.expiresAt > Date.now())) return;
++    if (input.reason === "cancel" && upload.status !== "uploading") throw new UploadError("upload_closed");
++    const account = await tx.accounts.get(ctx.accountId);
++    await tx.accounts.patch(account.id, {
++      used: account.used - (upload.status === "ready" ? upload.size + upload.summaryBytes : 0),
++      reserved: account.reserved - upload.reserved,
++    });
++    await tx.uploads.patch(upload.id, {
++      status: input.reason === "delete" ? "deleted" : input.reason === "expire" ? "expired" : "canceled",
++      reserved: 0, summaryStatus: "canceled", summaryText: undefined, summaryBytes: 0,
++    });
++    // Keep this row/key until cleanup finishes AFTER all signed writes can land.
++    await tx.enqueue(`delete:${upload.id}`, "deleteObject", {
++      accountId: upload.accountId, uploadId: upload.id,
++      notBefore: Math.max(Date.now(), upload.expiresAt) + UPLOAD_TTL_MS,
++    });
++  });
+ }
+
+--- new file: docs/quota-accounting.md
+# Storage quota accounting
+
+`docs/brief.md` owns the product requirements. This document records the accounting design and assumptions made for the review requested there. The code implements the domain transitions; this repository currently contains no concrete database, storage, API, queue, or model-provider adapters.
+
+## Decisions and assumptions
+
+- The free cap is **10 GB = 10,000,000,000 bytes**, per account, shared across all clients and documents. `account.cap` remains the configured entitlement; this change does not modify existing plan values.
+- Both original file bytes and the UTF-8 bytes of saved summary text count. Database overhead, filenames, job metadata, temporary provider responses, and physical replicas do not count. There is no content deduplication credit: two documents count twice.
+- Every new document reserves its declared file size **plus 64 KiB (65,536 bytes)** for its summary. This conservative summary bound is a new assumption, not an owner decision from the brief. The provider worker must bound its output and reject oversized text rather than silently truncating it. A file that fits alone can therefore be rejected if its summary reservation would not fit.
+- An upload reservation and signed URL expire **one hour after the original start**. A retry never extends that deadline. Zero-byte files are allowed and still reserve summary space. Non-integer, negative, non-finite, unsafe, or overflow-prone sizes are rejected.
+- Failed summaries leave the original document available. Retry requires an explicit user action and fresh quota admission. No automatic retries of paid provider calls, including SDK or gateway retries. Successful summaries are not regenerated by this API.
+- These choices need owner review, but do not require blocking local implementation while the owner is away. No live plan or billing changes were made.
+
+## Invariant and meaning of usage
+
+All byte counters are nonnegative safe integers. Normally:
+
+```text
+account.used     = sum(original size of ready documents + their saved summaryBytes)
+account.reserved = sum(upload.reserved for all documents)
+account.used + account.reserved <= account.cap
+```
+
+An uploading document reserves `size + SUMMARY_MAX_BYTES`. A ready document with a pending/running summary reserves only `SUMMARY_MAX_BYTES`. Terminal failed/complete summaries and closed uploads reserve zero. `used` records durable success; reservations reduce availability without being reported as stored bytes. Display stored usage and pending reservations separately at the quota stop/settings surface.
+
+Cap reductions below existing usage preserve documents and admitted reservations; they block new admissions until enough space is freed. Finalizing already admitted work transfers reservations into usage without a second admission check. This cannot increase the total against the cap.
+
+## Atomicity and persistence
+
+`Ctx.db.transaction` is a **serializable, durable transaction**, with conflict retries. All account reads/writes, upload states, retry records, and outbox insertions in its callback commit together or roll back together. An account row lock or equivalent serializable conflict detection must serialize admissions; a process-local mutex or separate read/patch operations is insufficient across servers. Callbacks may run more than once, so no network effects are permitted inside them.
+
+`ctx.ts` specifies the required adapter contract, replacing the old untyped `db` and external enqueue. Required persistent constraints:
+
+- Unique `(accountId, requestId)` on uploads, indexed lookup by those fields.
+- Unique `(uploadId, requestId)` on summary retry records, with the attempt returned forever for that key.
+- Unique outbox key; durable insertion in the same transaction as the triggering state change.
+- Account counter bounds and indexed `(status, expiresAt)` for bounded expiry scans.
+- Opaque collision-resistant upload IDs, immutable size/account/request/name fields, and persistent closed rows or equivalent idempotency tombstones. Never reuse keys for another upload.
+
+The account counters are the transactional admission ledger. Document rows explain each reservation/charge for reconciliation. Enqueue means **insert into a database outbox**, not send to an external queue from a transaction. The dispatcher can retry cheap delivery; summary consumers still claim the attempt before any paid work.
+
+## Upload protocol
+
+1. Every UI, CLI, and MCP start supplies a fresh opaque `requestId` per intentional upload. It retains that ID across timeouts and retries. The server validates input and atomically finds the existing request or reserves bytes and inserts an uploading row. A reused key with different name/size returns `request_conflict`. Eight concurrent starts contend on the same account ledger; only those that fit commit.
+2. After commit, sign an exact-length, create-only PUT for that upload key with its original absolute expiry. Signing failures leave the reservation recoverable by retrying the same start. A start retry after successful finalization returns `ready` and no PUT URL. Closed/expired requests require a new key for a new upload.
+3. The client writes directly to object storage. The adapter must enforce exact length before acceptance; `Content-Length` as an unchecked header is insufficient. A storage version returned by inspection must be immutable. Summaries and downloads must read that pinned version. Signed URLs cannot overwrite finalized content. If the provider cannot meet this contract directly, use an isolated staging key and seal it before finalization.
+4. Finalize first authorizes ownership, then inspects server-side storage metadata. Missing objects and size mismatches never charge usage or queue summaries. The reservation remains available for correction/retry until expiry or cancellation. Storage network failures have the same effect.
+5. A second transaction rechecks ownership, state, and expiry; moves `size` from reserved to used; pins the object version; marks the document ready; and inserts `summary:<uploadId>:<attempt>` into the outbox. No provider work occurs here. Failure rolls everything back. Repeated or concurrent finalize calls return ready without changing counters or scheduling again.
+
+Cross-account IDs behave like missing IDs, and storage is never inspected before authorization. `ctx.accountId` comes from verified authentication, never request JSON. The transaction adapter must verify the account is live on every transaction. Signing must also refuse credentials for a closed account. Worker-only summary claim/completion and expiry operations must not be exposed as public API capabilities.
+
+## Summary lifecycle
+
+The first attempt starts at 1. The outbox carries the owner, upload ID, and attempt. The worker re-establishes the owner context and calls `claimSummary`. Only one `pending -> running` transition succeeds. Duplicated deliveries, stale attempts, and deleted documents cannot start a new call.
+
+After claiming, call the provider once, reading the pinned original version. Bound input tokens, output tokens, request duration, and accepted output bytes. `finishSummary` atomically persists the text and its UTF-8 size, adds that size to used, releases the full summary reservation, and marks complete. For example, a 1,000-byte original and a 120-byte summary end at 1,120 used and zero reserved, after initially reserving 66,536 bytes. Multibyte text counts encoded bytes, not JavaScript string length.
+
+On provider failure, timeout, or invalid/oversized output, call `finishSummary` with `text: null`: release the summary reservation, mark failed, and retain the original charge. An oversized success call is rejected without mutation; the worker must follow it with the failure transition. Persist sanitized failure diagnostics in the worker's operational job record. Repeating completion/failure is harmless. A stale result cannot overwrite a newer attempt or resurrect a deleted document.
+
+A worker crash after claiming has an ambiguous paid outcome. Do not automatically call the provider again. A bounded watchdog must fence/terminate that execution, then use the failure transition. A provider result already obtained can be saved again using the same attempt without another call. The tradeoff is that a crash before the call can require manual retry even though no provider cost was incurred; exactly-once paid calls across a provider boundary cannot be promised without provider idempotency support.
+
+`retrySummary` accepts its own durable `requestId`, only after failure. It reserves 64 KiB afresh and atomically increments the attempt, stores the retry key, and writes a new outbox entry. If quota is now full, it returns `QuotaExceeded` before a paid call. Old retry keys retain their original attempt even after later failures/retries; transport retries must not become new paid attempts.
+
+Storage bytes are **not an AI spending budget**. Tiny-file churn, deletion/reupload, and explicit retries can incur unlimited cost over time despite a storage cap. Before public launch, add independent per-account and global provider spend admission/reservations, finite input/output limits, edge request rate limits, and bounded pending job counts. Reserve estimated cost before dispatch and settle authoritative provider cost separately; deleting a document or releasing storage must not refund already incurred provider spend. The brief gives no AI allowance, pricing, model, or cost adapter, so this change does not invent a customer AI entitlement or claim that storage quota solves paid-model abuse.
+
+## Cancellation, expiry, and deletion
+
+`closeUpload` is an idempotent transaction. Cancel/expire of an uploading row releases its full reservation. Deletion of a ready document releases its stored original plus summary bytes and any outstanding summary reservation. Closure clears saved summary text, fences summary attempts through document state, and inserts a durable object cleanup task. Repeated close calls do not refund twice. Finalize versus expiry, and completion versus deletion, serialize so only one valid transition wins.
+
+An expiry sweep selects a bounded indexed batch and invokes `closeUpload(reason: expire)` with each owner context. The function rechecks the original deadline inside the transaction; merely passing time never silently changes a counter. Pending summary reservations survive upload expiry and are managed by the job/watchdog lifecycle instead.
+
+Logical deletion releases quota immediately and revokes reads. Physical cleanup waits until after the URL's expiry plus one additional hour, the assumed maximum in-flight PUT lifetime. Enforce that lifetime in the storage adapter. The cleanup outbox includes `notBefore`; the dispatcher must honor it, remove all object versions/multipart fragments, and retry cheap deletions. If the storage cannot bound in-flight writes, a single delayed delete is insufficient: use a recurring orphan sweep/lifecycle for staging until no late write can land. Keep the key ledger/tombstone discoverable until cleanup is confirmed. Physical garbage is operator overhead, not customer stored usage.
+
+## Integration and rollout still required
+
+There are no provider adapters or schemas in this checkout. Implement the typed transaction and storage contracts, durable outbox dispatcher, worker/watchdog, expiry sweeper, and cleanup scheduling before deploying this code. Migrate all clients to retain start/retry request IDs. Map `QuotaExceeded` to clear storage-limit copy with a free-space remedy; map `UploadError.code` to product-owned actionable errors without rendering raw provider exceptions.
+
+For existing data, pause admissions/workers, reconcile existing ready originals from authoritative metadata, measure saved summaries, set `reserved = 0` initially, and initialize states/attempts. Reconcile in-flight uploads explicitly: either reserve them under this protocol or expire them and revoke old signing capability. Deduplicate existing summary jobs and disable old finalize/enqueue paths before resuming. Never silently manufacture zero reservations while old uploads can still finalize. Preserve over-cap accounts and block new admissions; do not delete data to make counters fit.
+
+Run a bounded periodic reconciliation comparing counters to document rows. Repair drift transactionally with an audit record; investigate missing objects and orphan keys independently. Monitor oldest reservations, stale running attempts, outbox lag, cleanup lag, counter drift, and provider spend. Validate real storage length/version/expiry behavior and database races across processes; the local tests only prove domain behavior against a transactional test adapter.
+
+## Local verification
+
+From `packages/backend`, run `npm run typecheck` and `npm test`. Tests compile TypeScript with the available `tsc` and exercise concurrent admission, start/finalize retries, rollback, byte verification, ownership, summary settlement/failure, retry keys, expiry, cap reduction, and deletion races with a serializable in-memory adapter. They do not claim to certify an absent production adapter.
+
+--- new file: packages/backend/.gitignore
+.test-build/
+
+--- new file: packages/backend/test/uploads.test.mjs
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  startUpload, finalizeUpload, claimSummary, finishSummary, retrySummary, closeUpload,
+  SUMMARY_MAX_BYTES as S,
+} from "../.test-build/uploads.js";
+import { QuotaExceeded, UploadError } from "../.test-build/errors.js";
+
+// This adapter supplies serializability and rollback, not a production database.
+function fixture(cap = 1_000_000) {
+  let state = {
+    accounts: new Map([["a", { id: "a", used: 0, reserved: 0, cap }],
+      ["b", { id: "b", used: 0, reserved: 0, cap }]]),
+    uploads: new Map(), retries: new Map(), outbox: new Map(), nextId: 0,
+  };
+  let tail = Promise.resolve();
+  const objects = new Map();
+  const control = { failEnqueue: false, failSign: false, inspections: 0, afterInspect: null };
+  const db = {
+    async transaction(body) {
+      let unlock;
+      const wait = tail;
+      tail = new Promise(resolve => { unlock = resolve; });
+      await wait;
+      const draft = structuredClone(state);
+      const tx = {
+        accounts: {
+          get: async id => structuredClone(draft.accounts.get(id)),
+          patch: async (id, patch) => Object.assign(draft.accounts.get(id), patch),
+        },
+        uploads: {
+          get: async id => structuredClone(draft.uploads.get(id) ?? null),
+          findRequest: async (accountId, requestId) => structuredClone(
+            [...draft.uploads.values()].find(u => u.accountId === accountId && u.requestId === requestId) ?? null),
+          insert: async upload => {
+            const row = { ...upload, id: String(++draft.nextId) };
+            draft.uploads.set(row.id, row);
+            return structuredClone(row);
+          },
+          patch: async (id, patch) => Object.assign(draft.uploads.get(id), patch),
+        },
+        summaryRetries: {
+          find: async (id, key) => draft.retries.get(JSON.stringify([id, key])) ?? null,
+          insert: async (id, key, attempt) => draft.retries.set(JSON.stringify([id, key]), attempt),
+        },
+        enqueue: async (key, name, payload) => {
+          if (control.failEnqueue) throw new Error("outbox unavailable");
+          if (!draft.outbox.has(key)) draft.outbox.set(key, { name, payload });
+        },
+      };
+      try {
+        const result = await body(tx);
+        state = draft;
+        return result;
+      } finally { unlock(); }
+    },
+  };
+  const ctx = {
+    accountId: "a", db,
+    storage: {
+      signPut: async (id, options) => {
+        if (control.failSign) throw new Error("signing unavailable");
+        return `signed:${id}:${options.size}:${options.expiresAt}`;
+      },
+      inspect: async id => {
+        control.inspections++;
+        const result = structuredClone(objects.get(id) ?? null);
+        await control.afterInspect?.();
+        return result;
+      },
+    },
+  };
+  function invariant() {
+    for (const account of state.accounts.values()) {
+      const rows = [...state.uploads.values()].filter(u => u.accountId === account.id);
+      assert.equal(account.reserved, rows.reduce((n, u) => n + u.reserved, 0));
+      assert.equal(account.used, rows.filter(u => u.status === "ready")
+        .reduce((n, u) => n + u.size + u.summaryBytes, 0));
+      assert.ok(account.used >= 0 && account.reserved >= 0);
+      assert.ok(account.used + account.reserved <= account.cap);
+    }
+  }
+  return { ctx, control, objects, state: () => state, invariant };
+}
+
+const start = (f, requestId = "one", size = 100) =>
+  startUpload(f.ctx, { name: "document.txt", size, requestId });
+async function ready(f, requestId = "one", size = 100) {
+  const result = await start(f, requestId, size);
+  f.objects.set(result.uploadId, { size, version: "immutable-v1" });
+  await finalizeUpload(f.ctx, result);
+  return { uploadId: result.uploadId, attempt: 1 };
+}
+const code = value => error => error instanceof UploadError && error.code === value;
+
+test("eight parallel admissions cannot overcommit, including summary headroom", async () => {
+  const f = fixture(3 * (S + 100));
+  const results = await Promise.allSettled(Array.from({ length: 8 }, (_, i) => start(f, String(i))));
+  assert.equal(results.filter(r => r.status === "fulfilled").length, 3);
+  for (const r of results.filter(r => r.status === "rejected")) assert.ok(r.reason instanceof QuotaExceeded);
+  assert.equal(f.state().accounts.get("a").reserved, 3 * (S + 100));
+  f.invariant();
+});
+
+test("concurrent start retries and a lost signing response reserve only once", async () => {
+  const f = fixture();
+  f.control.failSign = true;
+  await assert.rejects(start(f), /signing unavailable/);
+  f.control.failSign = false;
+  const results = await Promise.all(Array.from({ length: 8 }, () => start(f)));
+  assert.equal(new Set(results.map(r => r.uploadId)).size, 1);
+  assert.equal(new Set(results.map(r => r.expiresAt)).size, 1);
+  assert.equal(f.state().uploads.size, 1);
+  await assert.rejects(start(f, "one", 101), code("request_conflict"));
+  f.invariant();
+});
+
+test("invalid metadata never creates a reservation", async () => {
+  const f = fixture();
+  for (const size of [-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER]) {
+    await assert.rejects(start(f, "bad", size), code("invalid_input"));
+  }
+  await assert.rejects(startUpload(f.ctx, { name: "x", size: 1 }), code("invalid_input"));
+  await assert.rejects(startUpload(f.ctx, { name: " ", size: 1, requestId: "bad" }), code("invalid_input"));
+  assert.equal(f.state().uploads.size, 0);
+  const zero = await start(f, "zero", 0);
+  assert.equal(f.state().uploads.get(zero.uploadId).reserved, S);
+  f.invariant();
+});
+
+test("exact cap includes summary; one byte over is refused", async () => {
+  const f = fixture(S + 100);
+  await assert.rejects(start(f, "too-big", 101), QuotaExceeded);
+  await start(f);
+  f.invariant();
+});
+
+test("finalize retries transfer bytes once and commit one durable summary intent", async () => {
+  const f = fixture();
+  const input = await start(f);
+  f.objects.set(input.uploadId, { size: 100, version: "v1" });
+  await Promise.all(Array.from({ length: 8 }, () => finalizeUpload(f.ctx, input)));
+  assert.equal(f.state().accounts.get("a").used, 100);
+  assert.equal(f.state().accounts.get("a").reserved, S);
+  assert.equal(f.state().outbox.size, 1);
+  assert.equal(f.state().uploads.get(input.uploadId).objectVersion, "v1");
+  assert.equal((await start(f)).url, undefined);
+  f.invariant();
+});
+
+test("outbox failure rolls back finalize and supports a later retry", async () => {
+  const f = fixture();
+  const input = await start(f);
+  f.objects.set(input.uploadId, { size: 100, version: "v1" });
+  f.control.failEnqueue = true;
+  await assert.rejects(finalizeUpload(f.ctx, input), /outbox unavailable/);
+  assert.equal(f.state().uploads.get(input.uploadId).status, "uploading");
+  assert.equal(f.state().accounts.get("a").used, 0);
+  assert.equal(f.state().outbox.size, 0);
+  f.invariant();
+  f.control.failEnqueue = false;
+  await finalizeUpload(f.ctx, input);
+  f.invariant();
+});
+
+test("ownership, missing bytes, and size mismatches fail without charging", async () => {
+  const f = fixture();
+  const input = await start(f);
+  await assert.rejects(finalizeUpload({ ...f.ctx, accountId: "b" }, input), code("not_found"));
+  assert.equal(f.control.inspections, 0);
+  await assert.rejects(finalizeUpload(f.ctx, input), code("object_missing"));
+  f.objects.set(input.uploadId, { size: 101, version: "v1" });
+  await assert.rejects(finalizeUpload(f.ctx, input), code("size_mismatch"));
+  assert.equal(f.state().outbox.size, 0);
+  f.invariant();
+});
+
+test("one summary claimant; settlement counts UTF-8 bytes and is idempotent", async () => {
+  const f = fixture();
+  const input = await ready(f);
+  const claims = await Promise.all(Array.from({ length: 8 }, () => claimSummary(f.ctx, input)));
+  assert.equal(claims.filter(Boolean).length, 1);
+  assert.deepEqual(claims.find(Boolean), { objectVersion: "immutable-v1", maxBytes: S });
+  await Promise.all(Array.from({ length: 8 }, () => finishSummary(f.ctx, { ...input, text: "é🌟" })));
+  assert.equal(f.state().accounts.get("a").used, 106);
+  assert.equal(f.state().accounts.get("a").reserved, 0);
+  assert.equal(f.state().uploads.get(input.uploadId).summaryText, "é🌟");
+  f.invariant();
+});
+
+test("summary failure releases only its reservation; manual retries have durable keys", async () => {
+  const f = fixture();
+  const input = await ready(f);
+  await claimSummary(f.ctx, input);
+  await finishSummary(f.ctx, { ...input, text: null });
+  assert.equal(f.state().accounts.get("a").used, 100);
+  assert.equal(f.state().accounts.get("a").reserved, 0);
+  const retryInput = { uploadId: input.uploadId, requestId: "retry1" };
+  const retries = await Promise.all(Array.from({ length: 8 }, () => retrySummary(f.ctx, retryInput)));
+  assert.ok(retries.every(r => r.attempt === 2));
+  assert.equal(f.state().outbox.size, 2);
+  assert.equal(await claimSummary(f.ctx, input), null);
+  const second = { ...input, attempt: 2 };
+  await claimSummary(f.ctx, second);
+  await finishSummary(f.ctx, { ...input, text: "stale" });
+  assert.equal(f.state().uploads.get(input.uploadId).summaryStatus, "running");
+  await finishSummary(f.ctx, { ...second, text: null });
+  assert.deepEqual(await retrySummary(f.ctx, { ...retryInput, requestId: "retry2" }), { attempt: 3 });
+  assert.deepEqual(await retrySummary(f.ctx, retryInput), { attempt: 2 });
+  assert.equal(f.state().outbox.size, 3);
+  f.invariant();
+});
+
+test("retry admission and outbox failure do not leak reservations", async () => {
+  const f = fixture(S + 100);
+  const input = await ready(f);
+  await claimSummary(f.ctx, input);
+  await finishSummary(f.ctx, { ...input, text: null });
+  const other = await start(f, "other", 0);
+  await assert.rejects(retrySummary(f.ctx, { ...input, requestId: "retry" }), QuotaExceeded);
+  await closeUpload(f.ctx, { ...other, reason: "cancel" });
+  f.control.failEnqueue = true;
+  await assert.rejects(retrySummary(f.ctx, { ...input, requestId: "retry" }), /outbox unavailable/);
+  assert.equal(f.state().uploads.get(input.uploadId).summaryAttempt, 1);
+  assert.equal(f.state().retries.size, 0);
+  f.invariant();
+});
+
+test("oversized summaries are rejected; failure settlement preserves the original", async () => {
+  const f = fixture();
+  const input = await ready(f);
+  await claimSummary(f.ctx, input);
+  await assert.rejects(finishSummary(f.ctx, { ...input, text: "x".repeat(S + 1) }), code("summary_too_large"));
+  assert.equal(f.state().accounts.get("a").reserved, S);
+  await finishSummary(f.ctx, { ...input, text: null });
+  f.invariant();
+});
+
+test("cancel wins a finalize race after inspect; late writes cannot revive it", async () => {
+  const f = fixture();
+  const input = await start(f);
+  f.objects.set(input.uploadId, { size: 100, version: "v1" });
+  f.control.afterInspect = () => closeUpload(f.ctx, { ...input, reason: "cancel" });
+  await assert.rejects(finalizeUpload(f.ctx, input), code("upload_closed"));
+  await closeUpload(f.ctx, { ...input, reason: "cancel" });
+  assert.equal(f.state().accounts.get("a").reserved, 0);
+  assert.equal([...f.state().outbox.values()].filter(e => e.name === "summarize").length, 0);
+  const cleanup = [...f.state().outbox.values()][0];
+  assert.ok(cleanup.payload.notBefore > input.expiresAt);
+  f.invariant();
+});
+
+test("expiry is idempotent; ready summary reservations do not expire with the upload", async () => {
+  const f = fixture();
+  const pending = await start(f);
+  await closeUpload(f.ctx, { ...pending, reason: "expire" });
+  assert.equal(f.state().uploads.get(pending.uploadId).status, "uploading");
+  await f.ctx.db.transaction(tx => tx.uploads.patch(pending.uploadId, { expiresAt: 0 }));
+  await assert.rejects(finalizeUpload(f.ctx, pending), code("upload_closed"));
+  await closeUpload(f.ctx, { ...pending, reason: "expire" });
+  await closeUpload(f.ctx, { ...pending, reason: "expire" });
+  await assert.rejects(start(f), code("upload_closed"));
+  const input = await ready(f, "ready");
+  await f.ctx.db.transaction(tx => tx.uploads.patch(input.uploadId, { expiresAt: 0 }));
+  await closeUpload(f.ctx, { ...input, reason: "expire" });
+  assert.equal(f.state().uploads.get(input.uploadId).reserved, S);
+  f.invariant();
+});
+
+test("delete/completion races refund once and stale results cannot resurrect data", async () => {
+  for (const deleteFirst of [true, false]) {
+    const f = fixture();
+    const input = await ready(f);
+    await claimSummary(f.ctx, input);
+    const deletion = () => closeUpload(f.ctx, { ...input, reason: "delete" });
+    const completion = () => finishSummary(f.ctx, { ...input, text: "summary" });
+    await Promise.all(deleteFirst ? [deletion(), completion()] : [completion(), deletion()]);
+    await deletion();
+    await completion();
+    assert.equal(f.state().uploads.get(input.uploadId).summaryText, undefined);
+    assert.equal(f.state().accounts.get("a").used, 0);
+    assert.equal(f.state().accounts.get("a").reserved, 0);
+    assert.equal(await claimSummary(f.ctx, input), null);
+    f.invariant();
+  }
+});
+
+test("cap reductions block admissions but preserve already reserved work", async () => {
+  const f = fixture(S + 100);
+  const input = await start(f);
+  await f.ctx.db.transaction(tx => tx.accounts.patch("a", { cap: 50 }));
+  await assert.rejects(start(f, "new", 0), QuotaExceeded);
+  f.objects.set(input.uploadId, { size: 100, version: "v1" });
+  await finalizeUpload(f.ctx, input);
+  await claimSummary(f.ctx, { ...input, attempt: 1 });
+  await finishSummary(f.ctx, { ...input, attempt: 1, text: "summary" });
+  assert.deepEqual(f.state().accounts.get("a"), { id: "a", used: 107, reserved: 0, cap: 50 });
+  await closeUpload(f.ctx, { ...input, reason: "delete" });
+  f.invariant();
+});
+
+test("cleanup outbox failure rolls back deletion and refunds", async () => {
+  const f = fixture();
+  const input = await ready(f);
+  f.control.failEnqueue = true;
+  await assert.rejects(closeUpload(f.ctx, { ...input, reason: "delete" }), /outbox unavailable/);
+  assert.equal(f.state().uploads.get(input.uploadId).status, "ready");
+  assert.equal(f.state().accounts.get("a").used, 100);
+  assert.equal(f.state().accounts.get("a").reserved, S);
+  f.invariant();
+});
+
+test("request IDs are account-scoped and summary/deletion actions enforce ownership", async () => {
+  const f = fixture();
+  const input = await ready(f);
+  const otherCtx = { ...f.ctx, accountId: "b" };
+  const other = await startUpload(otherCtx, { name: "document.txt", size: 100, requestId: "one" });
+  assert.notEqual(other.uploadId, input.uploadId);
+  await assert.rejects(claimSummary(otherCtx, input), code("not_found"));
+  await assert.rejects(finishSummary(otherCtx, { ...input, text: "foreign" }), code("not_found"));
+  await assert.rejects(retrySummary(otherCtx, { ...input, requestId: "retry" }), code("not_found"));
+  await assert.rejects(closeUpload(otherCtx, { ...input, reason: "delete" }), code("not_found"));
+  f.invariant();
+});

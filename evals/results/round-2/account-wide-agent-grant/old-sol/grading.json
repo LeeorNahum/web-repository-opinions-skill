@@ -1,0 +1,145 @@
+{
+  "session": "2-account-wide-agent-grant-old-sol",
+  "eval": "account-wide-agent-grant",
+  "arm": "old",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": "codex-cli 0.162.1",
+  "inputs": {
+    "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
+    "skill": "4171c1874df5e04b",
+    "fixture": "f43e39fe46e81e7a",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "03cac50f5cf2fdb3",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 130.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "app-surface",
+      "auth",
+      "bootstrap",
+      "data-model",
+      "http-apis",
+      "ids",
+      "model-context-protocol",
+      "modularity",
+      "product-ux",
+      "query-state",
+      "routing",
+      "source-of-truth",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 166805,
+    "cached_input_tokens": 128128,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 5871,
+    "reasoning_output_tokens": 231
+  },
+  "changed": [
+    "docs/workspace-access.md"
+  ],
+  "assertions": {
+    "account-wide-agent-grant-01": {
+      "v": "pass",
+      "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, and does not make the person pick one organization per connection.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:7 \"Connect an agent once per Alderdocs account and OAuth client. The grant covers the person's accessible documents across workspaces; it is not tied to an active workspace or one provider organization.\"; :56 \"Joining another workspace or accepting a direct share makes those resources reachable without reconnecting.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-02": {
+      "v": "pass",
+      "graded_text": "Every tool call resolves the target workspace or document and checks live membership, role, and individual share on the server at call time. A single organization claim in a token is not treated as proof of access to any other workspace.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:71-72 \"Resolve the target document by its stable ID, or the explicitly supplied workspace for creation. Caller-supplied IDs select a target; they grant nothing.\" / \"Establish current membership and role, or an accepted direct share for this exact document.\"; :40 \"An organization claim may help resolve membership, but it is neither an account-wide access proof nor a constraint that silently reduces the grant to that organization.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-03": {
+      "v": "pass",
+      "graded_text": "The create tool takes an explicit destination workspace ID, and the server verifies the caller may create in that workspace before creating. The design does not say a client-supplied workspace ID must never be used.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:90 \"`create_document` | `{ workspace_id, title, content, idempotency_key }` | `documents:create` | Require current Owner or Editor membership in this exact workspace.\"; :71 shows the supplied workspace ID is used as the target and is not forbidden."
+        }
+      ]
+    },
+    "account-wide-agent-grant-04": {
+      "v": "pass",
+      "graded_text": "Removing a membership or an individual share takes effect for an already connected agent without reconnecting.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:56 \"Leaving a workspace, a role downgrade, or share removal takes effect on subsequent operations even while a token remains unexpired.\"; :167 \"Membership loss, role downgrade, direct-share revocation, grant revocation, and account closure block the next applicable operation despite a valid old token.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-05": {
+      "v": "pass",
+      "graded_text": "An individually shared document gives access to that document only, never to its workspace's other documents or member list, through the UI and the agent alike.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:22 \"A direct share grants no workspace membership, workspace browsing, member list, or sibling document access.\"; :91 \"A directly shared document does not add its parent workspace to this list.\"; :97 \"Nonmember direct shares omit parent-workspace identity\"; :123 (library) \"Do not expose the parent workspace of a document-only share.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-06": {
+      "v": "pass",
+      "graded_text": "The library shows documents from every workspace the person belongs to by default, with workspace and shared filters held in URL query state, filters only narrow what is shown, and no active-workspace session state is introduced as an authority for browsing or for the agent connection.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:123 \"On entry, show all readable documents in a single list sorted by most recently updated.\"; :125 \"This is a view filter, not a global active-workspace switcher.\"; :129-132 URL states `/documents?q=proposal&workspace=<id>` and `/documents?access=shared_with_me`; :62 \"Account and direct-share views remain usable without an active organization.\"; :8 \"it never changes account authority.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-07": {
+      "v": "pass",
+      "graded_text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:77 \"The 25-member cap is the same on every plan, includes the Owner\"; :157 \"The member cap is a fixed 25 including the Owner, independent of plan; no plan-based seat eviction is introduced.\" No price is introduced."
+        }
+      ]
+    },
+    "account-wide-agent-grant-08": {
+      "v": "pass",
+      "graded_text": "The design says the consent screen states the connection's scope, including workspaces joined later.",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:44 consent copy \"This includes workspaces you join and documents shared with you later.\"; :56 \"Consent must explain this future-access behavior before approval.\""
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

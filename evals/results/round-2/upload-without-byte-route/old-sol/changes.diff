@@ -1,0 +1,347 @@
+diff --git a/packages/mcp/src/product.ts b/packages/mcp/src/product.ts
+index 5736b26..5ecee6b 100644
+--- a/packages/mcp/src/product.ts
++++ b/packages/mcp/src/product.ts
+@@ -1,4 +1,16 @@
+ export const images = {
++  /**
++   * Calls POST /v1/boards/{boardId}/images/imports as the authenticated user.
++   * The runtime adapter maps product failures to safe, actionable messages and
++   * returns success only after bytes and image metadata are durably finalized.
++   * See docs/upload-design.md for the shared ingestion contract.
++   */
++  async importFromUrl(userId: string, input: { boardId: string; url: string }): Promise<
++    | { ok: true; image: { id: string; boardId: string; size: number; contentType: string; status: "ready" } }
++    | { ok: false; code: "unauthorized" | "forbidden" | "quota_exceeded" | "invalid_source" | "source_unavailable" | "image_too_large" | "unsupported_image" | "upload_failed"; message: string }
++  > {
++    throw new Error("wired to the product API at runtime");
++  },
+   /** Returns a fresh opaque storage key for a new image on a board the user can edit. */
+   async allocateKey(userId: string, boardId: string): Promise<string> {
+     throw new Error("wired to the product API at runtime");
+diff --git a/packages/mcp/src/tools/upload-image.ts b/packages/mcp/src/tools/upload-image.ts
+index 9efe0a5..70d8d30 100644
+--- a/packages/mcp/src/tools/upload-image.ts
++++ b/packages/mcp/src/tools/upload-image.ts
+@@ -1,20 +1,64 @@
+-import { readFile } from "node:fs/promises";
+ import { z } from "zod";
+-import { storage } from "../storage";
+ import { images } from "../product";
+ 
++const sourceHelp =
++  "Use a directly downloadable HTTPS image URL, including a short-lived signed URL. " +
++  "Local paths, sandbox: URLs, chat attachment IDs, data: URLs, and base64 are not supported. " +
++  "For a local file, run kitepost images upload --board <board_id> <path> in the environment that holds the file, " +
++  "or send the file to the HTTP API as multipart/form-data.";
++
++const inputSchema = z.object({
++  board_id: z.string().min(1),
++  url: z.string().url().refine((value) => {
++    try {
++      const url = new URL(value);
++      return url.protocol === "https:" && !url.username && !url.password && !url.hash;
++    } catch {
++      return false;
++    }
++  }, "Use an HTTPS URL without embedded credentials or a fragment.").describe(sourceHelp),
++}).strict();
++
++const readyImageSchema = z.object({
++  id: z.string().min(1),
++  boardId: z.string().min(1),
++  size: z.number().int().positive().max(20_000_000),
++  contentType: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]),
++  status: z.literal("ready"),
++});
++
+ export const uploadImage = {
+   name: "upload_image",
+-  description: "Upload an image file to a board.",
+-  inputSchema: z.object({
+-    board_id: z.string(),
+-    path: z.string().describe("Path to the image file"),
+-  }),
+-  async run(input: { board_id: string; path: string }, ctx: { userId: string }) {
+-    const bytes = await readFile(input.path).catch(() => Buffer.alloc(0));
+-    const key = await images.allocateKey(ctx.userId, input.board_id);
+-    await storage.put(key, bytes);
+-    await images.create({ boardId: input.board_id, key, size: bytes.length });
+-    return { ok: true, message: `Uploaded ${input.path.split("/").pop()}` };
++  description: "Upload or import an image to a board from a downloadable HTTPS URL. " + sourceHelp,
++  inputSchema,
++  async run(input: z.infer<typeof inputSchema>, ctx: { userId: string }) {
++    // Validate here too: callers must not bypass the published schema with an old path argument.
++    const parsed = inputSchema.safeParse(input);
++    if (!parsed.success) {
++      return { ok: false as const, code: "invalid_source", message: sourceHelp };
++    }
++
++    // The product API owns authorization, guarded fetching, validation, quota, and finalization.
++    // This remote process neither reads caller files nor writes directly to the bucket.
++    try {
++      const result = await images.importFromUrl(ctx.userId, {
++        boardId: parsed.data.board_id,
++        url: parsed.data.url,
++      });
++      if (!result.ok) return result;
++
++      const image = readyImageSchema.safeParse(result.image);
++      if (!image.success || image.data.boardId !== parsed.data.board_id) {
++        throw new Error("Product API did not return a finalized image for the requested board");
++      }
++      return { ok: true as const, image: image.data, message: "Image uploaded to the board." };
++    } catch {
++      // A lost response may follow a successful commit. Do not encourage a blind duplicate retry.
++      return {
++        ok: false as const,
++        code: "outcome_unknown",
++        message: "Could not confirm the upload. Check the board before retrying; use a fresh downloadable HTTPS URL if needed.",
++      };
++    }
+   },
+ };
+
+--- new file: docs/upload-design.md
+# Image ingestion for agents
+
+`docs/brief.md` remains the product source of truth. This design addresses issues
+412, 418, and 421. Choices and deployment assumptions below are proposed defaults
+made while the owner is away.
+
+## Decisions
+
+Keep original bytes unchanged. All surfaces use the product API's authorization,
+image validation, quota accounting, storage lifecycle, and finalization. MCP must
+not read files or write directly to storage.
+
+Provide two agent paths: a server-fetched HTTPS URL and a real multipart byte
+upload. Keep the browser's working signed PUT/finalize flow. Direct PUT is a useful
+optimization for clients with upload support, but cannot be the only way scripts
+or sandbox agents can send a file. A normal HTTP upload must work without a
+caller first publishing its private image somewhere else.
+
+| Surface / source | How bytes reach Kitepost |
+| --- | --- |
+| Remote MCP, downloadable image URL | `upload_image { board_id, url }` invokes the product API URL import |
+| HTTP client, local file or byte stream | Authenticated multipart POST to the product API |
+| CLI, file on that machine or sandbox | CLI opens the file and streams multipart to the same API |
+| Browser | Existing authorize, signed PUT to storage, finalize flow |
+| Hosted chat attachment with no downloadable URL or byte-export facility | Unsupported by remote MCP alone; report this and offer browser upload or attachment export |
+
+A path is meaningful only to the process that can open it. `/mnt/data/photo.jpg`
+and `sandbox:/workspace/out/chart.png` do not grant a remote server access to an
+agent's sandbox. Neither a chat attachment ID nor an MCP resource URI implies
+byte access. Do not assume an arbitrary host implements attachment export,
+resource reads back into its filesystem, or direct PUT on behalf of tools.
+
+Do not add base64, data URLs, or inline byte arrays to MCP or JSON API inputs.
+Base64 grows bytes by about a third before tokenization; a 6 MB photo is already
+about 8 MB of text. It exhausts model context and risks truncation. Files must
+move through a byte-capable client or a downloadable URL outside model context.
+
+## Public HTTP contract
+
+Base: `https://api.kitepost.example/v1`. Personal API keys use
+`Authorization: Bearer <key>`. MCP's runtime API adapter propagates its verified
+acting principal through the existing trusted API authentication mechanism;
+`userId` is server-derived context, never a caller-controlled authentication
+header. Browser sessions, keys, and MCP identity cross the same capability gate.
+Check permission to add images to the board before fetching or accepting bytes.
+
+### Local files and streams
+
+`POST /boards/{board_id}/images` accepts `multipart/form-data` containing exactly
+one `file` part. Reject additional file parts, missing or empty files, and fields
+carrying encoded content. No path is sent as an instruction for the server to
+open. Optional sanitized filename metadata is never a storage key. Bound multipart
+headers and envelope overhead separately from the file's 20 MB cap.
+
+Example from the environment that actually holds the file:
+
+```sh
+curl --fail-with-body https://api.kitepost.example/v1/boards/Hq3k9TmPx2Ab/images \
+  -H "Authorization: Bearer $KITEPOST_API_KEY" \
+  -H "Idempotency-Key: chart-upload-001" \
+  -F 'file=@/workspace/out/chart.png;type=image/png'
+```
+
+The API ingress must support a streaming 20 MB file plus bounded multipart
+overhead. Stream through a dedicated byte-capable API runtime into storage with
+backpressure; do not buffer entire files or funnel them through a body-limited
+frontend/serverless route. This is an intentional server-mediated byte route for
+clients that need it. Preserve the browser's direct-storage route.
+
+### Downloadable URLs
+
+`POST /boards/{board_id}/images/imports`, `Content-Type: application/json`, body
+`{ "url": "https://source.example/chart.png?..." }` imports one image. A source
+must be directly downloadable without browser cookies or caller-supplied auth
+headers. Short-lived signed URLs are supported; their query strings are secrets.
+Kitepost fetches immediately and retains its own original bytes, not a hotlink.
+An HTML share page is not an image source.
+
+Both routes return `201 Created` only after finalization:
+
+```json
+{
+  "ok": true,
+  "image": {
+    "id": "Qp8m2TaLs7Vx",
+    "boardId": "Hq3k9TmPx2Ab",
+    "size": 123456,
+    "contentType": "image/png",
+    "status": "ready"
+  }
+}
+```
+
+`GET /boards/{board_id}/images` lists authorized ready images and
+`GET /boards/{board_id}/images/{image_id}` retrieves one using the same image
+shape. These reads reconcile an uncertain outcome. The board must render from
+ready records whose stored bytes passed validation, never pending imports.
+
+Errors use `{ "ok": false, "code": "...", "message": "..." }`, with safe,
+actionable product copy. Use 401 `unauthorized`, 403 `forbidden` (404 for an
+unavailable board where existence must be hidden), 400 `invalid_source`, 413
+`image_too_large`, 415 `unsupported_image`, 409 `quota_exceeded`, 422
+`source_unavailable`, and 503 `upload_failed`. Examples: an expired URL asks for
+a fresh downloadable URL; a quota refusal states the account limit. Raw provider
+responses, signed URLs, and stack traces stay out of results and public logs.
+Authentication challenges and rate-limit headers remain HTTP protocol metadata.
+
+Accept optional `Idempotency-Key` on both mutations, scoped to principal, board,
+and operation. Retain results for 24 hours. Same key and same payload return the
+original result; a different payload gives 409 `idempotency_conflict`. Concurrent
+calls with one key coalesce or return 409 `upload_in_progress` with a retry hint.
+For multipart compare a streamed digest before replaying success; URL imports
+bind to the exact request URL and do not refetch on replay. A fresh intentional
+upload gets a new key. Retry only transient failures with the same key. A lost
+response is uncertain, not proof that nothing landed.
+
+### Shared ingestion and storage lifecycle
+
+1. Authenticate, authorize board access, rate-limit, and reserve quota atomically
+   before expensive I/O. Known size must fit; unknown size reserves up to the
+   smaller of remaining account capacity and the image cap, and is stopped at
+   that boundary. Concurrent uploads cannot oversubscribe free-plan storage.
+2. Create a pending upload record and durable object-write ledger entry with an
+   opaque object key before writing bytes. Bind it to the principal and board.
+3. Stream to private storage, counting actual bytes and hashing them. Reject zero
+   bytes, over-limit content even without Content-Length, truncated transfers,
+   unsupported encodings, and non-images. Detect PNG, JPEG, WebP, or GIF from bytes,
+   not extensions or asserted MIME alone. Validate image structure with bounded
+   decoding resources; reject corrupt files and type mismatches. Never re-encode
+   originals, including animated images.
+4. On complete storage write, verify actual stored length and integrity, recheck
+   principal/board authorization, then atomically mark ready and convert the
+   quota reservation into actual usage. Finalization must be idempotent. The
+   existing browser finalize must enforce these same invariants.
+5. On failure abort the write, mark failed with a reason, release reservation,
+   and schedule cleanup of partial objects. Expire abandoned pending uploads.
+   Retain a ledger independent of deleted owners so a scheduled sweep can find
+   late writes after deletion; drain only after the maximum write window.
+
+The database owns metadata and usage; the bucket owns bytes. All three upload
+entrances call these capabilities. Failed/pending uploads are not usable board
+images. No empty buffer fallback and no success message on read/fetch failure.
+
+### URL fetch safety
+
+Enforce this in the product API importer, not just the MCP schema:
+
+- Only HTTPS, port 443, no embedded credentials or fragments. Reject local paths,
+  `sandbox:`, `file:`, `data:`, loopback, private, link-local, metadata, multicast,
+  reserved networks, and non-public IPv4/IPv6, including mapped IPv4 forms.
+- Resolve and validate all candidate addresses, pin a validated public address to
+  the actual TLS connection while preserving hostname verification, and enforce
+  egress policy. Parsing the original hostname alone does not stop DNS rebinding.
+- Follow at most three redirects. Revalidate scheme, host, port, DNS, and network
+  destination on every hop. Never forward Kitepost keys, cookies, or credentials
+  to the source. No automatic generic-fetch redirect behavior that bypasses this.
+- Bound connection to 5 seconds and total fetch to 30 seconds, including redirects;
+  bound response headers, streamed size, and concurrency. Use identity content
+  encoding and reject other encodings to avoid decompression amplification.
+  Content-Length is only an early hint; the actual stream limit always wins.
+- Do not persist or log source URL query strings. Keep sources only as long as
+  the import needs them; idempotency can retain a request digest instead.
+
+## MCP behavior
+
+Keep `upload_image` for discovery, replace `path` with required `url`, and reject
+unknown fields including `path` and `base64`. Advertise supported and unsupported
+sources in the description and schema. Return the finalized image identity and
+metadata, not a filename-based success sentence. Never return success for an
+accepted job, a blank response, a malformed resource, or a resource on another
+board. This design uses synchronous imports; asynchronous ingestion would need
+an explicit pending result and status tool before it could claim completion.
+
+`images.importFromUrl(userId, { boardId, url })` is the MCP product API boundary.
+It must call the URL-import endpoint as the acting user and parse its response,
+mapping expected errors to the safe result union. Do not replace this with
+MCP-owned fetch/storage logic. The tool also validates its runtime inputs and
+ready result. Transport failures and malformed successes report
+`outcome_unknown` and tell the caller to check the board before retrying.
+
+Old path-based callers must refresh discovery and switch inputs. There is no
+silent compatibility path that might read a coincidentally matching server file.
+Issue 412: ask the host for a downloadable attachment URL if available; otherwise
+explain the host limitation and use browser upload/export. Issue 418: strip no
+URI prefixes in MCP; the agent should use the actual sandbox-local path with the
+CLI or HTTP byte route. Issue 421: use those byte routes instead of base64.
+
+## CLI behavior
+
+`npx kitepost images upload --board Hq3k9TmPx2Ab /workspace/out/chart.png` opens the
+file in the CLI process and streams multipart to the API. Support `-` for stdin
+with `--filename chart.png --content-type image/png`; server validation remains
+authoritative. Known oversized/empty files fail before sending. Missing files
+fail locally with a useful message and a nonzero exit status, with no API mutation.
+The CLI can run in CI or an agent sandbox only if installed, network access is
+available, and a scoped API key has been provisioned there. Do not copy secrets
+into model messages or command arguments. Use `KITEPOST_API_KEY` or the CLI's
+credential store.
+
+Also support `--url <https-url>` as a mutually exclusive source that calls the
+URL-import endpoint. `--json` prints the shared result shape; ordinary output
+reports the ready image ID. Exit zero only for finalized success. Keep a stable
+idempotency key across retries in one invocation; stdin cannot be automatically
+replayed unless spooled with a bounded local mechanism. After an uncertain
+outcome, report how to inspect the board rather than restarting with a new key.
+
+## Assumptions, scope, and verification
+
+- Interpret 20 MB as 20,000,000 bytes and 2 GB as 2,000,000,000 bytes; use shared
+  API constants when the real backend is wired. These units, 24-hour deduplication,
+  and timeout budgets are decisions for owner review.
+- Assume no published compatibility promise for the broken path schema. Fail it
+  explicitly rather than preserving server filesystem access.
+- Assume verified MCP identity can be delegated to the product API at runtime;
+  do not invent a personal key from `userId`. No host-specific attachment bridge
+  is present or assumed. No new third-party upload service is required.
+- This repository contains only MCP code and throwing product/storage adapter
+  stubs. This change implements the MCP input and API-boundary contract plus the
+  necessary typed product port. HTTP routes, CLI, backend ingestion, deployed
+  runtime wiring, and browser finalize hardening are specified here, not deployed
+  by this patch. The tool fails honestly until its product adapter is wired.
+- Before rollout, implement these routes and publish OpenAPI, generate clients,
+  wire the adapter, then advertise the new MCP schema. Verify actual target
+  ingress size/time budgets and storage cleanup scheduling.
+
+Focused MCP checks should reject both reported paths, inline content, mixed
+inputs, and non-HTTPS URLs without calling storage/API; forward a valid signed
+URL and acting identity; preserve expected API refusals; reject pending,
+malformed, or wrong-board results; and report uncertainty on transport errors.
+End-to-end rollout checks must prove byte-for-byte equality for a 6 MB image
+through URL import and CLI/multipart, a 20 MB boundary upload, auth and quota
+failures (including concurrent uploads), expired/redirected/private/rebinding
+URLs, corrupt/truncated/empty files, oversized chunked bodies, duplicate retries,
+interrupted writes, and orphan cleanup. Verify the board displays the result;
+an HTTP acceptance response alone is insufficient evidence.
+
+Local verification for this patch: strict TypeScript compilation passed, and 20
+temporary Node checks with the product API mocked passed against the compiled
+tool (using Zod 3.25.76). They covered invalid inputs, principal/URL forwarding,
+quota refusal, finalized result validation, and unknown outcomes. Temporary
+dependencies and checks were removed afterward. No live API, CLI, MCP transport,
+or storage runtime exists here to verify end to end.

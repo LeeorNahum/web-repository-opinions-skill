@@ -1,0 +1,131 @@
+{
+  "session": "2-upload-without-byte-route-new-opus",
+  "eval": "upload-without-byte-route",
+  "arm": "new",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "1cb46008003edbaa75b9ebba53c440799f4429b4",
+    "skill": "94950d76aa042c5d",
+    "fixture": "fc59cabac6826db2",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "32768c0779856f2e",
+    "harness": "a49886de7f79fd07"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 150.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-tool-design",
+      "http-apis",
+      "model-context-protocol",
+      "object-storage",
+      "quota",
+      "uploads",
+      "user-facing-errors"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 33192,
+    "cache_read_input_tokens": 248993,
+    "output_tokens": 11491,
+    "total_cost_usd": 0.5452186,
+    "num_turns": 12
+  },
+  "changed": [
+    "docs/upload-design.md",
+    "packages/mcp/src/product.ts",
+    "packages/mcp/src/storage.ts",
+    "packages/mcp/src/tools/upload-image.ts"
+  ],
+  "assertions": {
+    "upload-without-byte-route-01": {
+      "v": "pass",
+      "graded_text": "The design states that a file path or sandbox URI sent by a remote agent does not transfer the file's bytes, and the changed MCP tool no longer reads a caller-supplied path from the server's file system.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:14 \"**Wrong route.** A path names a file only the caller can see, and it moves no bytes to a remote server.\" The changed tool C/project/packages/mcp/src/tools/upload-image.ts imports only zod and ../product (lines 1-2), no readFile; line 74-79 returns `code: \"local_path\"` for path input."
+        }
+      ]
+    },
+    "upload-without-byte-route-02": {
+      "v": "pass",
+      "graded_text": "The design gives each caller a route that moves bytes: the CLI reads local files and uploads them, HTTP clients send the bytes (multipart or a signed direct upload), and the remote MCP tool accepts a fetchable HTTPS URL or a host's documented file attachment reference.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:100 \"For each file, the CLI reads it locally, checks its type and the 20 MB limit before contacting the server, then runs create, PUT, and finalize through the HTTP API.\"; :26 \"HTTP API client ... Same staged upload: create upload, PUT bytes to the signed URL, finalize\"; :28 \"Remote MCP agent | Wherever the host keeps them | An HTTPS URL that Kitepost fetches on the server\"; host references at :127 \"The adapter turns that host's documented reference into an HTTPS URL for `importFromUrl`.\""
+        }
+      ]
+    },
+    "upload-without-byte-route-03": {
+      "v": "pass",
+      "graded_text": "When an MCP caller has no supported byte route, the tool returns an explicit error that names the routes that do work, and the changed tool code cannot report success unless validated bytes were stored (the empty-buffer success path is gone).",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "C/project/packages/mcp/src/tools/upload-image.ts:6-9 OTHER_ROUTES \"Pass an https:// URL Kitepost can download ... If you can run commands where the file is, use `npx kitepost upload <board_id> <file>` or the Kitepost HTTP API from there instead.\" appended to every pre-call refusal (lines 78, 85, 92). Success only at line 39 `if (outcome.kind === \"added\" && outcome.image.status === \"ready\")`; an added-but-not-ready outcome returns `ok: false, code: \"unknown_outcome\"` (lines 53-58). No empty-buffer path remains."
+        }
+      ]
+    },
+    "upload-without-byte-route-04": {
+      "v": "pass",
+      "graded_text": "Inline base64 or other inline content through the model is either refused or capped at a stated small size, so a multi-megabyte photo is never routed through model context.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:131 \"Declined for images. ... The tool does not accept inline bytes.\"; code upload-image.ts:81-86 `if (parsed.protocol === \"data:\") { return { ok: false, code: \"inline_bytes\", ...` and design :88 \"There is no base64 field on any endpoint.\""
+        }
+      ]
+    },
+    "upload-without-byte-route-05": {
+      "v": "pass",
+      "graded_text": "If the server fetches any URL, including one a host gives for an attachment, the design names enforced limits: blocking private and internal addresses, a redirect limit with each hop rechecked, a streamed size cap at the product's file limit, a timeout, and validation of the actual bytes or type. It never describes URL input as unbounded.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:58-62 \"HTTPS only. The host is resolved, and the fetch is refused if it resolves to a loopback, private, link-local, or cloud-metadata address. The connection goes only to the address that passed the check ... At most 3 redirects, and every hop is checked the same way. The download streams with a 20 MB byte cap and a 30 s total timeout. ... The bytes are sniffed for type. `Content-Type` is never trusted.\""
+        }
+      ]
+    },
+    "upload-without-byte-route-06": {
+      "v": "pass",
+      "graded_text": "Nothing in the design changes the browser's drag-and-drop flow, and the design states that every route it defines ends in the same authorization, quota, validation, and finalize step the browser flow uses before an image counts as added.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:25 \"Browser app | User's machine | Signed direct PUT to storage, then finalize (unchanged)\" and :21 \"Every route ends in the same product capability, with the same authorization, type and size checks, quota, and durable finalize. Nothing counts as added until finalize has succeeded.\" Closest to breaking it: :91 \"Storage CORS stays as the browser flow already needs it.\" \u2014 explicitly no change."
+        }
+      ]
+    },
+    "upload-without-byte-route-07": {
+      "v": "pass",
+      "graded_text": "Upload staging and completion stay in the HTTP API and CLI: an agent that can run commands is pointed at the CLI or HTTP upload, and the MCP catalog gains no separate tools for starting, signing, or finalizing an upload.",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:123 \"The tool is not split into two tools. Staging is plumbing and gets no tool of its own.\" and :29 \"Agent with a shell in a sandbox (coding agents) | Sandbox disk | Run the CLI or the HTTP API from inside the sandbox\"; the code exports a single `uploadImage` (upload-image.ts:11)."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

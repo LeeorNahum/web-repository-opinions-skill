@@ -1,0 +1,322 @@
+
+--- new file: docs/mcp-tools.md
+# Fernpage MCP tool catalog
+
+`docs/brief.md` is the source of truth for owner decisions; this document proposes the agent interface and labels the choices made where the brief is silent. This is a design contract, not an implemented MCP server.
+
+## Design
+
+Use familiar file operations for site source, site settings, and saved entries. Saved data stays in the reactive database: its JSON files are an authorized virtual view, not exported copies that must be synced back. Each virtual saved-data file represents exactly one entry. This keeps a small correction small and lets visitors continue writing other entries while an agent works.
+
+Advertise one static catalog of eleven tools. Authorization happens on every call, through the same product capabilities used by the browser app and runtime SDK. No SQL, arbitrary backend execution, upload-staging tools, confirmation flags, or separate publish step is needed.
+
+## Addressing and file view
+
+Every site operation takes the stable `site_id`; creation takes an explicit `workspace_id`. Names and titles are display values, never mutation addresses. IDs are opaque, case-sensitive strings returned by discovery; agents must not construct them. Public URLs are returned by the service rather than assembled by agents.
+
+Paths are absolute within the following **virtual site root**, not the agent's local filesystem:
+
+| Path | Meaning | Publicly served? |
+| --- | --- | --- |
+| `/files/index.html` | Site entry point | Yes, as `/index.html` and the site root |
+| `/files/styles.css`, `/files/assets/logo.png` | Site text and binary assets | Yes, without the `/files` prefix |
+| `/settings.json` | Site configuration, including visitor saved-data rules | No |
+| `/data/checklist/bring-cake.json` | One saved entry: collection `checklist`, key `bring-cake` | Only through the runtime SDK and its access rules |
+| `/data/rsvps/7qKp9Vm2.json` | One RSVP entry; key returned by SDK or discovery | Only through the runtime SDK and its access rules |
+
+`/files`, `/data`, and collection directories are listing prefixes, not writable files. Creating an entry requires its collection to be declared in settings. Removing a collection rule does not delete entries. Saved-data paths are never a static HTTP route; a static file named `data.json` has no special powers.
+
+Require canonical, case-sensitive paths: no `.` or `..` segments, repeated separators, backslashes, encoded separators, NULs, wildcards, or trailing slash on a file path. Validate the decoded address once and reject aliases rather than silently normalizing them. Collection names and entry keys use `[A-Za-z0-9_-]{1,64}`; `.json` is the virtual suffix, not part of the key. Keys stay stable when values change and must not contain visitor names or email addresses. Site asset paths may have nested directories and ordinary filename characters under `/files/`.
+
+## Argument schemas
+
+The following JSON Schema bundle defines every tool's `inputSchema`: use `#/$defs/<tool_name>` as its root and resolve shared references within this bundle. All objects reject unknown properties. Byte limits and cross-field/path constraints described below are enforced in addition to schema validation. Optional fields never change the scope of a destructive operation.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "Path": { "type": "string", "minLength": 2, "maxLength": 1024, "pattern": "^/" },
+    "Cursor": { "type": "string", "minLength": 1, "maxLength": 2048 },
+    "Content": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "properties": { "text": { "type": "string", "maxLength": 131072 } },
+          "required": ["text"]
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "source_url": { "type": "string", "format": "uri", "pattern": "^https://", "maxLength": 4096 }
+          },
+          "required": ["source_url"]
+        }
+      ]
+    },
+    "Edit": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "old_text": { "type": "string", "minLength": 1, "maxLength": 131072 },
+        "new_text": { "type": "string", "maxLength": 131072 }
+      },
+      "required": ["old_text", "new_text"]
+    },
+    "list_workspaces": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "cursor": { "$ref": "#/$defs/Cursor" },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 }
+      }
+    },
+    "list_sites": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "workspace_id": { "$ref": "#/$defs/Id" },
+        "cursor": { "$ref": "#/$defs/Cursor" },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 }
+      },
+      "required": ["workspace_id"]
+    },
+    "create_site": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "workspace_id": { "$ref": "#/$defs/Id" } },
+      "required": ["workspace_id"]
+    },
+    "list_files": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "site_id": { "$ref": "#/$defs/Id" },
+        "prefix": { "type": "string", "pattern": "^/", "maxLength": 1024, "default": "/" },
+        "cursor": { "$ref": "#/$defs/Cursor" },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 }
+      },
+      "required": ["site_id"]
+    },
+    "read_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "site_id": { "$ref": "#/$defs/Id" },
+        "path": { "$ref": "#/$defs/Path" }
+      },
+      "required": ["site_id", "path"]
+    },
+    "search_files": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "site_id": { "$ref": "#/$defs/Id" },
+        "prefix": { "type": "string", "pattern": "^/", "maxLength": 1024, "default": "/" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "case_sensitive": { "type": "boolean", "default": true },
+        "cursor": { "$ref": "#/$defs/Cursor" },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+      },
+      "required": ["site_id", "text"]
+    },
+    "create_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "site_id": { "$ref": "#/$defs/Id" },
+        "path": { "$ref": "#/$defs/Path" },
+        "content": { "$ref": "#/$defs/Content" }
+      },
+      "required": ["site_id", "path", "content"]
+    },
+    "write_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "site_id": { "$ref": "#/$defs/Id" },
+        "path": { "$ref": "#/$defs/Path" },
+        "content": { "$ref": "#/$defs/Content" }
+      },
+      "required": ["site_id", "path", "content"]
+    },
+    "edit_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "site_id": { "$ref": "#/$defs/Id" },
+        "path": { "$ref": "#/$defs/Path" },
+        "edits": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/$defs/Edit" } }
+      },
+      "required": ["site_id", "path", "edits"]
+    },
+    "delete_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "site_id": { "$ref": "#/$defs/Id" },
+        "path": { "$ref": "#/$defs/Path" }
+      },
+      "required": ["site_id", "path"]
+    },
+    "delete_site": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "site_id": { "$ref": "#/$defs/Id" } },
+      "required": ["site_id"]
+    }
+  }
+}
+```
+
+## Tool behavior and results
+
+Use the first sentence of each description in tool discovery. Return structured results with a short equivalent text summary. Never return success just because bytes were fetched or a job was accepted: success means the stated mutation is durable.
+
+| Tool | Description and behavior | Success payload |
+| --- | --- | --- |
+| `list_workspaces` | List workspaces this connection can access to find a site creation destination. Only return live authorized memberships within the grant. | `workspaces: [{id, name, capabilities}], next_cursor` |
+| `list_sites` | List active sites in a workspace, with their IDs, URLs, and metadata from index.html. Exclude Trash. Missing HTML metadata is returned as `null`, with the stable site ID available for identification. | `sites: [Site], next_cursor` |
+| `create_site` | Create an empty site in the specified workspace, ready for files and saved data. Initialize default settings and return its stable identity. It is a draft until `/files/index.html` exists. There is no title, description, favicon, or public-slug argument. | `site: Site` |
+| `list_files` | List site source, settings, and saved-entry paths under a prefix. Return metadata without loading file contents. Listing `/` recursively covers all three namespaces the caller may read. Prefixes match path segments, so `/data/rsvps/` cannot match `/data/rsvps-old/`. | `site: Site, files: [FileInfo], next_cursor` |
+| `read_file` | Read one site file, settings document, or saved entry before changing it. Return complete UTF-8 text up to the read cap; for binary or larger source files, return a short-lived authorized download URL. Establish the write baseline described below. | `site_id, file: FileInfo, content: {text} or {download_url, expires_at}, read_at` |
+| `search_files` | Find literal text in readable site source, settings, or saved entries. Search text content, skip binary assets, and return at most one hit per file with a bounded excerpt. This is discovery, not a write baseline: read a matching file before editing it. | `matches: [{path, excerpt}], skipped_binary, skipped_large_text, next_cursor` |
+| `create_file` | Create one new source file or saved entry at an exact path. Fail with `already_exists` if present, even if contents match. Settings already exists and cannot be created again. Creating `/files/index.html` publishes the site immediately. | `status: "created", site: Site, file: FileInfo` |
+| `write_file` | Replace the complete contents of one existing source file, settings document, or saved entry. Require a prior read and reject concurrent changes; never create a missing target. Replacing a saved entry changes only its application value, preserving its key and creator metadata. | `status: "updated" or "unchanged", site: Site, file: FileInfo` |
+| `edit_file` | Apply exact text replacements to one existing source file, settings document, or saved entry. Require a prior read. Each `old_text` must match exactly once, literally and case-sensitively, in the successive intermediate text. Apply edits in order and commit the final result atomically; no regex, fuzzy matching, or replace-all. Reject zero or multiple matches with the edit index and match count. | `status: "updated" or "unchanged", site: Site, file: FileInfo, edits_applied` |
+| `delete_file` | Delete exactly one source file or saved entry by its complete path. Require a prior read for an existing target. Never delete a directory, prefix, collection, settings document, or whole site. Deleting `/files/index.html` leaves the site in draft state. Individual file and entry deletion has no Trash recovery in this proposal. | `status: "deleted" or "already_absent", site: Site, path` |
+| `delete_site` | Move one site, its files, settings, and saved data to Trash for 30 days. Require site discovery in this session to establish its lifecycle, as described below. Immediately disable public serving and runtime SDK reads and writes. Return the existing deletion result on repeat calls while trashed, without extending retention. Restore is available only in the browser app. | `status: "trashed" or "already_trashed", site_id, trashed_at, purge_at, browser_trash_url` |
+
+Shared result shapes:
+
+- `Site = {id, workspace_id, url, browser_url, state, title, description, favicon_url}`. `state` is `draft` or `published`; a draft's `url` is its reserved destination, not evidence it serves a page. Metadata is derived from the current `index.html`; asset mutations may change favicon availability. No independent metadata update tool exists.
+- `FileInfo = {path, kind, media_type, byte_size, updated_at}`, with `kind` equal to `source`, `settings`, or `saved_entry`. Do not expose database IDs, visitor credentials, or storage object keys. Directory paths are inferred from files and settings declarations; empty directories have no independent existence.
+- `next_cursor` is a string or `null`. Cursors bind to the caller, filters, and last returned address. Lists use stable path/ID ordering; pagination is live, not a collection snapshot. Concurrent insertions before a cursor can be missed. Clearing test data therefore requires a fresh listing afterward, not a promise that one scan emptied a live collection.
+- Search excerpts are at most 240 characters each, treated as untrusted site/visitor content. A hit is not a claim that its content is still current. Search cursor work is bounded; a page may be empty with a non-null cursor when a scan budget is reached.
+
+## Saved data, settings, and permissions
+
+An entry body is a JSON object containing application-owned fields, for example:
+
+```json
+{"name":"Alicia","attending":true,"guests":2}
+```
+
+Render virtual JSON as UTF-8, two-space indentation, recursively sorted object keys, LF line endings, and a final newline. Preserve array order and JSON value types. Parse and validate the complete result of a write or edit before committing; duplicate object keys and invalid JSON are errors. Do not store the pretty-printed text as an independent copy. A key, creator identity, creation timestamp, and concurrency generation are server metadata outside this body; putting similarly named fields in the body never changes them.
+
+The runtime SDK addresses the same `(site_id, collection, key)` entry as the virtual file. Browser subscriptions observe successful agent mutations through the same reactive mechanism as visitor writes. An agent correcting an RSVP name preserves its original creator. Creating a seed entry records the authenticated creator; an agent cannot impersonate a visitor. Changing a whole site's JavaScript never replaces its saved entries. Copying source files to another site never copies data or visitor permissions implicitly.
+
+Proposed `/settings.json` content, present on every new site:
+
+```json
+{
+  "collections": {}
+}
+```
+
+Each collection declaration has the following closed shape; unknown settings and policy names are errors:
+
+```json
+{
+  "collections": {
+    "rsvps": {
+      "read": "creator_or_owner",
+      "create": "anyone",
+      "update": "creator_or_owner",
+      "delete": "creator_or_owner"
+    },
+    "checklist": {
+      "read": "anyone",
+      "create": "owner",
+      "update": "anyone",
+      "delete": "owner"
+    }
+  }
+}
+```
+
+`collections` maps valid collection names to objects requiring exactly `read`, `create`, `update`, and `delete`. `read`, `update`, and `delete` accept `anyone`, `creator_or_owner`, or `owner`; `create` accepts `anyone` or `owner`. There is no executable policy language in v1. An undeclared collection denies visitor access. Removing a declaration retains its data for authorized owner maintenance but disables all visitor access to it; redeclaring it re-enables its chosen rules. Recheck current rules and ownership in the same transaction that commits each entry operation. Validate settings changes atomically; deleting `/settings.json` is forbidden.
+
+For these policies, `anyone` includes an anonymous visitor. A server-issued, site-bound visitor identity establishes the creator; a browser-supplied ID or a JSON field cannot establish ownership. `owner` means a site owner or delegated member explicitly authorized for that operation. The agent acts for its authenticated user under the grant's capabilities; connecting MCP alone grants no owner powers. Policies constrain visitors; explicit owner maintenance capabilities allow authorized correction and cleanup across visitors' entries. They never allow an ordinary visitor to access the file interface.
+
+Apply capabilities by the addressed resource:
+
+| Resource/action | Required capability |
+| --- | --- |
+| Workspace/site discovery | Workspace/site visibility, with inaccessible sites omitted |
+| Create site | `sites.create` in the selected workspace |
+| Source list/read/search | `files.read` |
+| Source create/write/edit | `files.write` |
+| Source delete | `files.delete` |
+| Settings read/search | `settings.read` |
+| Settings write/edit | `settings.manage` |
+| Saved-entry list/read/search | `data.read` for the collection/entry |
+| Saved-entry create/write/edit | `data.write` for the collection/entry |
+| Saved-entry delete | `data.delete` for the collection/entry |
+| Trash site | `sites.delete` on that site |
+
+Every generic file tool dispatches through the appropriate capability, validation, and quota gate. Access to source is not access to RSVP data, and data maintenance is not permission to broaden visitor rules. Listings and searches omit inaccessible resources without leaking snippets or counts; a direct forbidden path returns a clean refusal. Saved application settings, such as checklist preferences, belong in an entry such as `/data/preferences/site.json`; `/settings.json` owns access policy only. Title, description, and favicon remain in HTML.
+
+## Concurrent edits and retries
+
+`read_file` captures a server-side baseline for the exact resource, including an incarnation ID and a monotonically changing generation. Compare it at commit time for **all** existing-target writes, edits, and deletes, including binary replacement. A visitor's change to another entry does not cause a conflict. A change to this entry does, even if the agent only planned to fix one field. Deleting and recreating the same key is a different incarnation and also conflicts. No force-write argument exists.
+
+Keep this read context isolated to an authenticated MCP session, principal, site, and path, in shared durable storage rather than a worker's memory. This proposal deliberately uses session state to avoid requiring agents to ferry revision tokens. Pin the first read baseline until a mutation, conflict, or expiry; repeat reads of that path return the same pinned snapshot and identify `read_at`. Do not silently advance a pending write baseline because another call read a newer value. A successful mutation consumes the baseline; a conflict invalidates it. Use a five-minute expiry; an expired context returns `read_required` before allowing a mutation, and a new read supplies a fresh baseline. Concurrent calls on the same path are serialized; independent agent tasks use separate sessions. A client that loses its session must read again. Listing/searching does not establish a baseline.
+
+On conflict, change nothing and return `conflict`, the path, and an instruction to read the current file and reconsider the change. The agent must preserve visitor changes in its new edit rather than replaying an old whole-entry body. A second read after conflict captures current state. This conservative entry-level comparison also protects the visitor from agent edits racing each other. A baseline is not authority: membership, capabilities, current rules, quota, and active site state are rechecked at commit time.
+
+Site deletion has a separate lifecycle baseline: `list_sites` establishes it for each returned site, and `create_site` establishes it for the new site. Pin it in the same isolated session for five minutes and require it before the first `delete_site`; otherwise return `read_required` naming `list_sites`. It compares only the site's lifecycle generation, not changing entry contents, so normal visitor activity does not prevent an intentional whole-site deletion. A browser restore changes that generation and invalidates all older file and site baselines and cached mutations. Listing again after a lifecycle conflict establishes fresh intent against the restored site. A new session alone establishes no deletion baseline.
+
+Retry contracts:
+
+- Read/list/search calls are safe to repeat, subject to the pinned-read behavior above.
+- `create_site` is not idempotent across distinct invocations. After a timeout, inspect `list_sites` and reconcile with the invocation's recorded result before retrying; if multiple indistinguishable new sites exist, report the unknown outcome rather than guessing or deleting one. Reuse of the same transport request is deduplicated server-side, but a new request may create a second site.
+- `create_file` never duplicates a path or overwrites an entry. After a timeout, read that exact path and compare its contents; `already_exists` alone does not prove this invocation created it.
+- `write_file` and `edit_file` consume their baseline atomically with the mutation. Cache completed mutation results for repeated identical calls in that session until a fresh read or expiry. A lost response must not cause an edit to run twice. After losing that context, read and inspect the resulting content before retrying. Report an unknown outcome if it cannot be determined.
+- `delete_file` returns `already_absent` when there is no target. A retry must never delete a newly created incarnation at the same path; require a fresh read and renewed intent for that new resource. Keep incarnation tombstones for the read/retry window. A cached delete result refers only to the deleted incarnation.
+- `delete_site` is idempotent while the same site remains in Trash. Do not let a stale pre-Trash request delete a browser-restored site: invalidate old session mutation contexts on restore and refuse their delete requests with `conflict`. Fresh site discovery is required to act on the restored site; a repeated Trash call never restarts its 30-day clock.
+
+## Bounds, atomicity, and asset transport
+
+Proposed v1 operational bounds, separate from product plan quotas:
+
+- Inline text, settings documents, and individual saved-entry values: at most 128 KiB UTF-8 each. JSON Schema character limits are an early bound; the UTF-8 byte check is authoritative. Aggregate saved data remains a few KiB to a few MiB per site, as in the brief; enforce the configured site quota and return its measured limit on refusal.
+- One file per read or mutation; up to 20 exact replacements per edit. Total inline request text is capped at 256 KiB, including all edit strings. One call is atomic for its single resource. No multi-file or collection-wide transaction is promised. An invalid JSON edit or a stale comparison leaves everything in that call unchanged.
+- Source assets fetched from `source_url`: at most 10 MiB per file, with a 30-second fetch deadline. Use this route for binary assets or source text over the inline cap. Only `/files/` accepts URL input; settings and saved entries require inline text. No inline base64, local paths, or sandbox URIs. An agent with a local asset must first make it fetchable using its host's supported transfer route; Fernpage must not pretend it can read that local path.
+- Fetch URL content server-side with byte limits, MIME/content checks, at most three redirects, and public HTTPS address validation on every redirect and DNS resolution. Reject loopback, private, link-local, and metadata destinations. URLs are sources to copy, not permanent external references. Finalize fetched bytes and authorized file metadata durably before reporting success; a failed fetch or stale baseline leaves the existing file intact.
+- Read text responses contain at most 128 KiB. Larger text and binary source files return a five-minute download URL plus metadata; the caller needs an HTTP-capable host to fetch it. They can be replaced from a URL after a read, but cannot be exact-edited through this text tool. Search only inline-readable text; explicitly report skipped large-text/binary counts within authorized scope so a zero-hit result is not presented as exhaustive.
+- A source-file mutation becomes publicly visible when finalized; no build or deployment job is implied. Create assets first and `index.html` last when assembling a new site. Multiple file edits may be observed between calls. Saved-data changes land as normal reactive database transactions and propagate live to open pages.
+
+No bulk-clear tool is provided. To clear test entries, list/search the intended collection, read and inspect each selected entry, then delete its exact path. Successful independent deletes remain successful if a later one conflicts. Report those outcomes individually and retry only unresolved entries. New visitor submissions remain intact unless the agent explicitly discovers and selects them in a later pass.
+
+## Errors and MCP annotations
+
+Domain refusals return `isError: true` and structured `{code, message, site_id?, path?, details?, next_action}`. Keep raw provider errors, credentials, request bodies, and stacks out of results. Messages give an actionable measurement where relevant, such as `max_bytes`, `actual_bytes`, or `match_count`, without echoing private values. Authentication failures use the transport's authentication challenge; malformed tool arguments use schema validation errors.
+
+Required codes: `not_found`, `permission_denied`, `already_exists`, `read_required`, `conflict`, `invalid_path`, `invalid_json`, `invalid_settings`, `edit_match_failed`, `unsupported_content`, `payload_too_large`, `quota_exceeded`, `rate_limited`, `fetch_failed`, `site_trashed`, and `outcome_unknown`. Rate limiting includes a retry delay; unknown outcomes identify the read/list operation that can disambiguate them. A refusal reports no mutation, except `outcome_unknown`, which explicitly makes no claim about landing. There are no partial mutations within a single file call.
+
+Annotations describe the worst supported effect; they do not authorize it:
+
+| Tools | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
+| --- | --- | --- | --- | --- |
+| `list_workspaces`, `list_sites`, `list_files`, `read_file`, `search_files` | true | false | true | false |
+| `create_site` | false | false | false | false |
+| `create_file` | false | false | false | true |
+| `write_file` | false | true | false | true |
+| `edit_file` | false | true | false | false |
+| `delete_file` | false | true | false | false |
+| `delete_site` | false | true | false | false |
+
+The conservative idempotency hints reflect context consumption, incarnation checks, and restore behavior; cached retries do not make arbitrary future invocations idempotent. URL-capable tools are open-world because they can fetch an external resource. Creating public source files publishes content, even though creation does not replace an existing file.
+
+## Agent workflows
+
+1. **Build a site:** `list_workspaces` → `create_site` → `create_file` for CSS, JS, and assets → `read_file` and `edit_file` on settings if data is needed → create seed entries → create `/files/index.html`. The site is now published with metadata derived from that HTML. A single self-contained HTML file needs only the creation and entry-point calls after workspace discovery.
+2. **Make a small change:** discover the site with `list_sites`, read `/files/index.html`, then exact-edit the relevant text. Use `write_file` when deliberately replacing the whole file. There is no separate metadata or publish call.
+3. **Seed a checklist:** declare the `checklist` collection rules in settings, then create one JSON entry per stable key, e.g. `/data/checklist/bring-cake.json` with `{"label":"Bring cake","done":false}`. An existing key produces `already_exists`; inspect it instead of resetting a visitor's `done` value.
+4. **Correct an RSVP:** search `/data/rsvps/` for the misspelling, read the matching path, then exact-edit `"name": "Alcia"` to `"name": "Alicia"`. If the visitor changes the same entry first, reread after `conflict`, preserve their current attendance and guest count, and reapply only the name correction. Another visitor creating a different RSVP does not block the edit.
+5. **Clear test data:** list or search a collection, inspect each selected test entry, and call `delete_file` for each. Preserve unrelated entries and report conflicts. A live collection is never guaranteed empty merely because the agent finished its selected deletions.
+6. **Change a setting:** application preferences use a saved-entry path; visitor permissions use `/settings.json`. Read then edit the appropriate JSON file. Neither path controls the HTML title.
+7. **Remove content:** `delete_file` removes one exact file or entry. `delete_site` removes the entire site from service and retains its graph in Trash for 30 days; return the browser Trash URL for recovery. No MCP restore or permanent-purge tool is advertised.
+
+## Assumptions made while the owner is away
+
+These choices are proposals, not additional decisions attributed to the brief:
+
+- Use one-entry virtual JSON files and a generic file catalog rather than a second record CRUD interface. Collections and stable keys form the minimal saved-data model; collection-wide replacement, schema migrations, and query languages are outside v1.
+- Create an empty draft first, publish on entry-point creation, and return to draft if that file is deleted. Public file changes take effect independently; there is no staging/release model. The brief establishes that one `index.html` is enough, but does not specify the empty-site lifecycle.
+- Use the settings shape and three visitor policy presets above. Default to no declared collections and no visitor data access. The brief specifies configurable write rules but does not fix their syntax, read rules, or visitor identity mechanism.
+- Give explicitly authorized owners/delegates maintenance access across saved entries while preserving server-owned creator identity. Assume capability-granular grants and an account-wide connection that can discover authorized workspaces; check live membership on every call. Workspace-bound grants can narrow this without changing tool schemas. OAuth provider and transport revision selection are implementation decisions, not specified here.
+- Require isolated server-managed MCP sessions for read baselines, with a five-minute pin/expiry window. This is an explicit compatibility requirement to test in target hosts, not an assumption that a stateless service can infer what an agent read. A host without isolated sessions needs a revised, explicit precondition contract before enabling existing-target mutations.
+- Pick the operational caps, formatting, policy grammar, canonical paths, literal search, and pagination rules above for a small-site first release. They are not plan pricing or new promises about unlimited storage.
+- Individual file/entry deletes are immediately permanent; only whole-site deletion has the brief's 30-day Trash guarantee. Whole-site Trash retains files, settings, and saved data together and disables visitor access during retention. Restoration retains the stable site ID but starts a new lifecycle generation to invalidate stale requests.
+- Leave workspace administration, custom domains, billing, arbitrary server code, scheduled jobs, whole-collection deletion, and MCP restore/purge outside this catalog. No product runtime or external service has been changed by this document.
