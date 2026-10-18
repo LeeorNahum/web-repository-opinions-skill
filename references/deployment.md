@@ -18,7 +18,7 @@ Each deployable app carries its own hosting config that gates deploys by branch.
 
 Custom domains, branch domains, and env vars are dashboard concerns, not part of the deploy-gating config. Document them in the setup checklist.
 
-Which branch is production is a dashboard setting, not part of the hosting config. Confirm `main` as the production branch once per project so the provider cannot silently select another branch.
+Which branch is production is a dashboard setting, not part of the hosting config. Confirm `main` as the production branch once per project so the provider cannot silently select another branch. Before a new project's first push, fill its production environment values and deploy `main` first, because a host can promote a new project's first Git deployment to production whichever branch it came from, and a `preview` push would then answer on the production domains without production values.
 
 Machine-facing apps skip the browser access gate that preview deployments carry, and only because that gate cannot work for them. An API, MCP, or webhook project answers programmatic requests directly, so confirm any interactive access protection (a hosting platform preview-protection or SSO gate that only a browser session can satisfy) is off for those projects. A blanket gate turns every machine call into an opaque auth failure the client cannot resolve, including on preview deployments. Replace it with a protection those clients can satisfy, such as a token, rather than leaving the surface open.
 
