@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Assistant:** I’ll read the product brief and open issues, then write the metadata design with decisions and assumptions called out. I’m using the web-repository-opinions skill for the web product guidance.
 
 **Shell:** `"<home>\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command "Get-Content .agents/skills/web-repository-opinions/SKILL.md; Get-Content docs/brief.md; Get-Content docs/issues.md; rg --files -g AGENTS.md -g '*metadata*' -g 'package.json'"`

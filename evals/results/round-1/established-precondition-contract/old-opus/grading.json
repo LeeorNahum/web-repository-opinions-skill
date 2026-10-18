@@ -9,7 +9,7 @@
   "requested_model": "opus",
   "cli": "2.1.302 (Claude Code)",
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
     "fixture": "438e6792903dbc11",
     "base_fixture": "9a72a07420d785e3",
@@ -49,6 +49,7 @@
   "assertions": {
     "established-precondition-contract-01": {
       "v": "pass",
+      "graded_text": "The new row update requires a precondition from the caller (If-Match with the document's ETag, or a row-level equivalent) and answers a stale one with 412, matching the existing PUT contract.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -59,6 +60,7 @@
     },
     "established-precondition-contract-02": {
       "v": "pass",
+      "graded_text": "The existing PUT and its required If-Match stay unchanged.",
       "votes": [
         {
           "critic": "claude-fallback",

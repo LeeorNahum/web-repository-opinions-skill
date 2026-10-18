@@ -81,7 +81,7 @@ def main():
                 if len({r.get('requested_model') or r.get('model_id') for r in results}) > 1:
                     problems.append(f'{rnd}-{name} {m}: arms requested different models, so the pair is not comparable')
                 inputs = [r.get('digests') or {} for r in results]
-                for k in ('fixture', 'base_fixture', 'evals'):
+                for k in ('fixture', 'base_fixture', 'case'):
                     if inputs[0].get(k) != inputs[1].get(k):
                         problems.append(f'{rnd}-{name} {m}: arms saw different {k} inputs, so the pair is not comparable')
     verdict, blocking = verdicts_for(rnd, grades)

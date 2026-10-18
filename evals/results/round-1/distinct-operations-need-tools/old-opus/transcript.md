@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Tool call `Skill`:** `{"skill": "web-repository-opinions"}`
 
 > Result: Launching skill: web-repository-opinions
@@ -18,7 +20,39 @@
 
 > Result: # Bulk Actions  Design bulk work as independent per-item outcomes unless the operation is inherently atomic.  ## Result Contract  Return one structured result for every requested item. Include the stable input identity and a small product-level state such as completed, unchanged, or failed. Where the result shape is typed, give each state its own variant carrying exactly the facts it promise [... 5077 more characters]
 
-**Tool call `Write`:** `{"file_path": "<run>/builds/1-distinct-operations-need-tools-old-opus/work/docs/mcp-tools.md", "content": "# Quillstack MCP tools\n\n| Tool | Arguments | Behavior |\n| --- | --- | --- |\n| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |\n| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page titles and Markdown content across the workspace, or within `folder` and its subfolders. Returns `{ results: [{ path, title, snippet }], next_cursor? }`, best match first. Default 20 per page. Read-only. |\n| `read_page` | `{ path }` | Returns the page's Markdown. |\n| `write_page` | `{ path, content }` | Creates or replaces one page. |\n| `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. |\n| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |\n| `order_prints` | `{ idempotency_key, paths[], copies, ship_to }` | Orders `copies` printed, bound copies of the listed pages, bound in the listed order, charges the workspace's card on file, and ships them to `ship_to`. Requires the Editor role. Returns `{ order_id, status, paths[], copies, total, replayed }`. |\n\n## `search_pages`\n\n- `query` matches case-insensitively. Every word must appear in the page, and a `\"quoted phrase\"` must appear exactly. An empty `query` is refused.\n- `snippet` is a short excerpt around the first match, not the whole page. Call `read_page` for the content.\n- Pages in Trash are never returned. Writes, edits, and deletes are reflected in later searches.\n- Any role that can read pages can search them, and results include only pages the caller can read.\n\n## `order_prints`\n\n- `idempotency_key` is required. Generate a new one for each order you mean to place, and resend the same one when retrying a call that timed out or returned no answer. A repeat call with a key the workspace has already used returns the original order with `replayed: true` and charges nothing. Reusing a key with different `paths`, `copies`, or `ship_to` is refused.\n- `paths` must be nonempty, with no duplicates, and every path must name a page the caller can read. The order is all or nothing: if any path is missing, nothing is charged and the refusal lists the missing paths.\n- `copies` is a positive integer. `ship_to` is `{ name, line1, line2?, city, region?, postal_code, country }`, with `country` as an ISO 3166-1 alpha-2 code.\n- Pages print as they read when the order is placed. Later edits do not change the order.\n- `total` is `{ amount, currency }`: the print partner's per-copy price times `copies`, as charged.\n- `status` is `placed` once the card is charged and the print partner has accepted the order, or `processing` while that is still in progress. To get the outcome of a `processing` order, call again with the same `idempotency_key`.\n- Refusals say what failed and what to do next: caller is not an Editor, page not found, no card on file, card declined, address rejected by the print partner, key reused with a different order, or too many pages or copies for one order (naming the limit).\n"}`
+**Tool call `Write`:** `<run>/builds/1-distinct-operations-need-tools-old-opus/work/docs/mcp-tools.md`
+
+````text
+# Quillstack MCP tools
+
+| Tool | Arguments | Behavior |
+| --- | --- | --- |
+| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |
+| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page titles and Markdown content across the workspace, or within `folder` and its subfolders. Returns `{ results: [{ path, title, snippet }], next_cursor? }`, best match first. Default 20 per page. Read-only. |
+| `read_page` | `{ path }` | Returns the page's Markdown. |
+| `write_page` | `{ path, content }` | Creates or replaces one page. |
+| `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. |
+| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |
+| `order_prints` | `{ idempotency_key, paths[], copies, ship_to }` | Orders `copies` printed, bound copies of the listed pages, bound in the listed order, charges the workspace's card on file, and ships them to `ship_to`. Requires the Editor role. Returns `{ order_id, status, paths[], copies, total, replayed }`. |
+
+## `search_pages`
+
+- `query` matches case-insensitively. Every word must appear in the page, and a `"quoted phrase"` must appear exactly. An empty `query` is refused.
+- `snippet` is a short excerpt around the first match, not the whole page. Call `read_page` for the content.
+- Pages in Trash are never returned. Writes, edits, and deletes are reflected in later searches.
+- Any role that can read pages can search them, and results include only pages the caller can read.
+
+## `order_prints`
+
+- `idempotency_key` is required. Generate a new one for each order you mean to place, and resend the same one when retrying a call that timed out or returned no answer. A repeat call with a key the workspace has already used returns the original order with `replayed: true` and charges nothing. Reusing a key with different `paths`, `copies`, or `ship_to` is refused.
+- `paths` must be nonempty, with no duplicates, and every path must name a page the caller can read. The order is all or nothing: if any path is missing, nothing is charged and the refusal lists the missing paths.
+- `copies` is a positive integer. `ship_to` is `{ name, line1, line2?, city, region?, postal_code, country }`, with `country` as an ISO 3166-1 alpha-2 code.
+- Pages print as they read when the order is placed. Later edits do not change the order.
+- `total` is `{ amount, currency }`: the print partner's per-copy price times `copies`, as charged.
+- `status` is `placed` once the card is charged and the print partner has accepted the order, or `processing` while that is still in progress. To get the outcome of a `processing` order, call again with the same `idempotency_key`.
+- Refusals say what failed and what to do next: caller is not an Editor, page not found, no card on file, card declined, address rejected by the print partner, key reused with a different order, or too many pages or copies for one order (naming the limit).
+
+````
 
 > Result: The file <run>/builds/1-distinct-operations-need-tools-old-opus/work/docs/mcp-tools.md has been updated successfully. (file state is current in your context — no need to Read it back)
 

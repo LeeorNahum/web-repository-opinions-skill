@@ -154,9 +154,14 @@ def condensed(base, model, clip=400):
                     lines.append(f"**Assistant:** {c['text'].strip()}\n")
                 elif c.get('type') == 'tool_use':
                     inp = c.get('input', {})
-                    # Content the session wrote is kept whole, since it is the work being graded.
-                    keep = c.get('name') in ('Write', 'Edit', 'MultiEdit')
-                    lines.append(f"**Tool call `{c.get('name')}`:** `{_clip(json.dumps(inp), 100000 if keep else clip)}`\n")
+                    name = c.get('name')
+                    # Content the session wrote is the work being graded, so it is shown as text, not as escaped JSON.
+                    if name == 'Write':
+                        lines.append(f"**Tool call `Write`:** `{inp.get('file_path', '')}`\n\n````text\n{_clip(inp.get('content', ''), 100000)}\n````\n")
+                    elif name == 'Edit':
+                        lines.append(f"**Tool call `Edit`:** `{inp.get('file_path', '')}`\n\nReplaced:\n\n````text\n{_clip(inp.get('old_string', ''), 20000)}\n````\n\nWith:\n\n````text\n{_clip(inp.get('new_string', ''), 100000)}\n````\n")
+                    else:
+                        lines.append(f"**Tool call `{name}`:** `{_clip(json.dumps(inp), clip)}`\n")
         elif t == 'user':
             content = e.get('message', {}).get('content', [])
             for c in content if isinstance(content, list) else []:

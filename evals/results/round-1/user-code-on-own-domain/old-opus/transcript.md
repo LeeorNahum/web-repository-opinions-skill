@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Tool call `Skill`:** `{"skill": "web-repository-opinions"}`
 
 > Result: Launching skill: web-repository-opinions
@@ -18,7 +20,130 @@
 
 > Result: continuous-integration.md:10:- Use read-only workflow permissions by default. Grant release writes only to the release job, and keep secrets out of untrusted pull-request execution. interaction-feedback.md:26:Transient feedback must not reflow the surrounding interface. Reserve its space, replace content within a stable footprint, or use an overlay surface whose appearance does not move nearby con [... 1330 more characters]
 
-**Tool call `Write`:** `{"file_path": "<run>\\builds\\1-user-code-on-own-domain-old-opus\\work\\docs\\hosting-plan.md", "content": "# Hosting and origin plan for the beta\n\nStatus: proposed, written while the owner is away. Inputs are `docs/brief.md` (decisions) and `docs/hosting.md` (current serving and the change freeze). Assumptions are listed at the end, along with the one decision only the owner can make.\n\n## Summary\n\nPlinth serves JavaScript that strangers write on subdomains of the same registrable domain that holds our signed-in product and our auth session. To the browser, every `<name>.plinth.example` app and `app.plinth.example` are the **same site**. As served today:\n\n1. The shared session cookie on `plinth.example` gets sent to every app host. If any session cookie can be read from JavaScript, any app author can read the session of anyone who opens their app and act as that person on `app.plinth.example`.\n2. Any app can set cookies on `plinth.example` that `app.plinth.example` will receive (cookie tossing or session fixation).\n3. `SameSite` cookies don't protect `app.plinth.example` from requests made by user apps, because those requests are same-site.\n4. Private apps rely on the edge reading the provider's session cookie on app hosts. That design only works if the session reaches user-controlled origins, which is the exposure in (1).\n\nThe proper fix is a separate registrable domain for user content, listed on the Public Suffix List. The freeze rules that out until after the beta (no new domains, zones, or certificates). This plan is the layout we can ship **inside the freeze**. It keeps `<name>.plinth.example` as decided, and it closes or contains each problem above using only the hosts and the wildcard certificate we already have. Section 6 covers the move after the freeze and the decision it needs.\n\n## 1. Host layout for the beta\n\nNo new hosts, records, or certificates. Ownership of each existing host is made explicit:\n\n| Host | Serves | Who writes the code that runs there | Session cookie present? |\n| --- | --- | --- | --- |\n| `app.plinth.example` | Signed-in product, invitations, access handshake for private apps | Us | Yes, host-only (see 2) |\n| Auth provider hosts on `plinth.example` (existing CNAMEs) | Managed auth | Provider | Provider's own host-only cookies |\n| `<name>.plinth.example` | One user app per name, streamed by the edge from object storage | **The app author (untrusted)** | Must not be |\n| `<name>.plinth.example/_plinth/*` | Edge-owned endpoints (access handshake). User files cannot shadow this path | Us (edge) | Per-app access cookie only |\n\nThe edge matches exact known hosts (`app`, provider hosts, anything else with a DNS record) **before** it falls through to the wildcard app lookup. A name that matches a reserved word is never looked up as an app.\n\n## 2. Cookies: nothing that matters may be readable or settable from an app host\n\nPre-beta blocker. Sign in on production and read the real cookies the provider sets (name, `Domain`, `HttpOnly`, `Secure`, `SameSite`). Then open any app host and check what `document.cookie` shows and what the request `Cookie` header carries. Base decisions on what the provider actually sets, not on its docs.\n\nTarget state:\n\n- **No credential cookie carries `Domain=plinth.example`.** The session lives host-only on `app.plinth.example` (and on the provider's own hosts as the provider needs). The brief says sessions are shared across subdomains. Plinth has exactly one first-party signed-in surface, so nothing needs that sharing once private apps stop reading the session (see 3).\n- If the provider can't scope its session cookie to a host, then at minimum every parent-domain cookie it sets must be `HttpOnly`. Any cookie that is readable from JavaScript **and** works as a bearer credential is a beta blocker. Escalate it (section 7). Don't ship around it.\n- Cookies we own on `app.plinth.example` use the `__Host-` prefix (`Secure`, `Path=/`, no `Domain`) so a sibling subdomain can't set or shadow them.\n- Edge and hosting logs for app hosts never record `Cookie` or `Authorization` headers.\n\n## 3. Private apps: per-app access cookie through a handshake\n\nReplace \"the edge checks the auth provider's session cookie\" with an access grant minted by `app.plinth.example` and scoped to one app host:\n\n1. A visitor requests `https://<name>.plinth.example/some/path` for a private app with no valid access cookie. The edge responds `302` to `https://app.plinth.example/apps/<appId>/access?return=/some/path`.\n2. `app.plinth.example` signs the visitor in if needed (the return destination survives sign-in). It then checks the invitation through the product's single authorization gate, and mints a one-time code. The code lives about 60 seconds, can be used once, and is bound to the app ID and user ID. The visitor is redirected to `https://<name>.plinth.example/_plinth/access?code=\u2026&return=/some/path` with `Referrer-Policy: no-referrer`.\n3. The edge redeems the code server-to-server, then sets `__Host-plinth_access` (`HttpOnly; Secure; SameSite=Lax; Path=/`). Its value is a signed token holding app ID, user ID, and expiry (about 1 hour). The edge then redirects to `return`, after confirming `return` is a same-origin relative path. The code never reaches a document the author's JavaScript can see.\n4. On every request, the edge checks the signature and expiry, checks that the token's app ID matches the app this host currently resolves to, and checks for revocation. Revoking an invitation takes effect within one short cache window (target: 5 minutes or less). Document whatever bound we ship.\n\nThe provider's session cookie isn't needed on app hosts at all, which is what lets section 2 make it host-only. The access cookie is useless on any other app host and on `app.plinth.example`.\n\nAccepted by design: once an invited person opens a private app, that app's own JavaScript runs with that person's access to **that app**. The author wrote the app, so this is inherent.\n\n## 4. Hardening `app.plinth.example` against its same-site neighbours\n\nEvery user app is same-site with the product, so these defenses can't depend on `SameSite`:\n\n- State-changing requests require an exact `Origin` of `https://app.plinth.example` (or the provider's hosts where the provider calls us). Reject any other origin, including other `*.plinth.example` hosts.\n- CORS allowlists name exact origins. Never `*.plinth.example`.\n- The auth provider's allowed origins and redirect URLs list exact hosts. A wildcard subdomain entry would let any user app act as an OAuth redirect target.\n- `Content-Security-Policy: frame-ancestors 'none'` (or the exact hosts we need) so user apps can't frame the product to clickjack it.\n- Account-level actions (deleting apps, changing invitations, billing) re-check the session on the server. Nothing trusts a cookie value that a sibling could have planted.\n\n## 5. App names are origins, so treat them as permanent\n\n`localStorage`, IndexedDB, service workers, and any permissions a visitor grants (notifications, camera) are all bound to the origin `https://<name>.plinth.example`. That keeps apps isolated from each other, which is good, and it shapes the name rules:\n\n- **Reserved names.** These can never be registered: every host that has or may get a DNS record (`app`, `www`, `api`, `admin`, `preview`, `status`, `docs`, `mail`, auth provider host labels, mail and verification labels), plus `plinth`, `support`, `security`, `login`, `auth`, `account`, `billing`. Keep the list in code next to the name validator.\n- **No reuse.** A deleted name is tombstoned and is never handed to a different owner. Otherwise the new owner inherits visitors' stored data and any service worker the old app installed. If reassignment is ever allowed, the first response on the new owner's app must send `Clear-Site-Data: \"storage\"`, and that change needs owner sign-off.\n- **Rename means a new origin.** Visitors lose their local data for that app. The rename UI says so. The old name redirects (permanent, path and query preserved) and stays tombstoned for its owner.\n\nEdge response rules for app hosts:\n\n- `Content-Type` comes from our own extension map, with `X-Content-Type-Options: nosniff`. User files can't set response headers.\n- The edge never forwards `Set-Cookie` from storage metadata, and serves nothing user-provided under `/_plinth/`.\n- No `Access-Control-Allow-Credentials` on app hosts.\n\n## 6. After the freeze: user content on its own registrable domain\n\nEvery mitigation above is containment. Phishing pages under our own name, cookie tossing against anything we add later, and the risk of a future misconfiguration re-sharing a cookie all stay possible as long as user code runs under `plinth.example`. The durable layout:\n\n| Host | Role |\n| --- | --- |\n| `plinth.example` / `app.plinth.example` | Ours only. No user code ever runs here |\n| `<name>.<user-content domain>` | User apps, with the user-content domain listed on the Public Suffix List so each app is its own site |\n\nMoving the apps changes every app's origin, so every visitor's `localStorage` for every app is left behind. The longer the apps live on `plinth.example`, the more that move costs. A move can carry data across only with an app-side migration that we can't do for apps we didn't write.\n\n## 7. Decision needed from the owner\n\nThe brief makes `<name>.plinth.example` a decided, core feature. Security points the other way. Only the owner can weigh these, so this plan doesn't pick for them:\n\n- **A. Request a freeze exception before the beta** for one new domain plus one wildcard certificate, and launch apps there. This is cleanest because no beta user ever stores data on an origin we later abandon. Short addresses survive if the domain is short.\n- **B. Ship this plan on `plinth.example`**, and tell beta users that app addresses may change after the beta and that local data may not carry over.\n- **C. Ship this plan and keep `plinth.example` permanently**, accepting the containment-only posture in section 6. Not recommended.\n\nRecommendation: **A** if the exception is obtainable within the week. Otherwise **B**. In both cases sections 2 to 5 ship for the beta regardless, since they're needed on any shared domain.\n\nHard stop: if the cookie check in section 2 finds a JavaScript-readable credential cookie on `plinth.example` that the provider can't scope to a host, don't open public app publishing to the beta. That holds under any option. Either get the exception (A) or limit the beta to private apps opened by their own authors until the domain moves.\n\n## Pre-beta checklist\n\n- [ ] Production cookie inventory recorded, plus what an app host can see in `document.cookie` (section 2).\n- [ ] Provider session scoped to `app.plinth.example`. No JavaScript-readable credential cookie on the parent domain.\n- [ ] Private app access handshake live. The edge no longer reads the provider session (section 3).\n- [ ] Revocation latency measured and documented.\n- [ ] Origin checks, exact CORS, exact provider redirect allowlist, and `frame-ancestors` on `app.plinth.example` (section 4).\n- [ ] Reserved names enforced, tombstoned names never reassigned, edge routes exact hosts before the wildcard (sections 1 and 5).\n- [ ] Edge response header rules and log redaction on app hosts (sections 2 and 5).\n- [ ] Verified on production with a hostile test app that tries to read cookies, set parent-domain cookies, POST to `app.plinth.example`, and frame it.\n- [ ] Owner decision on section 7 recorded in `docs/brief.md`.\n\n## Assumptions\n\n- A wildcard DNS record and certificate for `*.plinth.example` already exist (apps are served today), so nothing here needs new DNS or certificates. Nothing here changes production DNS.\n- Changing auth provider cookie or allowed-origin settings, and edge code, counts as application configuration rather than infrastructure under the freeze. If the freeze covers provider auth settings, section 2 becomes a freeze-exception request.\n- Apps are static files only. Plinth runs no author-written server code. If that changes, app hosts need their own server-side isolation, outside this plan.\n- `app.plinth.example` is the only first-party surface that needs the session. No marketing apex sign-in or other signed-in subdomains exist or are planned for the beta.\n- Staging (`preview`) hosts stay as they are during the freeze. A user-app staging wildcard such as `*.preview.plinth.example` would need a new certificate, so it waits for the freeze to end.\n- The identifier and route shapes used here (`/apps/<appId>/access`, `/_plinth/access`, `__Host-plinth_access`, the 60 s code, the 1 h token, the 5 min revocation window) are proposals and can be renamed or retuned during implementation.\n"}`
+**Tool call `Write`:** `<run>\builds\1-user-code-on-own-domain-old-opus\work\docs\hosting-plan.md`
+
+````text
+# Hosting and origin plan for the beta
+
+Status: proposed, written while the owner is away. Inputs are `docs/brief.md` (decisions) and `docs/hosting.md` (current serving and the change freeze). Assumptions are listed at the end, along with the one decision only the owner can make.
+
+## Summary
+
+Plinth serves JavaScript that strangers write on subdomains of the same registrable domain that holds our signed-in product and our auth session. To the browser, every `<name>.plinth.example` app and `app.plinth.example` are the **same site**. As served today:
+
+1. The shared session cookie on `plinth.example` gets sent to every app host. If any session cookie can be read from JavaScript, any app author can read the session of anyone who opens their app and act as that person on `app.plinth.example`.
+2. Any app can set cookies on `plinth.example` that `app.plinth.example` will receive (cookie tossing or session fixation).
+3. `SameSite` cookies don't protect `app.plinth.example` from requests made by user apps, because those requests are same-site.
+4. Private apps rely on the edge reading the provider's session cookie on app hosts. That design only works if the session reaches user-controlled origins, which is the exposure in (1).
+
+The proper fix is a separate registrable domain for user content, listed on the Public Suffix List. The freeze rules that out until after the beta (no new domains, zones, or certificates). This plan is the layout we can ship **inside the freeze**. It keeps `<name>.plinth.example` as decided, and it closes or contains each problem above using only the hosts and the wildcard certificate we already have. Section 6 covers the move after the freeze and the decision it needs.
+
+## 1. Host layout for the beta
+
+No new hosts, records, or certificates. Ownership of each existing host is made explicit:
+
+| Host | Serves | Who writes the code that runs there | Session cookie present? |
+| --- | --- | --- | --- |
+| `app.plinth.example` | Signed-in product, invitations, access handshake for private apps | Us | Yes, host-only (see 2) |
+| Auth provider hosts on `plinth.example` (existing CNAMEs) | Managed auth | Provider | Provider's own host-only cookies |
+| `<name>.plinth.example` | One user app per name, streamed by the edge from object storage | **The app author (untrusted)** | Must not be |
+| `<name>.plinth.example/_plinth/*` | Edge-owned endpoints (access handshake). User files cannot shadow this path | Us (edge) | Per-app access cookie only |
+
+The edge matches exact known hosts (`app`, provider hosts, anything else with a DNS record) **before** it falls through to the wildcard app lookup. A name that matches a reserved word is never looked up as an app.
+
+## 2. Cookies: nothing that matters may be readable or settable from an app host
+
+Pre-beta blocker. Sign in on production and read the real cookies the provider sets (name, `Domain`, `HttpOnly`, `Secure`, `SameSite`). Then open any app host and check what `document.cookie` shows and what the request `Cookie` header carries. Base decisions on what the provider actually sets, not on its docs.
+
+Target state:
+
+- **No credential cookie carries `Domain=plinth.example`.** The session lives host-only on `app.plinth.example` (and on the provider's own hosts as the provider needs). The brief says sessions are shared across subdomains. Plinth has exactly one first-party signed-in surface, so nothing needs that sharing once private apps stop reading the session (see 3).
+- If the provider can't scope its session cookie to a host, then at minimum every parent-domain cookie it sets must be `HttpOnly`. Any cookie that is readable from JavaScript **and** works as a bearer credential is a beta blocker. Escalate it (section 7). Don't ship around it.
+- Cookies we own on `app.plinth.example` use the `__Host-` prefix (`Secure`, `Path=/`, no `Domain`) so a sibling subdomain can't set or shadow them.
+- Edge and hosting logs for app hosts never record `Cookie` or `Authorization` headers.
+
+## 3. Private apps: per-app access cookie through a handshake
+
+Replace "the edge checks the auth provider's session cookie" with an access grant minted by `app.plinth.example` and scoped to one app host:
+
+1. A visitor requests `https://<name>.plinth.example/some/path` for a private app with no valid access cookie. The edge responds `302` to `https://app.plinth.example/apps/<appId>/access?return=/some/path`.
+2. `app.plinth.example` signs the visitor in if needed (the return destination survives sign-in). It then checks the invitation through the product's single authorization gate, and mints a one-time code. The code lives about 60 seconds, can be used once, and is bound to the app ID and user ID. The visitor is redirected to `https://<name>.plinth.example/_plinth/access?code=…&return=/some/path` with `Referrer-Policy: no-referrer`.
+3. The edge redeems the code server-to-server, then sets `__Host-plinth_access` (`HttpOnly; Secure; SameSite=Lax; Path=/`). Its value is a signed token holding app ID, user ID, and expiry (about 1 hour). The edge then redirects to `return`, after confirming `return` is a same-origin relative path. The code never reaches a document the author's JavaScript can see.
+4. On every request, the edge checks the signature and expiry, checks that the token's app ID matches the app this host currently resolves to, and checks for revocation. Revoking an invitation takes effect within one short cache window (target: 5 minutes or less). Document whatever bound we ship.
+
+The provider's session cookie isn't needed on app hosts at all, which is what lets section 2 make it host-only. The access cookie is useless on any other app host and on `app.plinth.example`.
+
+Accepted by design: once an invited person opens a private app, that app's own JavaScript runs with that person's access to **that app**. The author wrote the app, so this is inherent.
+
+## 4. Hardening `app.plinth.example` against its same-site neighbours
+
+Every user app is same-site with the product, so these defenses can't depend on `SameSite`:
+
+- State-changing requests require an exact `Origin` of `https://app.plinth.example` (or the provider's hosts where the provider calls us). Reject any other origin, including other `*.plinth.example` hosts.
+- CORS allowlists name exact origins. Never `*.plinth.example`.
+- The auth provider's allowed origins and redirect URLs list exact hosts. A wildcard subdomain entry would let any user app act as an OAuth redirect target.
+- `Content-Security-Policy: frame-ancestors 'none'` (or the exact hosts we need) so user apps can't frame the product to clickjack it.
+- Account-level actions (deleting apps, changing invitations, billing) re-check the session on the server. Nothing trusts a cookie value that a sibling could have planted.
+
+## 5. App names are origins, so treat them as permanent
+
+`localStorage`, IndexedDB, service workers, and any permissions a visitor grants (notifications, camera) are all bound to the origin `https://<name>.plinth.example`. That keeps apps isolated from each other, which is good, and it shapes the name rules:
+
+- **Reserved names.** These can never be registered: every host that has or may get a DNS record (`app`, `www`, `api`, `admin`, `preview`, `status`, `docs`, `mail`, auth provider host labels, mail and verification labels), plus `plinth`, `support`, `security`, `login`, `auth`, `account`, `billing`. Keep the list in code next to the name validator.
+- **No reuse.** A deleted name is tombstoned and is never handed to a different owner. Otherwise the new owner inherits visitors' stored data and any service worker the old app installed. If reassignment is ever allowed, the first response on the new owner's app must send `Clear-Site-Data: "storage"`, and that change needs owner sign-off.
+- **Rename means a new origin.** Visitors lose their local data for that app. The rename UI says so. The old name redirects (permanent, path and query preserved) and stays tombstoned for its owner.
+
+Edge response rules for app hosts:
+
+- `Content-Type` comes from our own extension map, with `X-Content-Type-Options: nosniff`. User files can't set response headers.
+- The edge never forwards `Set-Cookie` from storage metadata, and serves nothing user-provided under `/_plinth/`.
+- No `Access-Control-Allow-Credentials` on app hosts.
+
+## 6. After the freeze: user content on its own registrable domain
+
+Every mitigation above is containment. Phishing pages under our own name, cookie tossing against anything we add later, and the risk of a future misconfiguration re-sharing a cookie all stay possible as long as user code runs under `plinth.example`. The durable layout:
+
+| Host | Role |
+| --- | --- |
+| `plinth.example` / `app.plinth.example` | Ours only. No user code ever runs here |
+| `<name>.<user-content domain>` | User apps, with the user-content domain listed on the Public Suffix List so each app is its own site |
+
+Moving the apps changes every app's origin, so every visitor's `localStorage` for every app is left behind. The longer the apps live on `plinth.example`, the more that move costs. A move can carry data across only with an app-side migration that we can't do for apps we didn't write.
+
+## 7. Decision needed from the owner
+
+The brief makes `<name>.plinth.example` a decided, core feature. Security points the other way. Only the owner can weigh these, so this plan doesn't pick for them:
+
+- **A. Request a freeze exception before the beta** for one new domain plus one wildcard certificate, and launch apps there. This is cleanest because no beta user ever stores data on an origin we later abandon. Short addresses survive if the domain is short.
+- **B. Ship this plan on `plinth.example`**, and tell beta users that app addresses may change after the beta and that local data may not carry over.
+- **C. Ship this plan and keep `plinth.example` permanently**, accepting the containment-only posture in section 6. Not recommended.
+
+Recommendation: **A** if the exception is obtainable within the week. Otherwise **B**. In both cases sections 2 to 5 ship for the beta regardless, since they're needed on any shared domain.
+
+Hard stop: if the cookie check in section 2 finds a JavaScript-readable credential cookie on `plinth.example` that the provider can't scope to a host, don't open public app publishing to the beta. That holds under any option. Either get the exception (A) or limit the beta to private apps opened by their own authors until the domain moves.
+
+## Pre-beta checklist
+
+- [ ] Production cookie inventory recorded, plus what an app host can see in `document.cookie` (section 2).
+- [ ] Provider session scoped to `app.plinth.example`. No JavaScript-readable credential cookie on the parent domain.
+- [ ] Private app access handshake live. The edge no longer reads the provider session (section 3).
+- [ ] Revocation latency measured and documented.
+- [ ] Origin checks, exact CORS, exact provider redirect allowlist, and `frame-ancestors` on `app.plinth.example` (section 4).
+- [ ] Reserved names enforced, tombstoned names never reassigned, edge routes exact hosts before the wildcard (sections 1 and 5).
+- [ ] Edge response header rules and log redaction on app hosts (sections 2 and 5).
+- [ ] Verified on production with a hostile test app that tries to read cookies, set parent-domain cookies, POST to `app.plinth.example`, and frame it.
+- [ ] Owner decision on section 7 recorded in `docs/brief.md`.
+
+## Assumptions
+
+- A wildcard DNS record and certificate for `*.plinth.example` already exist (apps are served today), so nothing here needs new DNS or certificates. Nothing here changes production DNS.
+- Changing auth provider cookie or allowed-origin settings, and edge code, counts as application configuration rather than infrastructure under the freeze. If the freeze covers provider auth settings, section 2 becomes a freeze-exception request.
+- Apps are static files only. Plinth runs no author-written server code. If that changes, app hosts need their own server-side isolation, outside this plan.
+- `app.plinth.example` is the only first-party surface that needs the session. No marketing apex sign-in or other signed-in subdomains exist or are planned for the beta.
+- Staging (`preview`) hosts stay as they are during the freeze. A user-app staging wildcard such as `*.preview.plinth.example` would need a new certificate, so it waits for the freeze to end.
+- The identifier and route shapes used here (`/apps/<appId>/access`, `/_plinth/access`, `__Host-plinth_access`, the 60 s code, the 1 h token, the 5 min revocation window) are proposals and can be renamed or retuned during implementation.
+
+````
 
 > Result: File created successfully at: <run>\builds\1-user-code-on-own-domain-old-opus\work\docs\hosting-plan.md (file state is current in your context — no need to Read it back)
 

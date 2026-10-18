@@ -9,7 +9,7 @@
   "requested_model": "opus",
   "cli": null,
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
   },
   "completed": true,
@@ -52,6 +52,7 @@
   "assertions": {
     "file-catalog-with-saved-data-01": {
       "v": "fail",
+      "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -62,6 +63,7 @@
     },
     "file-catalog-with-saved-data-02": {
       "v": "fail",
+      "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -72,6 +74,7 @@
     },
     "file-catalog-with-saved-data-03": {
       "v": "fail",
+      "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -82,6 +85,7 @@
     },
     "file-catalog-with-saved-data-04": {
       "v": "pass",
+      "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -92,6 +96,7 @@
     },
     "file-catalog-with-saved-data-05": {
       "v": "fail",
+      "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -102,6 +107,7 @@
     },
     "file-catalog-with-saved-data-06": {
       "v": "pass",
+      "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
       "votes": [
         {
           "critic": "claude-fallback",

@@ -55,11 +55,11 @@ def guard():
 
 
 def digest(path):
-    """One hash over every file under a folder, by relative path and bytes."""
+    """One hash over every file under a folder, by relative path and bytes, with CRLF read as LF so a checkout's line-ending setting cannot change it."""
     h = hashlib.sha256()
     files = (p for p in pathlib.Path(path).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc')
     for f in sorted(files):
-        h.update(f.relative_to(path).as_posix().encode() + b'|' + f.read_bytes() + b'|')
+        h.update(f.relative_to(path).as_posix().encode() + b'|' + f.read_bytes().replace(b'\r\n', b'\n') + b'|')
     return h.hexdigest()[:16]
 
 
@@ -129,8 +129,10 @@ def main():
     baseline = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=work, capture_output=True, text=True).stdout.strip()
     # Hash the inputs before the session starts, so a session that writes into its own skill copy cannot change the record.
     installed = work / ('.claude' if model == 'opus' else '.agents') / 'skills'
+    # The case's own spec, not the whole file, so editing one case leaves every other case's pairs intact.
+    case = json.dumps({k: spec[k] for k in ('prompt', 'fixture', 'assertions')}, sort_keys=True).encode()
     digests = {'skill': digest(installed) if skill_dir else None, 'fixture': digest(FIXTURES / spec['fixture']),
-               'base_fixture': digest(FIXTURES / 'base'), 'evals': hashlib.sha256(EVALS.read_bytes()).hexdigest()[:16],
+               'base_fixture': digest(FIXTURES / 'base'), 'case': hashlib.sha256(case).hexdigest()[:16],
                'harness': digest(HERE)}
     started = datetime.now().astimezone()
     start = time.time()
@@ -155,7 +157,7 @@ def main():
               'finished': datetime.now().astimezone().isoformat(timespec='seconds'), 'baseline': baseline,
               # Claude Code reports the model it served. Codex reports none, so its pinned request is recorded as such.
               'served_model': transcript.served_model(base, model), 'requested_model': MODELS[model],
-              'cli': cli_version(args[0]), 'digests': digests}
+              'cli': cli_version(args[0]), 'prompt': prompt, 'digests': digests}
     (base / 'result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     print(json.dumps(result), flush=True)
 

@@ -9,7 +9,7 @@
   "requested_model": "gpt-6.1-sol",
   "cli": null,
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
   },
   "completed": true,
@@ -56,6 +56,7 @@
   "assertions": {
     "solo-product-without-workspaces-01": {
       "v": "pass",
+      "graded_text": "Journal data is owned by the user account directly, with no workspace, organization, team, or membership layer, and the auth provider's organization feature is not used.",
       "votes": [
         {
           "critic": "claude",
@@ -66,6 +67,7 @@
     },
     "solo-product-without-workspaces-02": {
       "v": "pass",
+      "graded_text": "Signed-in routes are not nested under a workspace, organization, or account-scope segment.",
       "votes": [
         {
           "critic": "claude",

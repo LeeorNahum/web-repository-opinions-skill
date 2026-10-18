@@ -101,10 +101,16 @@ def main():
         (out / 'answer.md').write_text(scrub(transcript.answer(base, model), secrets, hits), encoding='utf-8')
         if result.get('baseline'):
             (out / 'changes.diff').write_text(scrub(diff_text(base / 'work', result['baseline']), secrets, hits), encoding='utf-8')
-        (out / 'transcript.md').write_text(scrub(transcript.condensed(base, model), secrets, hits), encoding='utf-8')
+        prompt = result.get('prompt')
+        head = f'**Prompt:** {prompt}' if prompt else '**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.'
+        (out / 'transcript.md').write_text(scrub(head + '\n\n' + transcript.condensed(base, model), secrets, hits), encoding='utf-8')
         verdicts = {a['id']: {'v': ('pass' if g['checks'].get(a['id']) else 'fail'), 'by': 'check'} for a in EVALS[name]['assertions'] if a['kind'] == 'check'}
+        # The assertion text the critics actually graded, from the package they read.
+        packaged = ROOT / 'judge' / f'{rnd}-{name}' / 'semantic.json'
+        graded = {a['id']: a['text'] for a in json.loads(packaged.read_text(encoding='utf-8'))} if packaged.is_file() else {}
         for aid, vs in votes.get(label, {}).items():
-            verdicts[aid] = {'v': 'pass' if all(ok for _, ok, _ in vs) else 'fail', 'votes': [{'critic': c, 'v': 'pass' if ok else 'fail', 'e': scrub(e, secrets, hits)} for c, ok, e in vs]}
+            verdicts[aid] = {'v': 'pass' if all(ok for _, ok, _ in vs) else 'fail', 'graded_text': graded.get(aid),
+                             'votes': [{'critic': c, 'v': 'pass' if ok else 'fail', 'e': scrub(e, secrets, hits)} for c, ok, e in vs]}
         notes = {'blocking': [f'[{c}] {scrub(f, secrets, hits)}' + (f' ({st})' if st else '') for c, f, st in blocking.get(label, [])], 'minor': []}
         row = {'session': label, 'eval': name, 'arm': arm, 'model': model, 'model_id': result.get('model_id'), 'effort': result.get('effort'),
                'served_model': result.get('served_model') or transcript.served_model(base, model),
@@ -119,14 +125,17 @@ def main():
         sys.exit(f'The round holds {total} bytes, above the {ROUND_LIMIT} byte limit. It stays in {dest} and nothing was written to {final}.')
     same_family = sorted({s['session'] for s in sessions if s['model'] == 'opus' and any(
         v.get('critic') != 'codex' for a in s['assertions'].values() for v in a.get('votes', []))})
-    shutil.copyfile(jobs_file, dest / 'jobs.txt')
+    (dest / 'jobs.txt').write_text(scrub(pathlib.Path(jobs_file).read_text(encoding='utf-8'), secrets, hits), encoding='utf-8')
     summary = {'round': rnd, 'recorded': datetime.now().astimezone().isoformat(timespec='seconds'), 'skill_commit': commit,
                'same_family_graded': same_family, 'unfinished': unfinished, 'sessions': sessions}
     (dest / 'summary.json').write_text(json.dumps(summary, indent=2), encoding='utf-8')
     cols = [(s['arm'], s['model']) for s in sessions]
     cols = sorted(set(cols), key=cols.index)
-    note = (['Sessions in the round that did not finish, and are not recorded:', ''] + [f"- `{u['session']}`: {u['reason']}" for u in unfinished] + ['']) if unfinished else []
-    note += [f'Claude critics graded {len(same_family)} Claude-built sessions because Codex was unreachable. They need a Codex verdict before any comparison.', ''] if same_family else []
+    note = (["Sessions in the round's jobs file that are not recorded:", ''] + [f"- `{u['session']}`: {u['reason']}" for u in unfinished] + ['']) if unfinished else []
+    note += [f'Claude critics graded {len(same_family)} Claude-built sessions because Codex could not be reached. They need a Codex verdict before any comparison.', ''] if same_family else []
+    cases = {s['inputs'].get('case') or s['inputs'].get('evals') for s in sessions}
+    if len(cases) > 1 or None in cases:
+        note += ['Sessions in this round ran under more than one version of `evals.json`, and some before the case hash was recorded. Treat the round as a reference record: a before-and-after comparison reruns the old arm in the same round as the new one.', '']
     lines = [f'# Round {rnd}', '', f'Skill commit `{commit}`. One session per eval and column. P is a pass, F a fail, and a dash a missing verdict.', '', *note,
              '| Assertion | ' + ' | '.join(f'{a} {m}' for a, m in cols) + ' |', '| --- |' + ' :---: |' * len(cols)]
     by = {(s['eval'], s['arm'], s['model']): s for s in sessions}
@@ -139,7 +148,8 @@ def main():
                 v = by.get((name, arm, model), {}).get('assertions', {}).get(a['id'], {}).get('v')
                 cells.append({'pass': 'P', 'fail': 'F'}.get(v, '-'))
             lines.append(f"| `{a['id']}` | " + ' | '.join(cells) + ' |')
-    lines += ['', '| Session | Finished | Skill read | References read | Seconds |', '| --- | :---: | :---: | ---: | ---: |']
+    lines += ['', 'References read counts files whose opening and closing lines came back to the model. For Codex sessions it counts command output, which Codex may shorten before the model sees it, so treat those counts as an upper bound.',
+              '', '| Session | Finished | Skill read | References read | Seconds |', '| --- | :---: | :---: | ---: | ---: |']
     lines += [f"| `{s['session']}` | {'yes' if s['completed'] else 'no'} | {'yes' if s['skill_read'] else 'no'} | {len(s['references_read']['full'])} | {s['seconds']} |" for s in sessions]
     (dest / 'SUMMARY.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     if final.exists():

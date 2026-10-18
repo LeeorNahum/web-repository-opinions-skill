@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Tool call `Skill`:** `{"skill": "web-repository-opinions"}`
 
 > Result: Launching skill: web-repository-opinions
@@ -14,11 +16,245 @@
 
 > Result: # Abuse Resistance  A product reachable from the open internet is a target on day one. Bound what a single caller can cost the product before finding out the hard way.  ## Quota As Anti-Abuse Plumbing  Hold two different numbers, not one. A hidden internal quota, sized to the max load the product can absorb, applies to every account regardless of plan and stays invisible. A user-facing plan  [... 15789 more characters]
 
-**Tool call `Write`:** `{"file_path": "<run>\\builds\\1-upload-without-byte-route-old-opus\\work\\packages\\mcp\\src\\product.ts", "content": "export const images = {\n  /** Returns a fresh opaque storage key for a new image on a board the user can edit. */\n  async allocateKey(userId: string, boardId: string): Promise<string> {\n    throw new Error(\"wired to the product API at runtime\");\n  },\n  /** Records a stored image on a board. */\n  async create(input: { boardId: string; key: string; size: number }): Promise<void> {\n    throw new Error(\"wired to the product API at runtime\");\n  },\n};\n\nexport const ACCEPTED_IMAGE_TYPES = [\"image/png\", \"image/jpeg\", \"image/webp\", \"image/gif\"] as const;\nexport type ImageContentType = (typeof ACCEPTED_IMAGE_TYPES)[number];\nexport const MAX_IMAGE_BYTES = 20 * 1024 * 1024;\n\n/** The shared image resource returned by every surface. */\nexport type Image = {\n  id: string;\n  board_id: string;\n  filename: string;\n  content_type: ImageContentType;\n  size_bytes: number;\n  url: string;\n};\n\nexport type UploadFailureCode =\n  | \"board_not_found\"\n  | \"forbidden\"\n  | \"too_large\"\n  | \"unsupported_type\"\n  | \"quota_exceeded\"\n  | \"upload_not_found\"\n  | \"upload_expired\"\n  | \"bytes_missing\"\n  | \"size_mismatch\"\n  | \"type_mismatch\"\n  | \"url_blocked\"\n  | \"url_unreachable\";\n\nexport type UploadFailure = {\n  ok: false;\n  code: UploadFailureCode;\n  /** Product-owned, actionable copy. Never a raw provider or exception message. */\n  message: string;\n};\n\nexport type PendingUpload = {\n  upload_id: string;\n  put_url: string;\n  required_headers: Record<string, string>;\n  expires_at: string;\n};\n\n/**\n * Shared upload capability. The browser app, HTTP API, CLI, and MCP server all call these;\n * authorization, type and size limits, quota, and the storage write-ahead ledger live behind them.\n */\nexport const uploads = {\n  /** Checks access, type, size, and quota, registers the key, and signs a single PUT for exactly these bytes. */\n  async begin(input: {\n    userId: string;\n    boardId: string;\n    filename: string;\n    contentType: ImageContentType;\n    sizeBytes: number;\n  }): Promise<({ ok: true } & PendingUpload) | UploadFailure> {\n    throw new Error(\"wired to the product API at runtime\");\n  },\n  /** Verifies the stored object (present, declared size, sniffed type), publishes the image, and charges quota. Idempotent. */\n  async finalize(input: { userId: string; uploadId: string }): Promise<{ ok: true; image: Image } | UploadFailure> {\n    throw new Error(\"wired to the product API at runtime\");\n  },\n  /** Server-side fetch of a public http(s) URL with SSRF, redirect, timeout, and size guards, then finalize. */\n  async importFromUrl(input: {\n    userId: string;\n    boardId: string;\n    url: string;\n    filename?: string;\n  }): Promise<{ ok: true; image: Image } | UploadFailure> {\n    throw new Error(\"wired to the product API at runtime\");\n  },\n  /** Stores small inline bytes through the same begin/finalize rules. Callers enforce the inline cap. */\n  async storeInline(input: {\n    userId: string;\n    boardId: string;\n    filename: string;\n    bytes: Uint8Array;\n  }): Promise<{ ok: true; image: Image } | UploadFailure> {\n    throw new Error(\"wired to the product API at runtime\");\n  },\n};\n"}`
+**Tool call `Write`:** `<run>\builds\1-upload-without-byte-route-old-opus\work\packages\mcp\src\product.ts`
+
+````text
+export const images = {
+  /** Returns a fresh opaque storage key for a new image on a board the user can edit. */
+  async allocateKey(userId: string, boardId: string): Promise<string> {
+    throw new Error("wired to the product API at runtime");
+  },
+  /** Records a stored image on a board. */
+  async create(input: { boardId: string; key: string; size: number }): Promise<void> {
+    throw new Error("wired to the product API at runtime");
+  },
+};
+
+export const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"] as const;
+export type ImageContentType = (typeof ACCEPTED_IMAGE_TYPES)[number];
+export const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
+/** The shared image resource returned by every surface. */
+export type Image = {
+  id: string;
+  board_id: string;
+  filename: string;
+  content_type: ImageContentType;
+  size_bytes: number;
+  url: string;
+};
+
+export type UploadFailureCode =
+  | "board_not_found"
+  | "forbidden"
+  | "too_large"
+  | "unsupported_type"
+  | "quota_exceeded"
+  | "upload_not_found"
+  | "upload_expired"
+  | "bytes_missing"
+  | "size_mismatch"
+  | "type_mismatch"
+  | "url_blocked"
+  | "url_unreachable";
+
+export type UploadFailure = {
+  ok: false;
+  code: UploadFailureCode;
+  /** Product-owned, actionable copy. Never a raw provider or exception message. */
+  message: string;
+};
+
+export type PendingUpload = {
+  upload_id: string;
+  put_url: string;
+  required_headers: Record<string, string>;
+  expires_at: string;
+};
+
+/**
+ * Shared upload capability. The browser app, HTTP API, CLI, and MCP server all call these;
+ * authorization, type and size limits, quota, and the storage write-ahead ledger live behind them.
+ */
+export const uploads = {
+  /** Checks access, type, size, and quota, registers the key, and signs a single PUT for exactly these bytes. */
+  async begin(input: {
+    userId: string;
+    boardId: string;
+    filename: string;
+    contentType: ImageContentType;
+    sizeBytes: number;
+  }): Promise<({ ok: true } & PendingUpload) | UploadFailure> {
+    throw new Error("wired to the product API at runtime");
+  },
+  /** Verifies the stored object (present, declared size, sniffed type), publishes the image, and charges quota. Idempotent. */
+  async finalize(input: { userId: string; uploadId: string }): Promise<{ ok: true; image: Image } | UploadFailure> {
+    throw new Error("wired to the product API at runtime");
+  },
+  /** Server-side fetch of a public http(s) URL with SSRF, redirect, timeout, and size guards, then finalize. */
+  async importFromUrl(input: {
+    userId: string;
+    boardId: string;
+    url: string;
+    filename?: string;
+  }): Promise<{ ok: true; image: Image } | UploadFailure> {
+    throw new Error("wired to the product API at runtime");
+  },
+  /** Stores small inline bytes through the same begin/finalize rules. Callers enforce the inline cap. */
+  async storeInline(input: {
+    userId: string;
+    boardId: string;
+    filename: string;
+    bytes: Uint8Array;
+  }): Promise<{ ok: true; image: Image } | UploadFailure> {
+    throw new Error("wired to the product API at runtime");
+  },
+};
+
+````
 
 > Result: The file <run>\builds\1-upload-without-byte-route-old-opus\work\packages\mcp\src\product.ts has been updated successfully. (file state is current in your context — no need to Read it back)
 
-**Tool call `Write`:** `{"file_path": "<run>\\builds\\1-upload-without-byte-route-old-opus\\work\\packages\\mcp\\src\\tools\\upload-image.ts", "content": "import { z } from \"zod\";\nimport { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES, uploads, type UploadFailure } from \"../product\";\n\n// This server is remote. It cannot read files on the caller's machine or sandbox, so no tool\n// takes a path. Bytes arrive by server-fetched URL, by a signed PUT the caller performs, or,\n// for tiny images only, inline. See docs/upload-design.md.\n\n/** Inline bytes are generated token by token, so they are reserved for genuinely tiny images. */\nexport const MAX_INLINE_BYTES = 64 * 1024;\n\ntype Ctx = { userId: string };\n\nconst boardId = z.string().describe(\"Stable ID of the board, e.g. Hq3k9TmPx2Ab\");\nconst filename = z.string().min(1).max(255).describe(\"File name to show on the board, e.g. chart.png\");\n\nconst NOT_A_PATH =\n  \"Kitepost's server cannot read files on your machine or sandbox. \" +\n  \"If the file has a public https URL, pass that URL. Otherwise call create_image_upload, \" +\n  \"PUT the file from where it lives, then call finalize_image_upload.\";\n\nfunction looksLikeLocalPath(value: string): boolean {\n  return !/^https?:\\/\\//i.test(value);\n}\n\nfunction refuse(code: UploadFailure[\"code\"], message: string): UploadFailure {\n  return { ok: false, code, message };\n}\n\nexport const addImageFromUrl = {\n  name: \"add_image_from_url\",\n  description:\n    \"Add an image to a board from a public http(s) URL. Kitepost downloads it server-side. \" +\n    \"Preferred when the image is already online. PNG, JPEG, WebP, or GIF up to 20 MB. Not for local file paths.\",\n  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },\n  inputSchema: z.object({\n    board_id: boardId,\n    url: z.string().describe(\"Public http or https URL of the image. Local paths and sandbox: links do not work.\"),\n    filename: filename.optional(),\n  }),\n  async run(input: { board_id: string; url: string; filename?: string }, ctx: Ctx) {\n    if (looksLikeLocalPath(input.url)) return refuse(\"url_blocked\", NOT_A_PATH);\n    return uploads.importFromUrl({\n      userId: ctx.userId,\n      boardId: input.board_id,\n      url: input.url,\n      filename: input.filename,\n    });\n  },\n};\n\nexport const createImageUpload = {\n  name: \"create_image_upload\",\n  description:\n    \"Create an image upload for a board and get a signed URL to PUT the file to. \" +\n    \"Use for a file on your machine or sandbox: PUT the raw bytes with the returned headers \" +\n    \"(e.g. curl -T file -H ... put_url), then call finalize_image_upload. PNG, JPEG, WebP, or GIF up to 20 MB.\",\n  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },\n  inputSchema: z.object({\n    board_id: boardId,\n    filename,\n    content_type: z.enum(ACCEPTED_IMAGE_TYPES),\n    size_bytes: z.number().int().positive().describe(\"Exact file size in bytes, e.g. from `wc -c < file`\"),\n  }),\n  async run(\n    input: { board_id: string; filename: string; content_type: (typeof ACCEPTED_IMAGE_TYPES)[number]; size_bytes: number },\n    ctx: Ctx,\n  ) {\n    if (input.size_bytes > MAX_IMAGE_BYTES) {\n      return refuse(\"too_large\", `The file is ${input.size_bytes} bytes. Kitepost accepts images up to 20 MB.`);\n    }\n    const pending = await uploads.begin({\n      userId: ctx.userId,\n      boardId: input.board_id,\n      filename: input.filename,\n      contentType: input.content_type,\n      sizeBytes: input.size_bytes,\n    });\n    if (!pending.ok) return pending;\n    return {\n      ...pending,\n      next_step:\n        \"PUT the file's raw bytes (not base64, not multipart) to put_url with exactly required_headers \" +\n        \"before expires_at, then call finalize_image_upload with upload_id. The image is not on the board until finalized.\",\n    };\n  },\n};\n\nexport const finalizeImageUpload = {\n  name: \"finalize_image_upload\",\n  description:\n    \"Finalize an image upload after its bytes were PUT to the signed URL, and add the image to the board. \" +\n    \"Returns the image. Safe to call again for the same upload.\",\n  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },\n  inputSchema: z.object({\n    upload_id: z.string().describe(\"upload_id returned by create_image_upload\"),\n  }),\n  async run(input: { upload_id: string }, ctx: Ctx) {\n    return uploads.finalize({ userId: ctx.userId, uploadId: input.upload_id });\n  },\n};\n\nexport const uploadSmallImage = {\n  name: \"upload_small_image\",\n  description:\n    \"Upload a tiny image (64 KB or less) to a board as inline base64. \" +\n    \"For anything larger use add_image_from_url or create_image_upload, which do not spend context on the bytes.\",\n  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },\n  inputSchema: z.object({\n    board_id: boardId,\n    filename,\n    data_base64: z.string().describe(\"Base64 of the image bytes, 64 KB decoded at most\"),\n  }),\n  async run(input: { board_id: string; filename: string; data_base64: string }, ctx: Ctx) {\n    const encoded = input.data_base64.replace(/^data:[^,]*,/, \"\").replace(/\\s+/g, \"\");\n    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length === 0) {\n      return refuse(\"unsupported_type\", \"data_base64 is not valid base64. Pass only the base64 of the image file.\");\n    }\n    const bytes = Buffer.from(encoded, \"base64\");\n    if (bytes.length > MAX_INLINE_BYTES) {\n      return refuse(\n        \"too_large\",\n        `The image is ${bytes.length} bytes; inline upload takes up to ${MAX_INLINE_BYTES}. ` +\n          \"Use create_image_upload and PUT the file, or add_image_from_url if it is online.\",\n      );\n    }\n    return uploads.storeInline({\n      userId: ctx.userId,\n      boardId: input.board_id,\n      filename: input.filename,\n      bytes,\n    });\n  },\n};\n\nexport const imageUploadTools = [addImageFromUrl, createImageUpload, finalizeImageUpload, uploadSmallImage];\n"}`
+**Tool call `Write`:** `<run>\builds\1-upload-without-byte-route-old-opus\work\packages\mcp\src\tools\upload-image.ts`
+
+````text
+import { z } from "zod";
+import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES, uploads, type UploadFailure } from "../product";
+
+// This server is remote. It cannot read files on the caller's machine or sandbox, so no tool
+// takes a path. Bytes arrive by server-fetched URL, by a signed PUT the caller performs, or,
+// for tiny images only, inline. See docs/upload-design.md.
+
+/** Inline bytes are generated token by token, so they are reserved for genuinely tiny images. */
+export const MAX_INLINE_BYTES = 64 * 1024;
+
+type Ctx = { userId: string };
+
+const boardId = z.string().describe("Stable ID of the board, e.g. Hq3k9TmPx2Ab");
+const filename = z.string().min(1).max(255).describe("File name to show on the board, e.g. chart.png");
+
+const NOT_A_PATH =
+  "Kitepost's server cannot read files on your machine or sandbox. " +
+  "If the file has a public https URL, pass that URL. Otherwise call create_image_upload, " +
+  "PUT the file from where it lives, then call finalize_image_upload.";
+
+function looksLikeLocalPath(value: string): boolean {
+  return !/^https?:\/\//i.test(value);
+}
+
+function refuse(code: UploadFailure["code"], message: string): UploadFailure {
+  return { ok: false, code, message };
+}
+
+export const addImageFromUrl = {
+  name: "add_image_from_url",
+  description:
+    "Add an image to a board from a public http(s) URL. Kitepost downloads it server-side. " +
+    "Preferred when the image is already online. PNG, JPEG, WebP, or GIF up to 20 MB. Not for local file paths.",
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  inputSchema: z.object({
+    board_id: boardId,
+    url: z.string().describe("Public http or https URL of the image. Local paths and sandbox: links do not work."),
+    filename: filename.optional(),
+  }),
+  async run(input: { board_id: string; url: string; filename?: string }, ctx: Ctx) {
+    if (looksLikeLocalPath(input.url)) return refuse("url_blocked", NOT_A_PATH);
+    return uploads.importFromUrl({
+      userId: ctx.userId,
+      boardId: input.board_id,
+      url: input.url,
+      filename: input.filename,
+    });
+  },
+};
+
+export const createImageUpload = {
+  name: "create_image_upload",
+  description:
+    "Create an image upload for a board and get a signed URL to PUT the file to. " +
+    "Use for a file on your machine or sandbox: PUT the raw bytes with the returned headers " +
+    "(e.g. curl -T file -H ... put_url), then call finalize_image_upload. PNG, JPEG, WebP, or GIF up to 20 MB.",
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  inputSchema: z.object({
+    board_id: boardId,
+    filename,
+    content_type: z.enum(ACCEPTED_IMAGE_TYPES),
+    size_bytes: z.number().int().positive().describe("Exact file size in bytes, e.g. from `wc -c < file`"),
+  }),
+  async run(
+    input: { board_id: string; filename: string; content_type: (typeof ACCEPTED_IMAGE_TYPES)[number]; size_bytes: number },
+    ctx: Ctx,
+  ) {
+    if (input.size_bytes > MAX_IMAGE_BYTES) {
+      return refuse("too_large", `The file is ${input.size_bytes} bytes. Kitepost accepts images up to 20 MB.`);
+    }
+    const pending = await uploads.begin({
+      userId: ctx.userId,
+      boardId: input.board_id,
+      filename: input.filename,
+      contentType: input.content_type,
+      sizeBytes: input.size_bytes,
+    });
+    if (!pending.ok) return pending;
+    return {
+      ...pending,
+      next_step:
+        "PUT the file's raw bytes (not base64, not multipart) to put_url with exactly required_headers " +
+        "before expires_at, then call finalize_image_upload with upload_id. The image is not on the board until finalized.",
+    };
+  },
+};
+
+export const finalizeImageUpload = {
+  name: "finalize_image_upload",
+  description:
+    "Finalize an image upload after its bytes were PUT to the signed URL, and add the image to the board. " +
+    "Returns the image. Safe to call again for the same upload.",
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  inputSchema: z.object({
+    upload_id: z.string().describe("upload_id returned by create_image_upload"),
+  }),
+  async run(input: { upload_id: string }, ctx: Ctx) {
+    return uploads.finalize({ userId: ctx.userId, uploadId: input.upload_id });
+  },
+};
+
+export const uploadSmallImage = {
+  name: "upload_small_image",
+  description:
+    "Upload a tiny image (64 KB or less) to a board as inline base64. " +
+    "For anything larger use add_image_from_url or create_image_upload, which do not spend context on the bytes.",
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  inputSchema: z.object({
+    board_id: boardId,
+    filename,
+    data_base64: z.string().describe("Base64 of the image bytes, 64 KB decoded at most"),
+  }),
+  async run(input: { board_id: string; filename: string; data_base64: string }, ctx: Ctx) {
+    const encoded = input.data_base64.replace(/^data:[^,]*,/, "").replace(/\s+/g, "");
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length === 0) {
+      return refuse("unsupported_type", "data_base64 is not valid base64. Pass only the base64 of the image file.");
+    }
+    const bytes = Buffer.from(encoded, "base64");
+    if (bytes.length > MAX_INLINE_BYTES) {
+      return refuse(
+        "too_large",
+        `The image is ${bytes.length} bytes; inline upload takes up to ${MAX_INLINE_BYTES}. ` +
+          "Use create_image_upload and PUT the file, or add_image_from_url if it is online.",
+      );
+    }
+    return uploads.storeInline({
+      userId: ctx.userId,
+      boardId: input.board_id,
+      filename: input.filename,
+      bytes,
+    });
+  },
+};
+
+export const imageUploadTools = [addImageFromUrl, createImageUpload, finalizeImageUpload, uploadSmallImage];
+
+````
 
 > Result: The file <run>\builds\1-upload-without-byte-route-old-opus\work\packages\mcp\src\tools\upload-image.ts has been updated successfully. (file state is current in your context — no need to Read it back)
 
@@ -28,7 +264,114 @@
 
 **Assistant:** No dependencies are installed (there's no zod or TypeScript in the repo), so I can't typecheck. Now the design doc:
 
-**Tool call `Write`:** `{"file_path": "<run>\\builds\\1-upload-without-byte-route-old-opus\\work\\docs\\upload-design.md", "content": "# Getting images into Kitepost\n\nStatus: proposed 2026-10-17, addresses bug reports 412, 418, 421. Assumptions awaiting the owner are listed at the end.\n\n## What went wrong\n\n`upload_image { board_id, path }` called `readFile(path)` **on the MCP server**. The MCP server is remote (`mcp.kitepost.example/mcp`). The agent's file lives in a chat app's sandbox (`/mnt/data/photo.jpg`, 412) or a coding agent's sandbox (`sandbox:/workspace/out/chart.png`, 418), and our server cannot see either one. The read failed, the error was swallowed into an empty buffer, a 0-byte image was stored, and the tool reported `Uploaded photo.jpg`. Result: a broken image and a false success.\n\nThe same code was also an **arbitrary file read on the MCP host**: any path the server process could read, such as `/proc/self/environ` or a mounted secret, would be copied onto the caller's board. The rewrite removes it. See follow-ups.\n\n421 (base64 input) is the opposite failure. An inline blob is generated token by token, so a 6 MB photo (about 8 MB of base64) cannot fit in context.\n\n## Principles\n\n1. **A remote server never takes a file path.** No surface except the CLI, which runs on the user's machine, reads a local path, and the CLI reads it locally.\n2. **One upload capability, many adapters.** The browser flow the brief describes (sign a PUT, upload bytes directly to object storage, finalize) becomes the shared product capability `uploads.*`. The HTTP API, CLI, and MCP server translate to it. Authorization, the 20 MB / type limits, quota, and the storage ledger are enforced there once (brief: \"every surface goes through the same product API and the same authorization\").\n3. **Bytes go out of band.** Primary inputs are a URL the server fetches, or a signed PUT straight to storage. Inline bytes are only for tiny images.\n4. **Success means the image landed.** A tool or endpoint reports success only after finalize has confirmed the stored object is present, has the declared size, and sniffs as an accepted type. It returns the resulting image.\n5. **Originals are stored as uploaded.** Nothing is recompressed or transcoded (brief).\n\n## Shared product capability\n\nSignatures are in `packages/mcp/src/product.ts` (stubs wired to the product API at runtime).\n\n| Capability | Does |\n| --- | --- |\n| `uploads.begin(board, filename, content_type, size_bytes)` | Checks edit access, accepted type, size \u2264 20 MB, and quota headroom (gate before). Records the object key in the write-ahead ledger and creates a **pending** image row, then signs one PUT bound to that key, `Content-Type`, and `Content-Length`, valid for 15 minutes. Returns `upload_id`, `put_url`, `required_headers`, `expires_at`. |\n| `uploads.finalize(upload_id)` | HEADs the object and checks that it exists and that its size equals the declared size. Sniffs the magic bytes against the declared type, marks the image ready, and charges quota (charge after). Idempotent: a second call returns the same image. |\n| `uploads.importFromUrl(board, url, filename?)` | Server-side fetch, then the same begin/finalize rules. Guards: https/http only, DNS resolved and checked before connecting (no private, loopback, link-local, or metadata ranges, re-checked on each redirect), at most 3 redirects, 30 s total timeout, streamed with a hard 20 MB cut-off, `Content-Length` pre-checked against quota when present. Synchronous. Returns the landed image. |\n| `uploads.storeInline(board, filename, bytes)` | Same rules for small bytes the server already holds. Callers cap the size. |\n\nPending rows are invisible on boards, so an abandoned upload never shows as a broken image. A sweep removes pending uploads older than 24 h, along with their objects, through the ledger.\n\nTyped failure codes: `invalid_input`, `board_not_found`, `forbidden`, `too_large`, `unsupported_type`, `quota_exceeded`, `upload_not_found`, `upload_expired`, `bytes_missing`, `size_mismatch`, `type_mismatch`, `url_blocked`, `url_unreachable`. Each carries product-owned copy that names the measurement and the next step, for example \"The file is 24117248 bytes. Kitepost accepts images up to 20 MB.\" Raw storage and fetch errors stay in logs.\n\n## HTTP API (`api.kitepost.example/v1`)\n\nSame flow as the browser, published in the OpenAPI contract:\n\n```\nPOST /v1/boards/{board_id}/uploads        {filename, content_type, size_bytes}\n  -> 201 {upload_id, put_url, required_headers, expires_at}\nPUT  {put_url}   (raw bytes, straight to object storage, no API key needed)\nPOST /v1/uploads/{upload_id}/finalize\n  -> 200 {image}\n\nPOST /v1/boards/{board_id}/images:import  {url, filename?}\n  -> 201 {image}\n```\n\n**No byte-carrying route on the API.** No multipart or base64 body goes through `api.kitepost.example`. The signed PUT already gives HTTP clients a normal raw-file upload (`curl -T photo.jpg`) without proxying 20 MB bodies through serverless functions. This is a deliberate decision, not an omission.\n\n## CLI (`npx kitepost`)\n\n```\nkitepost upload --board <board_id> <file>...     # local files\nkitepost upload --board <board_id> --url <url>   # server-side import\n```\n\n- Thin client over the HTTP API, authenticated with `KITEPOST_API_KEY` or `kitepost login`.\n- For each file it stats the file, sniffs the type locally, calls create, PUTs, and finalizes. It refuses wrong types or files over 20 MB before any network call.\n- Several files run with concurrency 4. Each file gets its own result line in input order, failures are reported inline, and the exit code is non-zero if any file failed. `--json` prints one image or error object per file.\n- This is the only surface that reads local paths, because it runs where the files are.\n\n## MCP server (`mcp.kitepost.example/mcp`)\n\nImplemented in `packages/mcp/src/tools/upload-image.ts`. There are four single-purpose tools rather than one tool with `path | url | base64` modes, because agents pick the wrong argument more often than the wrong tool.\n\n| Tool | When the agent should use it |\n| --- | --- |\n| `add_image_from_url {board_id, url, filename?}` | The image is already at a public URL. Cheapest path. Non-http(s) input (`/mnt/...`, `sandbox:...`, `file:...`) is refused with copy that points to the upload tools. |\n| `create_image_upload {board_id, filename, content_type, size_bytes}` | The file is in the agent's sandbox or on the user's machine and the agent can make an outbound HTTP request (shell, Python, code interpreter). Returns the signed PUT, its headers, and a `next_step` instruction. This fixes 418, and 412 wherever the chat sandbox has network egress. |\n| `finalize_image_upload {upload_id}` | After the PUT. Returns the image. Idempotent. If the bytes never arrived it returns `bytes_missing` with instructions instead of creating a broken image. |\n| `upload_small_image {board_id, filename, data_base64}` | Answer to 421: inline base64, capped at **64 KB decoded**. Over the cap, it is refused with the measured size and the alternatives. The description and schema hints steer agents to the out-of-band tools first. |\n\nAll four are annotated as non-read-only and non-destructive. They only add images. `add_image_from_url` is open-world. `finalize_image_upload` is idempotent. One static catalog is advertised to every caller, and authorization is enforced per call by the product API.\n\nThe signed `put_url` will appear in the agent transcript. It is a narrow bearer capability: one key, a fixed size and type, 15 minutes, and nothing is published without an authenticated finalize. That is acceptable.\n\n## How each report resolves\n\n- **412**: If the chat sandbox can reach the internet, the agent uses create \u2192 PUT \u2192 finalize. If it cannot, the PUT fails, finalize returns `bytes_missing`, and the agent tells the user truthfully that it could not upload, so the user can drag the file into the web app. In neither case does an empty image appear or a false success get reported.\n- **418**: The coding agent has a shell, so it can `curl -T chart.png` to the signed URL, then finalize.\n- **421**: Inline base64 is supported for images of 64 KB or less. A 6 MB photo goes through the signed PUT, which costs a few hundred tokens instead of millions.\n\n## Assumptions made without the owner (please confirm)\n\n1. **`upload_image` is removed outright**, with no deprecated alias. It never worked for remote callers, and it was a security hole. Clients that cached the old catalog will get \"unknown tool\" until they reconnect. The alternative is a stub that always returns guidance, which keeps a dead tool in the catalog.\n2. **Inline cap of 64 KB decoded** (about 87 KB of base64, tens of thousands of tokens). It could be lower. Raising it brings back 421.\n3. **No multipart/byte route on the HTTP API.** The signed PUT is the file-upload path for scripts too.\n4. **URL import is synchronous** with a 30 s budget. That is enough for 20 MB from a reasonable host. If slow origins become common, it would become a background job that returns `202` plus a job to poll.\n5. **Signed PUT lifetime of 15 min, pending-upload sweep at 24 h.**\n6. **Quota is gated at begin and charged at finalize**, against the 2 GB free plan limit. Abandoned uploads are never charged.\n7. **Some chat hosts' sandboxes have no network egress.** For those, no MCP design can move a large attached file, because MCP has no client-to-server file transfer today. The fallback is the web app. If a target host later exposes attachments as fetchable URLs, `add_image_from_url` covers it.\n8. The existing direct `storage.put` from the MCP package is no longer used by the tool. All writes go through `uploads.*`.\n\n## Follow-ups (not done, need the owner)\n\n- **Audit MCP server logs** for `upload_image` calls whose `path` pointed anywhere other than an image (for example `/proc`, `/etc`, `.env`, or credential mounts). If any exist, treat it as a possible disclosure and rotate the secrets on that host.\n- **Existing broken images**: image rows with `size = 0` created by the old tool. Proposed: delete them and notify the affected users. I did not touch this because it deletes user-visible rows.\n- Implement `uploads.*` in the product API and move the browser app onto it. The browser flow is the same, so this is a refactor, not a behaviour change.\n- Add the HTTP routes to the OpenAPI contract and add the CLI `upload` command.\n- Test against each supported agent host: confirm that the agent picks `create_image_upload` for a sandbox file and that the PUT succeeds from that host's sandbox.\n"}`
+**Tool call `Write`:** `<run>\builds\1-upload-without-byte-route-old-opus\work\docs\upload-design.md`
+
+````text
+# Getting images into Kitepost
+
+Status: proposed 2026-10-17, addresses bug reports 412, 418, 421. Assumptions awaiting the owner are listed at the end.
+
+## What went wrong
+
+`upload_image { board_id, path }` called `readFile(path)` **on the MCP server**. The MCP server is remote (`mcp.kitepost.example/mcp`). The agent's file lives in a chat app's sandbox (`/mnt/data/photo.jpg`, 412) or a coding agent's sandbox (`sandbox:/workspace/out/chart.png`, 418), and our server cannot see either one. The read failed, the error was swallowed into an empty buffer, a 0-byte image was stored, and the tool reported `Uploaded photo.jpg`. Result: a broken image and a false success.
+
+The same code was also an **arbitrary file read on the MCP host**: any path the server process could read, such as `/proc/self/environ` or a mounted secret, would be copied onto the caller's board. The rewrite removes it. See follow-ups.
+
+421 (base64 input) is the opposite failure. An inline blob is generated token by token, so a 6 MB photo (about 8 MB of base64) cannot fit in context.
+
+## Principles
+
+1. **A remote server never takes a file path.** No surface except the CLI, which runs on the user's machine, reads a local path, and the CLI reads it locally.
+2. **One upload capability, many adapters.** The browser flow the brief describes (sign a PUT, upload bytes directly to object storage, finalize) becomes the shared product capability `uploads.*`. The HTTP API, CLI, and MCP server translate to it. Authorization, the 20 MB / type limits, quota, and the storage ledger are enforced there once (brief: "every surface goes through the same product API and the same authorization").
+3. **Bytes go out of band.** Primary inputs are a URL the server fetches, or a signed PUT straight to storage. Inline bytes are only for tiny images.
+4. **Success means the image landed.** A tool or endpoint reports success only after finalize has confirmed the stored object is present, has the declared size, and sniffs as an accepted type. It returns the resulting image.
+5. **Originals are stored as uploaded.** Nothing is recompressed or transcoded (brief).
+
+## Shared product capability
+
+Signatures are in `packages/mcp/src/product.ts` (stubs wired to the product API at runtime).
+
+| Capability | Does |
+| --- | --- |
+| `uploads.begin(board, filename, content_type, size_bytes)` | Checks edit access, accepted type, size ≤ 20 MB, and quota headroom (gate before). Records the object key in the write-ahead ledger and creates a **pending** image row, then signs one PUT bound to that key, `Content-Type`, and `Content-Length`, valid for 15 minutes. Returns `upload_id`, `put_url`, `required_headers`, `expires_at`. |
+| `uploads.finalize(upload_id)` | HEADs the object and checks that it exists and that its size equals the declared size. Sniffs the magic bytes against the declared type, marks the image ready, and charges quota (charge after). Idempotent: a second call returns the same image. |
+| `uploads.importFromUrl(board, url, filename?)` | Server-side fetch, then the same begin/finalize rules. Guards: https/http only, DNS resolved and checked before connecting (no private, loopback, link-local, or metadata ranges, re-checked on each redirect), at most 3 redirects, 30 s total timeout, streamed with a hard 20 MB cut-off, `Content-Length` pre-checked against quota when present. Synchronous. Returns the landed image. |
+| `uploads.storeInline(board, filename, bytes)` | Same rules for small bytes the server already holds. Callers cap the size. |
+
+Pending rows are invisible on boards, so an abandoned upload never shows as a broken image. A sweep removes pending uploads older than 24 h, along with their objects, through the ledger.
+
+Typed failure codes: `invalid_input`, `board_not_found`, `forbidden`, `too_large`, `unsupported_type`, `quota_exceeded`, `upload_not_found`, `upload_expired`, `bytes_missing`, `size_mismatch`, `type_mismatch`, `url_blocked`, `url_unreachable`. Each carries product-owned copy that names the measurement and the next step, for example "The file is 24117248 bytes. Kitepost accepts images up to 20 MB." Raw storage and fetch errors stay in logs.
+
+## HTTP API (`api.kitepost.example/v1`)
+
+Same flow as the browser, published in the OpenAPI contract:
+
+```
+POST /v1/boards/{board_id}/uploads        {filename, content_type, size_bytes}
+  -> 201 {upload_id, put_url, required_headers, expires_at}
+PUT  {put_url}   (raw bytes, straight to object storage, no API key needed)
+POST /v1/uploads/{upload_id}/finalize
+  -> 200 {image}
+
+POST /v1/boards/{board_id}/images:import  {url, filename?}
+  -> 201 {image}
+```
+
+**No byte-carrying route on the API.** No multipart or base64 body goes through `api.kitepost.example`. The signed PUT already gives HTTP clients a normal raw-file upload (`curl -T photo.jpg`) without proxying 20 MB bodies through serverless functions. This is a deliberate decision, not an omission.
+
+## CLI (`npx kitepost`)
+
+```
+kitepost upload --board <board_id> <file>...     # local files
+kitepost upload --board <board_id> --url <url>   # server-side import
+```
+
+- Thin client over the HTTP API, authenticated with `KITEPOST_API_KEY` or `kitepost login`.
+- For each file it stats the file, sniffs the type locally, calls create, PUTs, and finalizes. It refuses wrong types or files over 20 MB before any network call.
+- Several files run with concurrency 4. Each file gets its own result line in input order, failures are reported inline, and the exit code is non-zero if any file failed. `--json` prints one image or error object per file.
+- This is the only surface that reads local paths, because it runs where the files are.
+
+## MCP server (`mcp.kitepost.example/mcp`)
+
+Implemented in `packages/mcp/src/tools/upload-image.ts`. There are four single-purpose tools rather than one tool with `path | url | base64` modes, because agents pick the wrong argument more often than the wrong tool.
+
+| Tool | When the agent should use it |
+| --- | --- |
+| `add_image_from_url {board_id, url, filename?}` | The image is already at a public URL. Cheapest path. Non-http(s) input (`/mnt/...`, `sandbox:...`, `file:...`) is refused with copy that points to the upload tools. |
+| `create_image_upload {board_id, filename, content_type, size_bytes}` | The file is in the agent's sandbox or on the user's machine and the agent can make an outbound HTTP request (shell, Python, code interpreter). Returns the signed PUT, its headers, and a `next_step` instruction. This fixes 418, and 412 wherever the chat sandbox has network egress. |
+| `finalize_image_upload {upload_id}` | After the PUT. Returns the image. Idempotent. If the bytes never arrived it returns `bytes_missing` with instructions instead of creating a broken image. |
+| `upload_small_image {board_id, filename, data_base64}` | Answer to 421: inline base64, capped at **64 KB decoded**. Over the cap, it is refused with the measured size and the alternatives. The description and schema hints steer agents to the out-of-band tools first. |
+
+All four are annotated as non-read-only and non-destructive. They only add images. `add_image_from_url` is open-world. `finalize_image_upload` is idempotent. One static catalog is advertised to every caller, and authorization is enforced per call by the product API.
+
+The signed `put_url` will appear in the agent transcript. It is a narrow bearer capability: one key, a fixed size and type, 15 minutes, and nothing is published without an authenticated finalize. That is acceptable.
+
+## How each report resolves
+
+- **412**: If the chat sandbox can reach the internet, the agent uses create → PUT → finalize. If it cannot, the PUT fails, finalize returns `bytes_missing`, and the agent tells the user truthfully that it could not upload, so the user can drag the file into the web app. In neither case does an empty image appear or a false success get reported.
+- **418**: The coding agent has a shell, so it can `curl -T chart.png` to the signed URL, then finalize.
+- **421**: Inline base64 is supported for images of 64 KB or less. A 6 MB photo goes through the signed PUT, which costs a few hundred tokens instead of millions.
+
+## Assumptions made without the owner (please confirm)
+
+1. **`upload_image` is removed outright**, with no deprecated alias. It never worked for remote callers, and it was a security hole. Clients that cached the old catalog will get "unknown tool" until they reconnect. The alternative is a stub that always returns guidance, which keeps a dead tool in the catalog.
+2. **Inline cap of 64 KB decoded** (about 87 KB of base64, tens of thousands of tokens). It could be lower. Raising it brings back 421.
+3. **No multipart/byte route on the HTTP API.** The signed PUT is the file-upload path for scripts too.
+4. **URL import is synchronous** with a 30 s budget. That is enough for 20 MB from a reasonable host. If slow origins become common, it would become a background job that returns `202` plus a job to poll.
+5. **Signed PUT lifetime of 15 min, pending-upload sweep at 24 h.**
+6. **Quota is gated at begin and charged at finalize**, against the 2 GB free plan limit. Abandoned uploads are never charged.
+7. **Some chat hosts' sandboxes have no network egress.** For those, no MCP design can move a large attached file, because MCP has no client-to-server file transfer today. The fallback is the web app. If a target host later exposes attachments as fetchable URLs, `add_image_from_url` covers it.
+8. The existing direct `storage.put` from the MCP package is no longer used by the tool. All writes go through `uploads.*`.
+
+## Follow-ups (not done, need the owner)
+
+- **Audit MCP server logs** for `upload_image` calls whose `path` pointed anywhere other than an image (for example `/proc`, `/etc`, `.env`, or credential mounts). If any exist, treat it as a possible disclosure and rotate the secrets on that host.
+- **Existing broken images**: image rows with `size = 0` created by the old tool. Proposed: delete them and notify the affected users. I did not touch this because it deletes user-visible rows.
+- Implement `uploads.*` in the product API and move the browser app onto it. The browser flow is the same, so this is a refactor, not a behaviour change.
+- Add the HTTP routes to the OpenAPI contract and add the CLI `upload` command.
+- Test against each supported agent host: confirm that the agent picks `create_image_upload` for a sandbox file and that the PUT succeeds from that host's sandbox.
+
+````
 
 > Result: File created successfully at: <run>\builds\1-upload-without-byte-route-old-opus\work\docs\upload-design.md (file state is current in your context — no need to Read it back)
 

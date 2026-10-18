@@ -9,7 +9,7 @@
   "requested_model": "gpt-6.1-sol",
   "cli": "codex-cli 0.162.1",
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
     "fixture": "cf95ce9da7951479",
     "base_fixture": "9a72a07420d785e3",
@@ -52,6 +52,7 @@
   "assertions": {
     "user-code-on-own-domain-01": {
       "v": "pass",
+      "graded_text": "The target layout serves people's HTML and JavaScript from a separate registrable domain, not from any subdomain of plinth.example.",
       "votes": [
         {
           "critic": "claude",
@@ -62,6 +63,7 @@
     },
     "user-code-on-own-domain-02": {
       "v": "pass",
+      "graded_text": "The reason given is that every subdomain of one registrable domain is the same site: script on a sibling subdomain can set cookies for the parent domain and ride same-site requests, which lets it interfere with sign-in (login CSRF or session confusion) or reach session tokens.",
       "votes": [
         {
           "critic": "claude",
@@ -72,6 +74,7 @@
     },
     "user-code-on-own-domain-03": {
       "v": "fail",
+      "graded_text": "The short <name>.plinth.example address is kept as Plinth's own page, which frames the app served from the other domain, so visitors still see the Plinth address.",
       "votes": [
         {
           "critic": "claude",
@@ -82,6 +85,7 @@
     },
     "user-code-on-own-domain-04": {
       "v": "pass",
+      "graded_text": "Each app gets its own origin on the content domain, such as a label per app, so one app cannot read another's storage.",
       "votes": [
         {
           "critic": "claude",
@@ -92,6 +96,7 @@
     },
     "user-code-on-own-domain-05": {
       "v": "fail",
+      "graded_text": "Until the separate domain can be set up after the freeze, people's code runs with an opaque origin, through a sandbox (for example a CSP sandbox header) without allow-same-origin, and the plan says this costs the apps their browser storage. It does not keep serving people's code as the top-level document on plinth.example subdomains during the beta.",
       "votes": [
         {
           "critic": "claude",

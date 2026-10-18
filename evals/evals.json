@@ -54,7 +54,7 @@
    "id": 2,
    "name": "account-wide-agent-grant",
    "fixture": "workspaces",
-   "role": "pressure",
+   "role": "control",
    "opinions": [
     "workspace-tenancy",
     "routing",
@@ -162,7 +162,7 @@
    "id": 5,
    "name": "downgrade-overage",
    "fixture": "downgrade",
-   "role": "pressure",
+   "role": "control",
    "opinions": [
     "billing",
     "quota",
@@ -179,7 +179,7 @@
     {
      "id": "downgrade-overage-02",
      "kind": "semantic",
-     "text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted, existing photos stay at least readable and deletable, and storage cannot keep growing past the Free allowance while the account is over it."
+     "text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted, existing photos stay at least readable and deletable, alone or with their book, and storage cannot keep growing past the Free allowance while the account is over it."
     },
     {
      "id": "downgrade-overage-03",

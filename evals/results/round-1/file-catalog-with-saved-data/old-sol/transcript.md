@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Assistant:** I’ll read the product brief and repository guidance, then write the tool catalog with argument schemas, saved-data behavior, and explicit assumptions. I’m using the web-repository-opinions skill for this web product design task.
 
 **Shell:** `"<home>\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command "Get-Content .agents/skills/web-repository-opinions/SKILL.md; Get-Content docs/brief.md; rg --files -g AGENTS.md -g '*mcp*' -g 'package.json' -g '*data*' -g '*schema*' -g '*README*'"`

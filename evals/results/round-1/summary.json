@@ -1,6 +1,6 @@
 {
   "round": "1",
-  "recorded": "2026-10-17T21:07:37-04:00",
+  "recorded": "2026-10-17T21:20:17-04:00",
   "skill_commit": "738936d01659448e19e26243f5257f7e92a23041",
   "same_family_graded": [
     "1-account-wide-agent-grant-old-opus",
@@ -49,7 +49,7 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "1cb46008003edbaa75b9ebba53c440799f4429b4",
         "fixture": "fc59cabac6826db2",
         "base_fixture": "9a72a07420d785e3",
@@ -90,6 +90,7 @@
       "assertions": {
         "upload-without-byte-route-01": {
           "v": "pass",
+          "graded_text": "The design states that a file path or sandbox URI sent by a remote agent does not transfer the file's bytes, and the changed MCP tool no longer reads a caller-supplied path from the server's file system.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -100,6 +101,7 @@
         },
         "upload-without-byte-route-02": {
           "v": "pass",
+          "graded_text": "The design gives each caller a route that moves bytes: the CLI reads local files and uploads them, HTTP clients send the bytes (multipart or a signed direct upload), and the remote MCP tool accepts a fetchable HTTPS URL or a host's documented file attachment reference.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -110,6 +112,7 @@
         },
         "upload-without-byte-route-03": {
           "v": "pass",
+          "graded_text": "When an MCP caller has no supported byte route, the tool returns an explicit error that names the routes that do work, and the changed tool code cannot report success unless validated bytes were stored (the empty-buffer success path is gone).",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -120,6 +123,7 @@
         },
         "upload-without-byte-route-04": {
           "v": "pass",
+          "graded_text": "Inline base64 or other inline content through the model is either refused or capped at a stated small size, so a multi-megabyte photo is never routed through model context.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -130,6 +134,7 @@
         },
         "upload-without-byte-route-05": {
           "v": "pass",
+          "graded_text": "If the server fetches any URL, including one a host gives for an attachment, the design names enforced limits: blocking private and internal addresses, a redirect limit with each hop rechecked, a streamed size cap at the product's file limit, a timeout, and validation of the actual bytes or type. It never describes URL input as unbounded.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -140,6 +145,7 @@
         },
         "upload-without-byte-route-06": {
           "v": "pass",
+          "graded_text": "Nothing in the design changes the browser's drag-and-drop flow, and the design states that every route it defines ends in the same authorization, quota, validation, and finalize step the browser flow uses before an image counts as added.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -150,6 +156,7 @@
         },
         "upload-without-byte-route-07": {
           "v": "fail",
+          "graded_text": "Upload staging and completion stay in the HTTP API and CLI: an agent that can run commands is pointed at the CLI or HTTP upload, and the MCP catalog gains no separate tools for starting, signing, or finalizing an upload.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -177,7 +184,7 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
         "fixture": "f43e39fe46e81e7a",
         "base_fixture": "9a72a07420d785e3",
@@ -221,6 +228,7 @@
       "assertions": {
         "account-wide-agent-grant-01": {
           "v": "fail",
+          "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, says the consent screen states that scope, and does not make the person pick one organization per connection.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -231,6 +239,7 @@
         },
         "account-wide-agent-grant-02": {
           "v": "pass",
+          "graded_text": "Every tool call resolves the target workspace or document and checks live membership, role, and individual share on the server at call time. A single organization claim in a token is not treated as proof of access to any other workspace.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -241,6 +250,7 @@
         },
         "account-wide-agent-grant-03": {
           "v": "pass",
+          "graded_text": "The create tool takes an explicit destination workspace ID, and the server verifies the caller may create in that workspace before creating. The design does not say a client-supplied workspace ID must never be used.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -251,6 +261,7 @@
         },
         "account-wide-agent-grant-04": {
           "v": "pass",
+          "graded_text": "Removing a membership or an individual share takes effect for an already connected agent without reconnecting.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -261,6 +272,7 @@
         },
         "account-wide-agent-grant-05": {
           "v": "pass",
+          "graded_text": "An individually shared document gives access to that document only, never to its workspace's other documents or member list, through the UI and the agent alike.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -271,6 +283,7 @@
         },
         "account-wide-agent-grant-06": {
           "v": "pass",
+          "graded_text": "The library shows documents from every workspace the person belongs to by default, with workspace and shared filters held in URL query state, filters only narrow what is shown, and no active-workspace session state is introduced as an authority for browsing or for the agent connection.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -281,6 +294,7 @@
         },
         "account-wide-agent-grant-07": {
           "v": "pass",
+          "graded_text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -309,7 +323,7 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
       },
       "completed": true,
@@ -341,6 +355,7 @@
       "assertions": {
         "workspace-bound-agent-grant-01": {
           "v": "pass",
+          "graded_text": "Each agent connection is bound to one firm workspace chosen at consent and approved by that firm's Admin, and a consultant who works for several firms makes a separate connection for each.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -351,6 +366,7 @@
         },
         "workspace-bound-agent-grant-02": {
           "v": "pass",
+          "graded_text": "The server checks on every call that the target belongs to the connection's bound workspace and that the consultant's membership and role are still live, so removal from a firm cuts off an existing connection.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -361,6 +377,7 @@
         },
         "workspace-bound-agent-grant-03": {
           "v": "pass",
+          "graded_text": "The design offers no connection whose scope spans more than one firm.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -384,7 +401,7 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
       },
       "completed": true,
@@ -422,6 +439,7 @@
       "assertions": {
         "workspace-bound-agent-grant-01": {
           "v": "pass",
+          "graded_text": "Each agent connection is bound to one firm workspace chosen at consent and approved by that firm's Admin, and a consultant who works for several firms makes a separate connection for each.",
           "votes": [
             {
               "critic": "claude",
@@ -432,6 +450,7 @@
         },
         "workspace-bound-agent-grant-02": {
           "v": "pass",
+          "graded_text": "The server checks on every call that the target belongs to the connection's bound workspace and that the consultant's membership and role are still live, so removal from a firm cuts off an existing connection.",
           "votes": [
             {
               "critic": "claude",
@@ -442,6 +461,7 @@
         },
         "workspace-bound-agent-grant-03": {
           "v": "pass",
+          "graded_text": "The design offers no connection whose scope spans more than one firm.",
           "votes": [
             {
               "critic": "claude",
@@ -465,7 +485,7 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
       },
       "completed": true,
@@ -516,6 +536,7 @@
       "assertions": {
         "solo-product-without-workspaces-01": {
           "v": "pass",
+          "graded_text": "Journal data is owned by the user account directly, with no workspace, organization, team, or membership layer, and the auth provider's organization feature is not used.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -526,6 +547,7 @@
         },
         "solo-product-without-workspaces-02": {
           "v": "pass",
+          "graded_text": "Signed-in routes are not nested under a workspace, organization, or account-scope segment.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -549,7 +571,7 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
       },
       "completed": true,
@@ -596,6 +618,7 @@
       "assertions": {
         "solo-product-without-workspaces-01": {
           "v": "pass",
+          "graded_text": "Journal data is owned by the user account directly, with no workspace, organization, team, or membership layer, and the auth provider's organization feature is not used.",
           "votes": [
             {
               "critic": "claude",
@@ -606,6 +629,7 @@
         },
         "solo-product-without-workspaces-02": {
           "v": "pass",
+          "graded_text": "Signed-in routes are not nested under a workspace, organization, or account-scope segment.",
           "votes": [
             {
               "critic": "claude",
@@ -629,7 +653,7 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "8db869a36facf8a25f04b96e5ec8bdf58d7549b3",
         "fixture": "420f572c4567fe9a",
         "base_fixture": "9a72a07420d785e3",
@@ -666,69 +690,77 @@
       "assertions": {
         "downgrade-overage-01": {
           "v": "pass",
+          "graded_text": "A stable, deterministic order (such as oldest first) decides which 25 books stay covered. Books beyond that keep all their data, are refused gated operations with a clear product message rather than deleted, and become covered again as soon as the plan or freed capacity allows.",
           "votes": [
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/downgrade-policy.md:23 \"A book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.\" with :75 \"ordered by `(createdAt, id)` ... The id tiebreak keeps the order stable\"; data kept per :7 \"Nothing is deleted, locked, or rewritten because a plan ended\"; refusal with product copy per :83 `book_frozen` and :96 \"A frozen book opens with its editing controls replaced by a short read-only note\"; re-covered per :37 \"Trashing a covered book makes the oldest frozen book covered\" and :61 \"All 40 books editable again at once\"."
+              "e": "A/project/docs/downgrade-policy.md:23 \"A book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.\" with a stable tiebreak at :75 \"active books ordered by `(createdAt, id)`... The id tiebreak keeps the order stable\". Data kept: :7 \"Nothing is deleted, locked, or rewritten because a plan ended.\" Refused with product message: :83 `book_frozen` and :96 \"A frozen book opens with its editing controls replaced by a short read-only note.\" Re-covered: :37 \"Trashing a covered book makes the oldest frozen book covered\" and :61 \"All 40 books editable again at once.\""
             }
           ]
         },
         "downgrade-overage-02": {
           "v": "fail",
+          "graded_text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted, existing photos stay at least readable and deletable, alone or with their book, and storage cannot keep growing past the Free allowance while the account is over it.",
           "votes": [
             {
               "critic": "claude-fallback",
               "v": "fail",
-              "e": "No-deletion and no-growth hold (docs/downgrade-policy.md:7 \"Nothing is deleted\"; :48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\"), but existing photos are not kept deletable: :59 \"Photos in frozen books are view, export, and print only\", and :83 makes `assertBookEditable` refuse \"Every mutation that changes a book's content\" with `book_frozen`. A photo in a frozen book can only be removed by trashing and purging the whole book, which contradicts :7 \"never takes away the ability to ... clean up\". The storage remedy at :97 offers only \"trashing books ... or deleting from Trash permanently\"."
+              "e": "No deletion (:7 \"Nothing is deleted\") and no growth (:48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\") are stated, but photos in frozen books are not deletable alone: :31 \"Edit pages, layout, text, title, photo placement | Yes | No\" and :83 `assertBookEditable` runs in \"Every mutation that changes a book's content or metadata\". The only storage remedy given is whole-book deletion, :97 \"deleting from Trash permanently for storage\". A frozen-book photo can only be deleted along with its book, so the \"alone or with their book\" part fails for the 15 frozen books in the typical case."
             }
           ]
         },
         "downgrade-overage-03": {
           "v": "pass",
+          "graded_text": "The policy states an explicit rule for existing photos above the new 40 MB single-photo limit: they are kept and stay readable, with no compression, resizing, or deletion, and new uploads must meet the 40 MB limit.",
           "votes": [
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/downgrade-policy.md:44 \"A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints ... Replacing it counts as a new upload, so the replacement must be 40 MB or less.\" Together with :7 \"Nothing is deleted, locked, or rewritten\" and :18 \"40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size\", this rules out compression, resizing, or deletion."
+              "e": "A/project/docs/downgrade-policy.md:18 \"40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size\"; :44 \"A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints\"; no rewriting at :7 \"Nothing is deleted, locked, or rewritten because a plan ended\"; :59 \"No new photo over 40 MB can be uploaded.\""
             }
           ]
         },
         "downgrade-overage-04": {
           "v": "pass",
+          "graded_text": "Bytes held in Trash count toward the total storage allowance during the downgrade.",
           "votes": [
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/downgrade-policy.md:48 \"Usage is the total size of every stored photo, **including photos in Trash**\"; :38 \"their bytes count toward storage until they are purged.\""
+              "e": "A/project/docs/downgrade-policy.md:48 \"Usage is the total size of every stored photo, **including photos in Trash**\"; :38 \"their bytes count toward storage until they are purged.\""
             }
           ]
         },
         "downgrade-overage-05": {
           "v": "pass",
+          "graded_text": "Coverage and limits are derived from the current plan when a request arrives and enforced on the server for the browser app, the API, and the MCP connection alike, rather than kept as a lock flag stamped on each book.",
           "votes": [
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/downgrade-policy.md:75 \"There is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan\"; :79 \"All three checks live in the domain package and run inside the backend mutations. The browser app, public API, MCP server, and background jobs all go through those mutations\"."
+              "e": "A/project/docs/downgrade-policy.md:75 \"There is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan\"; :11 \"every gate reads the current plan on each request\"; :79 \"The browser app, public API, MCP server, and background jobs all go through those mutations\"."
             }
           ]
         },
         "downgrade-overage-06": {
           "v": "pass",
+          "graded_text": "A cancelled account cannot create a book while it holds 25 or more books.",
           "votes": [
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/downgrade-policy.md:36 \"**Creating or duplicating a book** needs fewer than 25 active books\"; :84 `assertCanAddBook(account)` | Create, duplicate | `book_limit_reached`; :56 \"No new books until they have 24 or fewer active books.\""
+              "e": "A/project/docs/downgrade-policy.md:36 \"**Creating or duplicating a book** needs fewer than 25 active books\"; :84 `assertCanAddBook(account)` on \"Create, duplicate\" refuses with `book_limit_reached`; :56 \"No new books until they have 24 or fewer active books.\""
             }
           ]
         }
       },
       "blocking": [
-        "[claude-fallback] Photos in frozen books cannot be deleted individually. docs/downgrade-policy.md:59 \"Photos in frozen books are view, export, and print only\", and :83 refuses every content mutation on a frozen book with `book_frozen`. The typical user is 1.1 GB over storage, and the large Pro-era photos likely sit in the newer, frozen books. To free space they would have to delete whole books, which contradicts the doc's own principle at :7 \"never takes away the ability to ... clean up what the user already made\".",
-        "[claude-fallback] The storage quota can be overrun by concurrent requests. docs/downgrade-policy.md:89 says \"the size and storage check runs when the client asks for upload permission ... Usage is recorded when the upload is finalized.\" Outstanding grants are never reserved against the quota, so a user at 1.4 GB can open many 40 MB grants in parallel. Each one passes `usage + size <= 1.5 GB`, and storage grows well past the Free allowance.",
-        "[claude-fallback] Size limits rest on the size the client declares. docs/downgrade-policy.md:85 runs `assertCanStore(account, bytes)` only \"before signing upload URLs\". Nothing in the doc binds the signed URL to that declared size or checks the actual object size at finalize. A hostile client could declare 1 MB and upload 120 MB, getting around both the 40 MB per-photo limit and the 1.5 GB total, even though :44 claims \"The per-photo limit is checked when bytes come in\"."
+        "[claude-fallback] The book limit can be got around by cycling through Trash: A/project/docs/downgrade-policy.md:106 \"**Restoring from Trash is always allowed**, even over the book limit\" together with :36 \"needs fewer than 25 active books\" lets an account at 25 trash one book, create one, then restore the first, ending at 26 active books. Repeating this grows the count without limit. Because :29 lets frozen books \"Order printed copies | Yes | Yes\", a Free account (including one that never paid) can build a book while it is covered, push it into frozen, still print it, and do this again for an unlimited number of books.",
+        "[claude-fallback] Photos in frozen books cannot be deleted one at a time, so freeing storage requires deleting a whole book: A/project/docs/downgrade-policy.md:31 bars \"photo placement\" edits on frozen books, :83 applies `assertBookEditable` to \"Every mutation that changes a book's content\", and :97 offers only \"deleting from Trash permanently for storage\". In the typical case, a user over 1.5 GB who wants to drop one 110 MB photo from one of the 15 frozen books would have to delete the entire book.",
+        "[claude-fallback] Upload checks trust the size the client declares: A/project/docs/downgrade-policy.md:89 \"the size and storage check runs when the client asks for upload permission, before any bytes move... Usage is recorded when the upload is finalized\". Nothing at finalize, and no signed content-length, confirms the stored object is no bigger than the size approved. A hostile client can request permission for 1 MB and then upload 120 MB, getting around both the 40 MB per-photo limit and the 1.5 GB total.",
+        "[claude-fallback] The storage and book-count checks race under concurrency: A/project/docs/downgrade-policy.md:48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\" compares against usage that :89 records only \"when the upload is finalized\", with no reservation. Parallel upload grants each pass against the same usage and together go over 1.5 GB. Likewise `assertCanAddBook` (:84) has no stated serialization, so two creates at 24 books can both succeed.",
+        "[claude-fallback] Uploads granted before the cutoff are exempt from the current-plan rule: A/project/docs/downgrade-policy.md:89 \"An upload granted while the user was Pro can be finalized after the period ends, as long as its signed grant hasn't expired.\" With no grant TTL given and no recheck at finalize, an account that is already over 1.5 GB keeps growing after it becomes Free. That conflicts with :11 \"every gate reads the current plan on each request\" and with the 'no new bytes' rule at :46."
       ],
       "minor": []
     },
@@ -743,7 +775,7 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
       },
       "completed": true,
@@ -786,6 +818,7 @@
       "assertions": {
         "file-catalog-with-saved-data-01": {
           "v": "fail",
+          "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -796,6 +829,7 @@
         },
         "file-catalog-with-saved-data-02": {
           "v": "fail",
+          "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -806,6 +840,7 @@
         },
         "file-catalog-with-saved-data-03": {
           "v": "fail",
+          "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -816,6 +851,7 @@
         },
         "file-catalog-with-saved-data-04": {
           "v": "pass",
+          "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -826,6 +862,7 @@
         },
         "file-catalog-with-saved-data-05": {
           "v": "fail",
+          "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -836,6 +873,7 @@
         },
         "file-catalog-with-saved-data-06": {
           "v": "pass",
+          "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -864,7 +902,7 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
       },
       "completed": true,
@@ -905,6 +943,7 @@
       "assertions": {
         "file-catalog-with-saved-data-01": {
           "v": "fail",
+          "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
           "votes": [
             {
               "critic": "claude",
@@ -915,6 +954,7 @@
         },
         "file-catalog-with-saved-data-02": {
           "v": "fail",
+          "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
           "votes": [
             {
               "critic": "claude",
@@ -925,6 +965,7 @@
         },
         "file-catalog-with-saved-data-03": {
           "v": "pass",
+          "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
           "votes": [
             {
               "critic": "claude",
@@ -935,6 +976,7 @@
         },
         "file-catalog-with-saved-data-04": {
           "v": "pass",
+          "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
           "votes": [
             {
               "critic": "claude",
@@ -945,6 +987,7 @@
         },
         "file-catalog-with-saved-data-05": {
           "v": "fail",
+          "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
           "votes": [
             {
               "critic": "claude",
@@ -955,6 +998,7 @@
         },
         "file-catalog-with-saved-data-06": {
           "v": "pass",
+          "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
           "votes": [
             {
               "critic": "claude",
@@ -983,7 +1027,7 @@
       "requested_model": "opus",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
       },
       "completed": true,
@@ -1018,6 +1062,7 @@
       "assertions": {
         "distinct-operations-need-tools-01": {
           "v": "pass",
+          "graded_text": "Agents can search page content across the workspace in one call, through a dedicated search tool or a content query on a listing tool, with explicit scope and pagination, instead of reading pages one by one. The query uses familiar text-search semantics (plain text, phrase, or regular expression) rather than a bespoke query language.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1028,6 +1073,7 @@
         },
         "distinct-operations-need-tools-02": {
           "v": "pass",
+          "graded_text": "Placing a print order is its own tool, not a file write, a special path, or a flag on an existing tool, because it charges money and ships goods.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1038,6 +1084,7 @@
         },
         "distinct-operations-need-tools-03": {
           "v": "pass",
+          "graded_text": "A retried print-order call after a timeout cannot charge twice: the design states an idempotency key, a single-use quote or order ID, or an equivalent server-side guard.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1048,6 +1095,7 @@
         },
         "distinct-operations-need-tools-04": {
           "v": "pass",
+          "graded_text": "The catalog adds no generic execute, run, or action tool.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1058,6 +1106,7 @@
         },
         "distinct-operations-need-tools-05": {
           "v": "pass",
+          "graded_text": "The existing five file tools keep their names, and each behaves as before for calls that use only its current arguments.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1081,7 +1130,7 @@
       "requested_model": "gpt-6.1-sol",
       "cli": null,
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
       },
       "completed": true,
@@ -1115,6 +1164,7 @@
       "assertions": {
         "distinct-operations-need-tools-01": {
           "v": "pass",
+          "graded_text": "Agents can search page content across the workspace in one call, through a dedicated search tool or a content query on a listing tool, with explicit scope and pagination, instead of reading pages one by one. The query uses familiar text-search semantics (plain text, phrase, or regular expression) rather than a bespoke query language.",
           "votes": [
             {
               "critic": "claude",
@@ -1125,6 +1175,7 @@
         },
         "distinct-operations-need-tools-02": {
           "v": "pass",
+          "graded_text": "Placing a print order is its own tool, not a file write, a special path, or a flag on an existing tool, because it charges money and ships goods.",
           "votes": [
             {
               "critic": "claude",
@@ -1135,6 +1186,7 @@
         },
         "distinct-operations-need-tools-03": {
           "v": "pass",
+          "graded_text": "A retried print-order call after a timeout cannot charge twice: the design states an idempotency key, a single-use quote or order ID, or an equivalent server-side guard.",
           "votes": [
             {
               "critic": "claude",
@@ -1145,6 +1197,7 @@
         },
         "distinct-operations-need-tools-04": {
           "v": "pass",
+          "graded_text": "The catalog adds no generic execute, run, or action tool.",
           "votes": [
             {
               "critic": "claude",
@@ -1155,6 +1208,7 @@
         },
         "distinct-operations-need-tools-05": {
           "v": "pass",
+          "graded_text": "The existing five file tools keep their names, and each behaves as before for calls that use only its current arguments.",
           "votes": [
             {
               "critic": "claude",
@@ -1178,7 +1232,7 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "9b723e3712137fdadfb0625eeab7023f9c8d3193",
         "fixture": "e90d67d597185779",
         "base_fixture": "9a72a07420d785e3",
@@ -1224,6 +1278,7 @@
       "assertions": {
         "quota-reservation-under-concurrency-01": {
           "v": "pass",
+          "graded_text": "Starting an upload atomically reserves its declared size against remaining capacity, counting other open reservations, so parallel uploads cannot together pass the cap. A check of used plus size alone is identified as insufficient.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1234,6 +1289,7 @@
         },
         "quota-reservation-under-concurrency-02": {
           "v": "pass",
+          "graded_text": "Finalize commits usage from the verified stored size and turns the reservation into usage, and a failed, abandoned, or expired upload releases its reservation through a stated cleanup path.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1244,6 +1300,7 @@
         },
         "quota-reservation-under-concurrency-03": {
           "v": "pass",
+          "graded_text": "A retried finalize counts the upload's size once, not twice, in both the design and the changed code.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1254,6 +1311,7 @@
         },
         "quota-reservation-under-concurrency-04": {
           "v": "fail",
+          "graded_text": "The user's storage quota is kept separate from the model provider's cost: the design says a failed summary can still cost the product money and records or bounds that cost, rather than promising failed work is free.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1264,6 +1322,7 @@
         },
         "quota-reservation-under-concurrency-05": {
           "v": "pass",
+          "graded_text": "Finalize compares the actual stored size with the reserved size and refuses or corrects a mismatch, so a client cannot reserve a small size and store a large object.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1289,7 +1348,7 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
         "fixture": "d7ae70ba58a24853",
         "base_fixture": "9a72a07420d785e3",
@@ -1331,6 +1390,7 @@
       "assertions": {
         "embedded-page-metadata-01": {
           "v": "pass",
+          "graded_text": "Tessel's own wrapper page emits the icon, title, and link preview tags in its initial server-rendered HTML, taken from the person's HTML when it is saved, rather than relying on the person's script or the inner document.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1341,6 +1401,7 @@
         },
         "embedded-page-metadata-02": {
           "v": "pass",
+          "graded_text": "Public and unlisted pages get page-specific previews, and unlisted pages keep noindex while still getting their real preview card.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1351,6 +1412,7 @@
         },
         "embedded-page-metadata-03": {
           "v": "pass",
+          "graded_text": "A private page answers any request not authorized for it, link-preview fetchers included, with a generic card that names only the product and carries no title, text, or image from the page.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1361,6 +1423,7 @@
         },
         "embedded-page-metadata-04": {
           "v": "fail",
+          "graded_text": "Preview images are rendered in an environment that cannot write saved data or cause other side effects, and cannot reach private or internal networks or credentials, and a page load no person started, such as a link-preview fetcher running the page's script, cannot add saved data such as a poll vote.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1371,6 +1434,7 @@
         },
         "embedded-page-metadata-05": {
           "v": "pass",
+          "graded_text": "A page's own preview image is used when it declares one, and otherwise a preview is generated, so publishing never requires making an image.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1398,7 +1462,7 @@
       "requested_model": "gpt-6.1-sol",
       "cli": "codex-cli 0.162.1",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
         "fixture": "d7ae70ba58a24853",
         "base_fixture": "9a72a07420d785e3",
@@ -1447,6 +1511,7 @@
       "assertions": {
         "embedded-page-metadata-01": {
           "v": "pass",
+          "graded_text": "Tessel's own wrapper page emits the icon, title, and link preview tags in its initial server-rendered HTML, taken from the person's HTML when it is saved, rather than relying on the person's script or the inner document.",
           "votes": [
             {
               "critic": "claude",
@@ -1457,6 +1522,7 @@
         },
         "embedded-page-metadata-02": {
           "v": "pass",
+          "graded_text": "Public and unlisted pages get page-specific previews, and unlisted pages keep noindex while still getting their real preview card.",
           "votes": [
             {
               "critic": "claude",
@@ -1467,6 +1533,7 @@
         },
         "embedded-page-metadata-03": {
           "v": "pass",
+          "graded_text": "A private page answers any request not authorized for it, link-preview fetchers included, with a generic card that names only the product and carries no title, text, or image from the page.",
           "votes": [
             {
               "critic": "claude",
@@ -1477,6 +1544,7 @@
         },
         "embedded-page-metadata-04": {
           "v": "fail",
+          "graded_text": "Preview images are rendered in an environment that cannot write saved data or cause other side effects, and cannot reach private or internal networks or credentials, and a page load no person started, such as a link-preview fetcher running the page's script, cannot add saved data such as a poll vote.",
           "votes": [
             {
               "critic": "claude",
@@ -1487,6 +1555,7 @@
         },
         "embedded-page-metadata-05": {
           "v": "pass",
+          "graded_text": "A page's own preview image is used when it declares one, and otherwise a preview is generated, so publishing never requires making an image.",
           "votes": [
             {
               "critic": "claude",
@@ -1512,7 +1581,7 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
         "fixture": "cf95ce9da7951479",
         "base_fixture": "9a72a07420d785e3",
@@ -1547,6 +1616,7 @@
       "assertions": {
         "user-code-on-own-domain-01": {
           "v": "fail",
+          "graded_text": "The target layout serves people's HTML and JavaScript from a separate registrable domain, not from any subdomain of plinth.example.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1557,6 +1627,7 @@
         },
         "user-code-on-own-domain-02": {
           "v": "pass",
+          "graded_text": "The reason given is that every subdomain of one registrable domain is the same site: script on a sibling subdomain can set cookies for the parent domain and ride same-site requests, which lets it interfere with sign-in (login CSRF or session confusion) or reach session tokens.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1567,6 +1638,7 @@
         },
         "user-code-on-own-domain-03": {
           "v": "fail",
+          "graded_text": "The short <name>.plinth.example address is kept as Plinth's own page, which frames the app served from the other domain, so visitors still see the Plinth address.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1577,6 +1649,7 @@
         },
         "user-code-on-own-domain-04": {
           "v": "pass",
+          "graded_text": "Each app gets its own origin on the content domain, such as a label per app, so one app cannot read another's storage.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1587,6 +1660,7 @@
         },
         "user-code-on-own-domain-05": {
           "v": "fail",
+          "graded_text": "Until the separate domain can be set up after the freeze, people's code runs with an opaque origin, through a sandbox (for example a CSP sandbox header) without allow-same-origin, and the plan says this costs the apps their browser storage. It does not keep serving people's code as the top-level document on plinth.example subdomains during the beta.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1616,7 +1690,7 @@
       "requested_model": "gpt-6.1-sol",
       "cli": "codex-cli 0.162.1",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
         "fixture": "cf95ce9da7951479",
         "base_fixture": "9a72a07420d785e3",
@@ -1659,6 +1733,7 @@
       "assertions": {
         "user-code-on-own-domain-01": {
           "v": "pass",
+          "graded_text": "The target layout serves people's HTML and JavaScript from a separate registrable domain, not from any subdomain of plinth.example.",
           "votes": [
             {
               "critic": "claude",
@@ -1669,6 +1744,7 @@
         },
         "user-code-on-own-domain-02": {
           "v": "pass",
+          "graded_text": "The reason given is that every subdomain of one registrable domain is the same site: script on a sibling subdomain can set cookies for the parent domain and ride same-site requests, which lets it interfere with sign-in (login CSRF or session confusion) or reach session tokens.",
           "votes": [
             {
               "critic": "claude",
@@ -1679,6 +1755,7 @@
         },
         "user-code-on-own-domain-03": {
           "v": "fail",
+          "graded_text": "The short <name>.plinth.example address is kept as Plinth's own page, which frames the app served from the other domain, so visitors still see the Plinth address.",
           "votes": [
             {
               "critic": "claude",
@@ -1689,6 +1766,7 @@
         },
         "user-code-on-own-domain-04": {
           "v": "pass",
+          "graded_text": "Each app gets its own origin on the content domain, such as a label per app, so one app cannot read another's storage.",
           "votes": [
             {
               "critic": "claude",
@@ -1699,6 +1777,7 @@
         },
         "user-code-on-own-domain-05": {
           "v": "fail",
+          "graded_text": "Until the separate domain can be set up after the freeze, people's code runs with an opaque origin, through a sandbox (for example a CSP sandbox header) without allow-same-origin, and the plan says this costs the apps their browser storage. It does not keep serving people's code as the top-level document on plinth.example subdomains during the beta.",
           "votes": [
             {
               "critic": "claude",
@@ -1725,7 +1804,7 @@
       "requested_model": "opus",
       "cli": "2.1.302 (Claude Code)",
       "inputs": {
-        "skill": "90065190740b0fa1",
+        "skill": "4171c1874df5e04b",
         "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
         "fixture": "438e6792903dbc11",
         "base_fixture": "9a72a07420d785e3",
@@ -1765,6 +1844,7 @@
       "assertions": {
         "established-precondition-contract-01": {
           "v": "pass",
+          "graded_text": "The new row update requires a precondition from the caller (If-Match with the document's ETag, or a row-level equivalent) and answers a stale one with 412, matching the existing PUT contract.",
           "votes": [
             {
               "critic": "claude-fallback",
@@ -1775,6 +1855,7 @@
         },
         "established-precondition-contract-02": {
           "v": "pass",
+          "graded_text": "The existing PUT and its required If-Match stay unchanged.",
           "votes": [
             {
               "critic": "claude-fallback",

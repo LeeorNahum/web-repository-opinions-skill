@@ -9,7 +9,7 @@
   "requested_model": "gpt-6.1-sol",
   "cli": "codex-cli 0.162.1",
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
     "fixture": "d7ae70ba58a24853",
     "base_fixture": "9a72a07420d785e3",
@@ -58,6 +58,7 @@
   "assertions": {
     "embedded-page-metadata-01": {
       "v": "pass",
+      "graded_text": "Tessel's own wrapper page emits the icon, title, and link preview tags in its initial server-rendered HTML, taken from the person's HTML when it is saved, rather than relying on the person's script or the inner document.",
       "votes": [
         {
           "critic": "claude",
@@ -68,6 +69,7 @@
     },
     "embedded-page-metadata-02": {
       "v": "pass",
+      "graded_text": "Public and unlisted pages get page-specific previews, and unlisted pages keep noindex while still getting their real preview card.",
       "votes": [
         {
           "critic": "claude",
@@ -78,6 +80,7 @@
     },
     "embedded-page-metadata-03": {
       "v": "pass",
+      "graded_text": "A private page answers any request not authorized for it, link-preview fetchers included, with a generic card that names only the product and carries no title, text, or image from the page.",
       "votes": [
         {
           "critic": "claude",
@@ -88,6 +91,7 @@
     },
     "embedded-page-metadata-04": {
       "v": "fail",
+      "graded_text": "Preview images are rendered in an environment that cannot write saved data or cause other side effects, and cannot reach private or internal networks or credentials, and a page load no person started, such as a link-preview fetcher running the page's script, cannot add saved data such as a poll vote.",
       "votes": [
         {
           "critic": "claude",
@@ -98,6 +102,7 @@
     },
     "embedded-page-metadata-05": {
       "v": "pass",
+      "graded_text": "A page's own preview image is used when it declares one, and otherwise a preview is generated, so publishing never requires making an image.",
       "votes": [
         {
           "critic": "claude",

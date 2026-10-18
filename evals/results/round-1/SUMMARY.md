@@ -2,7 +2,7 @@
 
 Skill commit `738936d01659448e19e26243f5257f7e92a23041`. One session per eval and column. P is a pass, F a fail, and a dash a missing verdict.
 
-Sessions in the round that did not finish, and are not recorded:
+Sessions in the round's jobs file that are not recorded:
 
 - `1-upload-without-byte-route-old-sol`: not run yet
 - `1-account-wide-agent-grant-old-sol`: not run yet
@@ -10,7 +10,9 @@ Sessions in the round that did not finish, and are not recorded:
 - `1-quota-reservation-under-concurrency-old-sol`: not run yet
 - `1-established-precondition-contract-old-sol`: not run yet
 
-Claude critics graded 11 Claude-built sessions because Codex was unreachable. They need a Codex verdict before any comparison.
+Claude critics graded 11 Claude-built sessions because Codex could not be reached. They need a Codex verdict before any comparison.
+
+Sessions in this round ran under more than one version of `evals.json`, and some before the case hash was recorded. Treat the round as a reference record: a before-and-after comparison reruns the old arm in the same round as the new one.
 
 | Assertion | old opus | old sol |
 | --- | :---: | :---: |
@@ -67,6 +69,8 @@ Claude critics graded 11 Claude-built sessions because Codex was unreachable. Th
 | `user-code-on-own-domain-05` | F | F |
 | `established-precondition-contract-01` | P | - |
 | `established-precondition-contract-02` | P | - |
+
+References read counts files whose opening and closing lines came back to the model. For Codex sessions it counts command output, which Codex may shorten before the model sees it, so treat those counts as an upper bound.
 
 | Session | Finished | Skill read | References read | Seconds |
 | --- | :---: | :---: | ---: | ---: |

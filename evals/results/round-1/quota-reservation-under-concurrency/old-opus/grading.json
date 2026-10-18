@@ -9,7 +9,7 @@
   "requested_model": "opus",
   "cli": "2.1.302 (Claude Code)",
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "9b723e3712137fdadfb0625eeab7023f9c8d3193",
     "fixture": "e90d67d597185779",
     "base_fixture": "9a72a07420d785e3",
@@ -55,6 +55,7 @@
   "assertions": {
     "quota-reservation-under-concurrency-01": {
       "v": "pass",
+      "graded_text": "Starting an upload atomically reserves its declared size against remaining capacity, counting other open reservations, so parallel uploads cannot together pass the cap. A check of used plus size alone is identified as insufficient.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -65,6 +66,7 @@
     },
     "quota-reservation-under-concurrency-02": {
       "v": "pass",
+      "graded_text": "Finalize commits usage from the verified stored size and turns the reservation into usage, and a failed, abandoned, or expired upload releases its reservation through a stated cleanup path.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -75,6 +77,7 @@
     },
     "quota-reservation-under-concurrency-03": {
       "v": "pass",
+      "graded_text": "A retried finalize counts the upload's size once, not twice, in both the design and the changed code.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -85,6 +88,7 @@
     },
     "quota-reservation-under-concurrency-04": {
       "v": "fail",
+      "graded_text": "The user's storage quota is kept separate from the model provider's cost: the design says a failed summary can still cost the product money and records or bounds that cost, rather than promising failed work is free.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -95,6 +99,7 @@
     },
     "quota-reservation-under-concurrency-05": {
       "v": "pass",
+      "graded_text": "Finalize compares the actual stored size with the reserved size and refuses or corrects a mismatch, so a client cannot reserve a small size and store a large object.",
       "votes": [
         {
           "critic": "claude-fallback",

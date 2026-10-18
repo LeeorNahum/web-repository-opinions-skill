@@ -9,7 +9,7 @@
   "requested_model": "gpt-6.1-sol",
   "cli": null,
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
   },
   "completed": true,
@@ -47,6 +47,7 @@
   "assertions": {
     "workspace-bound-agent-grant-01": {
       "v": "pass",
+      "graded_text": "Each agent connection is bound to one firm workspace chosen at consent and approved by that firm's Admin, and a consultant who works for several firms makes a separate connection for each.",
       "votes": [
         {
           "critic": "claude",
@@ -57,6 +58,7 @@
     },
     "workspace-bound-agent-grant-02": {
       "v": "pass",
+      "graded_text": "The server checks on every call that the target belongs to the connection's bound workspace and that the consultant's membership and role are still live, so removal from a firm cuts off an existing connection.",
       "votes": [
         {
           "critic": "claude",
@@ -67,6 +69,7 @@
     },
     "workspace-bound-agent-grant-03": {
       "v": "pass",
+      "graded_text": "The design offers no connection whose scope spans more than one firm.",
       "votes": [
         {
           "critic": "claude",

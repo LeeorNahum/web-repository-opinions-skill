@@ -9,7 +9,7 @@
   "requested_model": "opus",
   "cli": "2.1.302 (Claude Code)",
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
     "fixture": "f43e39fe46e81e7a",
     "base_fixture": "9a72a07420d785e3",
@@ -53,6 +53,7 @@
   "assertions": {
     "account-wide-agent-grant-01": {
       "v": "fail",
+      "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, says the consent screen states that scope, and does not make the person pick one organization per connection.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -63,6 +64,7 @@
     },
     "account-wide-agent-grant-02": {
       "v": "pass",
+      "graded_text": "Every tool call resolves the target workspace or document and checks live membership, role, and individual share on the server at call time. A single organization claim in a token is not treated as proof of access to any other workspace.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -73,6 +75,7 @@
     },
     "account-wide-agent-grant-03": {
       "v": "pass",
+      "graded_text": "The create tool takes an explicit destination workspace ID, and the server verifies the caller may create in that workspace before creating. The design does not say a client-supplied workspace ID must never be used.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -83,6 +86,7 @@
     },
     "account-wide-agent-grant-04": {
       "v": "pass",
+      "graded_text": "Removing a membership or an individual share takes effect for an already connected agent without reconnecting.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -93,6 +97,7 @@
     },
     "account-wide-agent-grant-05": {
       "v": "pass",
+      "graded_text": "An individually shared document gives access to that document only, never to its workspace's other documents or member list, through the UI and the agent alike.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -103,6 +108,7 @@
     },
     "account-wide-agent-grant-06": {
       "v": "pass",
+      "graded_text": "The library shows documents from every workspace the person belongs to by default, with workspace and shared filters held in URL query state, filters only narrow what is shown, and no active-workspace session state is introduced as an authority for browsing or for the agent connection.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -113,6 +119,7 @@
     },
     "account-wide-agent-grant-07": {
       "v": "pass",
+      "graded_text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes.",
       "votes": [
         {
           "critic": "claude-fallback",

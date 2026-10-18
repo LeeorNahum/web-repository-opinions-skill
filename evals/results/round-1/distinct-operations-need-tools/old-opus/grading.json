@@ -9,7 +9,7 @@
   "requested_model": "opus",
   "cli": null,
   "inputs": {
-    "skill": "90065190740b0fa1",
+    "skill": "4171c1874df5e04b",
     "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
   },
   "completed": true,
@@ -44,6 +44,7 @@
   "assertions": {
     "distinct-operations-need-tools-01": {
       "v": "pass",
+      "graded_text": "Agents can search page content across the workspace in one call, through a dedicated search tool or a content query on a listing tool, with explicit scope and pagination, instead of reading pages one by one. The query uses familiar text-search semantics (plain text, phrase, or regular expression) rather than a bespoke query language.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -54,6 +55,7 @@
     },
     "distinct-operations-need-tools-02": {
       "v": "pass",
+      "graded_text": "Placing a print order is its own tool, not a file write, a special path, or a flag on an existing tool, because it charges money and ships goods.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -64,6 +66,7 @@
     },
     "distinct-operations-need-tools-03": {
       "v": "pass",
+      "graded_text": "A retried print-order call after a timeout cannot charge twice: the design states an idempotency key, a single-use quote or order ID, or an equivalent server-side guard.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -74,6 +77,7 @@
     },
     "distinct-operations-need-tools-04": {
       "v": "pass",
+      "graded_text": "The catalog adds no generic execute, run, or action tool.",
       "votes": [
         {
           "critic": "claude-fallback",
@@ -84,6 +88,7 @@
     },
     "distinct-operations-need-tools-05": {
       "v": "pass",
+      "graded_text": "The existing five file tools keep their names, and each behaves as before for calls that use only its current arguments.",
       "votes": [
         {
           "critic": "claude-fallback",

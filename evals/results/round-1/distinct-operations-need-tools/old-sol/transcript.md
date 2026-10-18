@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Assistant:** I’ll read the brief and existing catalog, add the tools needed for the two new capabilities, and record any assumptions in the docs. I’m using the web-repository-opinions skill because this is a product repository change.
 
 **Shell:** `"<home>\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command 'Get-Content .agents/skills/web-repository-opinions/SKILL.md; Get-Content docs/brief.md; Get-Content docs/mcp-tools.md'`

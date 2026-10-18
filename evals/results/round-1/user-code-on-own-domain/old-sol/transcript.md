@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Assistant:** I’ll read the hosting setup and product brief, then write a concrete beta hosting and origin plan with assumptions called out. I’m using the web-repository-opinions skill for this review.
 
 **Shell:** `"<home>\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command 'Get-Content .agents/skills/web-repository-opinions/SKILL.md; Get-Content docs/brief.md; Get-Content docs/hosting.md'`

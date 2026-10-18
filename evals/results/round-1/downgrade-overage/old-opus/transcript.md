@@ -1,3 +1,5 @@
+**Prompt:** not recorded by this session. The case in the committed `evals.json` may have changed since.
+
 **Tool call `Bash`:** `{"command": "cd \"<run>/builds/1-downgrade-overage-old-opus/work\" && git ls-files && cat docs/brief.md", "description": "List repo files and read the brief"}`
 
 **Tool call `Skill`:** `{"skill": "web-repository-opinions"}`
@@ -14,7 +16,121 @@
 
 > Result: # Data Deletion  Use a bounded, resumable deletion job when one operation must remove a dependent data graph and cannot safely fit one transaction or function budget.  ## Visibility  Define when the object stops appearing in normal reads. Mark it as deleting before dependent rows are removed when exposing a partially deleted graph would be invalid or misleading.  ## Phases  Process the g [... 10656 more characters]
 
-**Tool call `Write`:** `{"file_path": "<run>/builds/1-downgrade-overage-old-opus/work/docs/downgrade-policy.md", "content": "# Downgrade policy: Pro to Free\n\nWhat a cancelled Pro user can and can't do with what they already have once the paid period ends, and how the backend enforces it. `docs/brief.md` wins if the two disagree. Calls made without the owner are listed under [Assumptions](#assumptions-for-owner-review).\n\n## Principle\n\nNothing is deleted, locked, or rewritten because a plan ended. Losing Pro takes away the ability to **grow** past Free limits and to **change** books the Free plan doesn't cover. It never takes away the ability to see, export, print, or clean up what the user already made. Resubscribing restores everything the moment the billing provider reports Pro again.\n\n## When it takes effect\n\nCancellation sets the subscription to end at the period end. Until then the user is Pro with nothing changed. At the period end the plan becomes Free. No job runs at that moment and no record is touched: every gate reads the current plan on each request, so the change is simply what the next request sees.\n\n## The three Free limits, applied to existing data\n\n| Limit (Free) | What it gates | What it never touches |\n| --- | --- | --- |\n| 25 books | Which books can be edited, and whether a new book can be added | Viewing, exporting, ordering prints, trashing, restoring, permanent deletion |\n| 40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size |\n| 1.5 GB total storage | Anything that adds stored bytes | Anything that keeps or removes bytes |\n\n### Books: the oldest 25 stay editable\n\nA book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.\n\n| Action | Covered book | Frozen book |\n| --- | :---: | :---: |\n| Open, view, browse pages | Yes | Yes |\n| Export or download | Yes | Yes |\n| Order printed copies | Yes | Yes |\n| Move to Trash, restore from Trash, delete permanently | Yes | Yes |\n| Edit pages, layout, text, title, photo placement | Yes | No |\n| Upload or replace photos | Yes, within the photo and storage limits | No |\n\nOther rules:\n\n- **Creating or duplicating a book** needs fewer than 25 active books (and, if duplication copies bytes, storage room for the copy).\n- **Coverage moves only when the user acts.** Trashing a covered book makes the oldest frozen book covered. Restoring a book from Trash puts it back in its creation-time position, which can make the newest covered book frozen. Nothing else changes coverage.\n- **Trashed books don't count toward 25**, but their bytes count toward storage until they are purged.\n- **Trash keeps its normal 14-day purge.** Downgrading neither speeds it up nor pauses it.\n- **Print orders already placed** are fulfilled no matter what the plan is now.\n\n### Photos: the 40 MB limit applies to uploads only\n\nThe per-photo limit is checked when bytes come in. A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints, and can be moved or cropped in a covered book. Replacing it counts as a new upload, so the replacement must be 40 MB or less.\n\n### Storage: over the limit means no new bytes\n\nUsage is the total size of every stored photo, **including photos in Trash**, read from database records rather than the bucket. While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused. Editing a covered book without adding bytes still works when the account is over the limit. Trashing a book doesn't free space. Deleting from Trash permanently, or waiting for the purge, does.\n\n## The typical case, checked\n\nThe brief's typical cancelling user has 40 books, 2.6 GB stored (300 MB of it in Trash), and fifteen photos of 60\u2013110 MB.\n\n| Fact | Result after the period ends |\n| --- | --- |\n| 40 active books, 25 allowed | The 25 oldest stay editable. The 15 newest are frozen: viewable, exportable, printable, deletable. No new books until they have 24 or fewer active books. |\n| 2.6 GB stored, 1.5 GB allowed | All uploads refused. Emptying Trash brings usage to 2.3 GB, which is still over. They have to delete 0.8 GB more permanently, or 1.1 GB if they don't empty Trash, before any upload fits. The Trash purge gets them to 2.3 GB within 14 days anyway. |\n| 300 MB in Trash | Purged on its normal schedule. They can restore any of it before then. Restoring is free of storage cost (the bytes are already counted) but can freeze a newer book. |\n| 15 photos of 60\u2013110 MB | All kept and usable wherever they are. Photos in covered books can be moved and cropped. Photos in frozen books are view, export, and print only. No new photo over 40 MB can be uploaded. |\n| Data lost | None. |\n| Resubscribe to Pro | All 40 books editable again at once. Uploads fit again (2.6 GB of 4 GB). Nothing to restore or unlock. |\n\nEach rule follows from the table without a special case, so the rules hold up.\n\n## Backend enforcement\n\n### Plan comes from the billing provider\n\n- The billing provider owns subscription truth. The backend keeps a last-known mirror of each subscription (status, current period end, whether it cancels at period end), updated from provider webhooks and reconciled against the provider. The mirror is a cache and never the authority.\n- `currentPlan(account)` returns Pro while the subscription is active **and** the current time is before the period end. If a subscription is marked to cancel at period end and that time has passed, it returns Free even if the ending webhook hasn't arrived yet. This doesn't apply to renewing subscriptions, so a late renewal webhook never downgrades a paying user.\n- Plan limits are constants in the domain package (`FREE` and `PRO`: books, max photo bytes, storage bytes), as the brief decides. Env and the provider dashboard never set them.\n\n### Coverage is derived, never stored\n\nThere is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan and the account's active books ordered by `(createdAt, id)`. Because nothing is stamped, there's nothing to reconcile when the user resubscribes, trashes a book, or restores one. The id tiebreak keeps the order stable when two books share a creation time.\n\n### One gate that every client crosses\n\nAll three checks live in the domain package and run inside the backend mutations. The browser app, public API, MCP server, and background jobs all go through those mutations, so none of them can grant what the plan doesn't cover just because a control was reachable.\n\n| Check | Runs in | Refuses with |\n| --- | --- | --- |\n| `assertBookEditable(account, bookId)` | Every mutation that changes a book's content or metadata, including upload into a book | `book_frozen` |\n| `assertCanAddBook(account)` | Create, duplicate | `book_limit_reached` |\n| `assertCanStore(account, bytes)` | Upload permission (before signing upload URLs), duplicate when it copies bytes | `photo_too_large` or `storage_full` |\n\nReads, export, print ordering, trash, restore, and permanent delete call none of these checks.\n\n- **Uploads:** the size and storage check runs when the client asks for upload permission, before any bytes move, as the existing quota rule requires. Usage is recorded when the upload is finalized. An upload granted while the user was Pro can be finalized after the period ends, as long as its signed grant hasn't expired. That way a transfer still in progress at the cutoff isn't thrown away.\n- **Background jobs** that change a book (auto-layout, for example) run the editability check again when they execute, not only when they were queued.\n- **API and MCP** responses for a book include a derived `editable` boolean and, when it is false, the reason code. Clients can then show the read-only state without trying an edit first. API refusals return HTTP 403 with the outcome code in the body. MCP tools return the same code as a tool error.\n\n### What the user sees\n\n- Refusals are typed outcome codes, turned into product copy at the shared presentation layer. Raw provider or framework errors never reach the user.\n- A limit shows up where it's hit, not as a standing banner. A frozen book opens with its editing controls replaced by a short read-only note. A refused upload or a refused create names the limit.\n- Every refusal offers both honest remedies, because Pro raises all three Free limits: **upgrade**, or **free up capacity**. Freeing capacity means trashing books for the book limit, or deleting from Trash permanently for storage. For an over-size photo, the alternative is uploading a smaller file.\n\n## Assumptions for owner review\n\nEach one is a single constant or check if the owner wants it changed.\n\n1. **The oldest 25 by creation time stay editable.** The reason: the books past the Free allowance are the ones Pro added, so those are the ones that freeze. The alternative is letting the user pick their 25, but that needs a stored selection, which brings back the state this design avoids. Newest-first is the other option if in-progress work matters more.\n2. **Frozen books can still have prints ordered.** Ordering doesn't change the book, export is allowed anyway, and blocking it would only send print sales elsewhere. Gating it means one extra check in the order mutation.\n3. **Trash counts toward storage but not toward the book count.** The bytes are really stored, but a trashed book isn't an active book.\n4. **Restoring from Trash is always allowed**, even over the book limit. Restoring undoes a delete, and blocking it would turn the 14-day Trash into data loss for downgraded users. The cost is that a restore can freeze a newer book.\n5. **The per-photo limit applies only at upload.** Oversized photos already stored are not treated as over the limit.\n6. **No grace period beyond the paid period** and no reminder emails before it ends. Neither is in the brief.\n7. **HTTP 403 for plan refusals** over the public API. The alternative is 402.\n8. **The same rules apply to any Pro-to-Free transition**, not only cancellation: for example a failed payment that ends the subscription, once the billing provider reports it ended.\n"}`
+**Tool call `Write`:** `<run>/builds/1-downgrade-overage-old-opus/work/docs/downgrade-policy.md`
+
+````text
+# Downgrade policy: Pro to Free
+
+What a cancelled Pro user can and can't do with what they already have once the paid period ends, and how the backend enforces it. `docs/brief.md` wins if the two disagree. Calls made without the owner are listed under [Assumptions](#assumptions-for-owner-review).
+
+## Principle
+
+Nothing is deleted, locked, or rewritten because a plan ended. Losing Pro takes away the ability to **grow** past Free limits and to **change** books the Free plan doesn't cover. It never takes away the ability to see, export, print, or clean up what the user already made. Resubscribing restores everything the moment the billing provider reports Pro again.
+
+## When it takes effect
+
+Cancellation sets the subscription to end at the period end. Until then the user is Pro with nothing changed. At the period end the plan becomes Free. No job runs at that moment and no record is touched: every gate reads the current plan on each request, so the change is simply what the next request sees.
+
+## The three Free limits, applied to existing data
+
+| Limit (Free) | What it gates | What it never touches |
+| --- | --- | --- |
+| 25 books | Which books can be edited, and whether a new book can be added | Viewing, exporting, ordering prints, trashing, restoring, permanent deletion |
+| 40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size |
+| 1.5 GB total storage | Anything that adds stored bytes | Anything that keeps or removes bytes |
+
+### Books: the oldest 25 stay editable
+
+A book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.
+
+| Action | Covered book | Frozen book |
+| --- | :---: | :---: |
+| Open, view, browse pages | Yes | Yes |
+| Export or download | Yes | Yes |
+| Order printed copies | Yes | Yes |
+| Move to Trash, restore from Trash, delete permanently | Yes | Yes |
+| Edit pages, layout, text, title, photo placement | Yes | No |
+| Upload or replace photos | Yes, within the photo and storage limits | No |
+
+Other rules:
+
+- **Creating or duplicating a book** needs fewer than 25 active books (and, if duplication copies bytes, storage room for the copy).
+- **Coverage moves only when the user acts.** Trashing a covered book makes the oldest frozen book covered. Restoring a book from Trash puts it back in its creation-time position, which can make the newest covered book frozen. Nothing else changes coverage.
+- **Trashed books don't count toward 25**, but their bytes count toward storage until they are purged.
+- **Trash keeps its normal 14-day purge.** Downgrading neither speeds it up nor pauses it.
+- **Print orders already placed** are fulfilled no matter what the plan is now.
+
+### Photos: the 40 MB limit applies to uploads only
+
+The per-photo limit is checked when bytes come in. A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints, and can be moved or cropped in a covered book. Replacing it counts as a new upload, so the replacement must be 40 MB or less.
+
+### Storage: over the limit means no new bytes
+
+Usage is the total size of every stored photo, **including photos in Trash**, read from database records rather than the bucket. While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused. Editing a covered book without adding bytes still works when the account is over the limit. Trashing a book doesn't free space. Deleting from Trash permanently, or waiting for the purge, does.
+
+## The typical case, checked
+
+The brief's typical cancelling user has 40 books, 2.6 GB stored (300 MB of it in Trash), and fifteen photos of 60–110 MB.
+
+| Fact | Result after the period ends |
+| --- | --- |
+| 40 active books, 25 allowed | The 25 oldest stay editable. The 15 newest are frozen: viewable, exportable, printable, deletable. No new books until they have 24 or fewer active books. |
+| 2.6 GB stored, 1.5 GB allowed | All uploads refused. Emptying Trash brings usage to 2.3 GB, which is still over. They have to delete 0.8 GB more permanently, or 1.1 GB if they don't empty Trash, before any upload fits. The Trash purge gets them to 2.3 GB within 14 days anyway. |
+| 300 MB in Trash | Purged on its normal schedule. They can restore any of it before then. Restoring is free of storage cost (the bytes are already counted) but can freeze a newer book. |
+| 15 photos of 60–110 MB | All kept and usable wherever they are. Photos in covered books can be moved and cropped. Photos in frozen books are view, export, and print only. No new photo over 40 MB can be uploaded. |
+| Data lost | None. |
+| Resubscribe to Pro | All 40 books editable again at once. Uploads fit again (2.6 GB of 4 GB). Nothing to restore or unlock. |
+
+Each rule follows from the table without a special case, so the rules hold up.
+
+## Backend enforcement
+
+### Plan comes from the billing provider
+
+- The billing provider owns subscription truth. The backend keeps a last-known mirror of each subscription (status, current period end, whether it cancels at period end), updated from provider webhooks and reconciled against the provider. The mirror is a cache and never the authority.
+- `currentPlan(account)` returns Pro while the subscription is active **and** the current time is before the period end. If a subscription is marked to cancel at period end and that time has passed, it returns Free even if the ending webhook hasn't arrived yet. This doesn't apply to renewing subscriptions, so a late renewal webhook never downgrades a paying user.
+- Plan limits are constants in the domain package (`FREE` and `PRO`: books, max photo bytes, storage bytes), as the brief decides. Env and the provider dashboard never set them.
+
+### Coverage is derived, never stored
+
+There is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan and the account's active books ordered by `(createdAt, id)`. Because nothing is stamped, there's nothing to reconcile when the user resubscribes, trashes a book, or restores one. The id tiebreak keeps the order stable when two books share a creation time.
+
+### One gate that every client crosses
+
+All three checks live in the domain package and run inside the backend mutations. The browser app, public API, MCP server, and background jobs all go through those mutations, so none of them can grant what the plan doesn't cover just because a control was reachable.
+
+| Check | Runs in | Refuses with |
+| --- | --- | --- |
+| `assertBookEditable(account, bookId)` | Every mutation that changes a book's content or metadata, including upload into a book | `book_frozen` |
+| `assertCanAddBook(account)` | Create, duplicate | `book_limit_reached` |
+| `assertCanStore(account, bytes)` | Upload permission (before signing upload URLs), duplicate when it copies bytes | `photo_too_large` or `storage_full` |
+
+Reads, export, print ordering, trash, restore, and permanent delete call none of these checks.
+
+- **Uploads:** the size and storage check runs when the client asks for upload permission, before any bytes move, as the existing quota rule requires. Usage is recorded when the upload is finalized. An upload granted while the user was Pro can be finalized after the period ends, as long as its signed grant hasn't expired. That way a transfer still in progress at the cutoff isn't thrown away.
+- **Background jobs** that change a book (auto-layout, for example) run the editability check again when they execute, not only when they were queued.
+- **API and MCP** responses for a book include a derived `editable` boolean and, when it is false, the reason code. Clients can then show the read-only state without trying an edit first. API refusals return HTTP 403 with the outcome code in the body. MCP tools return the same code as a tool error.
+
+### What the user sees
+
+- Refusals are typed outcome codes, turned into product copy at the shared presentation layer. Raw provider or framework errors never reach the user.
+- A limit shows up where it's hit, not as a standing banner. A frozen book opens with its editing controls replaced by a short read-only note. A refused upload or a refused create names the limit.
+- Every refusal offers both honest remedies, because Pro raises all three Free limits: **upgrade**, or **free up capacity**. Freeing capacity means trashing books for the book limit, or deleting from Trash permanently for storage. For an over-size photo, the alternative is uploading a smaller file.
+
+## Assumptions for owner review
+
+Each one is a single constant or check if the owner wants it changed.
+
+1. **The oldest 25 by creation time stay editable.** The reason: the books past the Free allowance are the ones Pro added, so those are the ones that freeze. The alternative is letting the user pick their 25, but that needs a stored selection, which brings back the state this design avoids. Newest-first is the other option if in-progress work matters more.
+2. **Frozen books can still have prints ordered.** Ordering doesn't change the book, export is allowed anyway, and blocking it would only send print sales elsewhere. Gating it means one extra check in the order mutation.
+3. **Trash counts toward storage but not toward the book count.** The bytes are really stored, but a trashed book isn't an active book.
+4. **Restoring from Trash is always allowed**, even over the book limit. Restoring undoes a delete, and blocking it would turn the 14-day Trash into data loss for downgraded users. The cost is that a restore can freeze a newer book.
+5. **The per-photo limit applies only at upload.** Oversized photos already stored are not treated as over the limit.
+6. **No grace period beyond the paid period** and no reminder emails before it ends. Neither is in the brief.
+7. **HTTP 403 for plan refusals** over the public API. The alternative is 402.
+8. **The same rules apply to any Pro-to-Free transition**, not only cancellation: for example a failed payment that ends the subscription, once the billing provider reports it ended.
+
+````
 
 > Result: File created successfully at: <run>/builds/1-downgrade-overage-old-opus/work/docs/downgrade-policy.md (file state is current in your context — no need to Read it back)
 

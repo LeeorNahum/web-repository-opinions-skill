@@ -28,7 +28,7 @@ MODELS = {'claude': ['--model', 'opus', '--effort', 'high'], 'claude-fallback': 
 
 
 def task(folder, provider, letters):
-    return (f"Read {HERE / 'CRITIC.md'} and follow it exactly. EVAL_ROOT is {ROOT}. Your folder is {folder}. "
+    return (f"Read {HERE / 'CRITIC.md'} and follow it exactly. Your folder is {folder}, and everything you need is inside it. "
             f"Judge only these letters: {', '.join(letters)}. Your provider name is {provider}, so write {folder / f'critic-{provider}.json'}. "
             "You are finished when that file parses and holds a verdict with evidence for every assertion in semantic.json for each of your letters.")
 
