@@ -14,4 +14,4 @@ Rate limiting is a different gate from quota, and often layers on the same reque
 
 Cap size, file count, and accepted type before bytes get far. Treat archive extraction as attacker-controlled: guard against path traversal on extraction, reject symlink entries, and cap decompression ratios.
 
-A server-side fetch of a caller-supplied URL streams with a byte cap at the file limit and a timeout, follows a bounded number of redirects and rechecks every hop, refuses loopback, private, link-local, and metadata addresses after resolving the host and connects only to an address that passed that check, and validates the bytes it received rather than the type it was told.
+A server-side fetch of a caller-supplied URL streams with a byte cap at the file limit and a timeout, and follows a bounded number of redirects, rechecking every hop. It resolves each host, refuses loopback, private, link-local, and metadata addresses, connects only to an address that passed that check, and validates the bytes it received rather than the type it was told.

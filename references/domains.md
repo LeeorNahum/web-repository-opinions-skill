@@ -14,7 +14,7 @@ Use no `www`. Serve and link the apex directly. If a www host exists at the regi
 
 ## Every other domain you own is an alias, not a second home
 
-`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A domain that serves a distinct security role, such as the domain for code users supply below, is a serving origin of its own, not an alias. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias.
+`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias. The domain for code users supply, below, is a serving origin of its own and gets no redirect.
 
 Point each one at the canonical origin with a permanent redirect that preserves path and query, so a deep link into an alias lands on the same page rather than the home page. Do it at DNS, hosting, CDN, or edge, never in app code, exactly as with `www`.
 
@@ -39,7 +39,7 @@ Use custom domains everywhere, including for staging origins, OAuth origins, and
 
 The canonical production origin is a code constant, not a fallback string hidden inside a route handler.
 
-## Code Your Users Write Runs On Its Own Domain
+## Code Your Users Supply Runs On Its Own Domain
 
 When the product serves HTML or JavaScript its users supply, serve it from a separate registrable domain, never from a subdomain of the product's own. A browser treats every HTTPS subdomain of one registrable domain as the same site, so same-site requests carry same-site cookies, and script on any subdomain can also set a cookie for the parent domain. A managed auth provider that shares its session across subdomains is then exposed to whatever runs on a sibling, which can plant a session cookie that signs a visitor into another account or reach the session itself. The product's domain serves only the product's own pages, and the page at the product's address frames the content, so visitors still see that address.
 

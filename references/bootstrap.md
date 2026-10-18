@@ -13,4 +13,3 @@ Order on any route that can be opened directly:
 Do not rely only on a signup webhook to create user-owned rows. Webhooks can lag, fail, or arrive after the user first opens the app. The webhook is an optimization, not the source of the row.
 
 If a first-login flow ever requires a refresh to work, the order of operations is wrong, not the timing.
-
