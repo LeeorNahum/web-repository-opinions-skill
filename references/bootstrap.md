@@ -8,7 +8,7 @@ Order on any route that can be opened directly:
 2. Find or create the app user.
 3. Ensure the default workspace or account exists.
 4. Resolve the workspace the route addresses, when it addresses one.
-5. Only then read protected, membership-gated data.
+5. Only then read protected data, gated by membership or by a share of the resource.
 
 Do not rely only on a signup webhook to create user-owned rows. Webhooks can lag, fail, or arrive after the user first opens the app. The webhook is an optimization, not the source of the row.
 

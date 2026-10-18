@@ -14,7 +14,7 @@ Use no `www`. Serve and link the apex directly. If a www host exists at the regi
 
 ## Every other domain you own is an alias, not a second home
 
-`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias. The domain for code users supply, below, is a serving origin of its own and gets no redirect.
+`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias. A domain with a distinct security role, such as the domain for code users supply below, is a serving origin of its own and gets no redirect.
 
 Point each one at the canonical origin with a permanent redirect that preserves path and query, so a deep link into an alias lands on the same page rather than the home page. Do it at DNS, hosting, CDN, or edge, never in app code, exactly as with `www`.
 
