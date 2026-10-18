@@ -1,6 +1,6 @@
 {
   "round": "1",
-  "recorded": "2026-10-17T21:29:27-04:00",
+  "recorded": "2026-10-17T21:32:49-04:00",
   "skill_commit": "738936d01659448e19e26243f5257f7e92a23041",
   "same_family_graded": [
     "1-account-wide-agent-grant-old-opus",
@@ -227,13 +227,13 @@
       ],
       "assertions": {
         "account-wide-agent-grant-01": {
-          "v": "fail",
-          "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, says the consent screen states that scope, and does not make the person pick one organization per connection.",
+          "v": "pass",
+          "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, and does not make the person pick one organization per connection.",
           "votes": [
             {
               "critic": "claude-fallback",
-              "v": "fail",
-              "e": "The scope itself is right. docs/workspace-access.md:73 \"one OAuth connection covers every workspace the person belongs to\". :63 \"*all my workspaces*, which is derived live from membership, so joining a new client workspace needs no reconnect\". Shared documents are included through :103 \"across all your workspaces and documents shared with you\" and Assumption 5 (:193). Nothing asks the person to pick an org per connection (:79 \"No per-workspace resources or paths\"). But the design never says the consent screen states this scope. The only mention of consent is :75 \"the usual pattern of an organization-scoped grant, where consent selects one workspace\", which describes the rejected pattern. The consent text for the chosen grant is never specified, so this required part is missing."
+              "v": "pass",
+              "e": "A/project/docs/workspace-access.md:73 \"Decision: one OAuth connection covers every workspace the person belongs to.\"; :63 \"By default that is *all my workspaces*, which is derived live from membership, so joining a new client workspace needs no reconnect.\"; :103 list_documents searches \"across all your workspaces and documents shared with you\"; :75 rejects the organization-scoped grant \"where consent selects one workspace and switching means re-authorizing\"."
             }
           ]
         },
@@ -244,7 +244,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/workspace-access.md:73 \"Each tool call names the workspace or document it acts on, and the gate checks membership for that specific target on that call\". :17 \"Roles, membership, and agent reach are read live at each call\". :65 \"allowed = (role grants it OR share grants it) AND ...\". :81 \"If the token carries an organization claim, it is **ignored for authorization**. It never selects or limits a workspace.\""
+              "e": "A/project/docs/workspace-access.md:73 \"Each tool call names the workspace or document it acts on, and the gate checks membership for that specific target on that call.\"; :17 \"Roles, membership, and agent reach are read live at each call.\"; :81 \"If the token carries an organization claim, it is **ignored for authorization**. It never selects or limits a workspace.\"; :65 allowed = (role grants it OR share grants it) AND scope AND policy AND reach."
             }
           ]
         },
@@ -255,7 +255,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/workspace-access.md:115 \"`workspace` is **required** and takes a workspace ID ... an omitted workspace is a validation error\". The server checks it: :14 \"Selecting never grants. A workspace you are not a member of is refused even if you name it\", the role table at :51-55 grants create only to Owner and Editor, and :128 refuses Viewers. Nothing forbids client-supplied IDs: :14 lists \"a tool argument\" as a valid way to select the target."
+              "e": "A/project/docs/workspace-access.md:115 \"`workspace` is **required** and takes a workspace ID ... an omitted workspace is a validation error, not a silent fallback.\"; server check via :65 and :174 \"`authorize(principal, capability, target)` ... inside the same backend transaction that reads or writes\" with :53 role table (create: Owner/Editor yes, Viewer no) and :128 refusal \"You are a Viewer in Acme Studio, so you can read but not edit or create there.\" Nowhere says a client workspace ID must never be used; :14 \"Which workspace or document is addressed comes from the request ... a tool argument. Selecting never grants.\""
             }
           ]
         },
@@ -266,7 +266,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/workspace-access.md:83 \"Removing someone from a workspace cuts their agent off from it on the very next call, because membership is read live.\" Shares are covered by :17 \"Nothing is cached as a grant that a later change could leave stale\" together with :174, which runs `authorize` (share route included, :57) inside the transaction of each call. Neither path needs a reconnect. The share case relies on the general principle only, and the tests at :177 cover only membership removal (see minor)."
+              "e": "A/project/docs/workspace-access.md:83 \"Removing someone from a workspace cuts their agent off from it on the very next call, because membership is read live.\"; shares go through the same per-call gate (:65 \"(role grants it OR share grants it)\") under :17 \"Nothing is cached as a grant that a later change could leave stale.\" Share removal is covered only by this general rule, not named explicitly."
             }
           ]
         },
@@ -277,7 +277,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/workspace-access.md:57 \"A share grants exactly one document to exactly one person ... It never grants `workspace.list`, `document.create`, `document.share`, or sight of any other document in that workspace.\" The gate is shared by every surface: :13 \"Every read and write, from the web app, the MCP server, or a background job, goes through the same `authorize` function\". On the agent side, :103 returns \"`workspace` is `null` for share-only documents\". Members are hidden too: :147 \"`/w/<id>/members` | Workspace members (Owner/Editor see it...)\"."
+              "e": "A/project/docs/workspace-access.md:57 \"A share grants exactly one document to exactly one person ... It never grants `workspace.list`, `document.create`, `document.share`, or sight of any other document in that workspace.\"; agent side :103 \"`workspace` is `null` for share-only documents, so the agent never learns workspace details the person cannot see\"; UI :147 \"`/w/<id>/members` | Workspace members (Owner/Editor see it ...)\", :160 \"Share-only documents are matched on their own content only.\""
             }
           ]
         },
@@ -288,7 +288,7 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/workspace-access.md:144 \"`/documents` | The library: every document the person can reach, across all workspaces and shares\". :158 \"Filters, in this URL order: `q` (search), `workspace=<id>` (one workspace), `shared=true`\". Filters only narrow and the URL grants nothing: :151 \"The URL never grants\". :103 \"`workspace` is an optional filter that only narrows a read\". No active-workspace state: :15 \"There is no active workspace in session state, cookies, client memory, or token claims\". :138 \"the app has no 'current workspace' state\"."
+              "e": "A/project/docs/workspace-access.md:144 \"`/documents` | The library: every document the person can reach, across all workspaces and shares\"; :158 \"Filters, in this URL order: `q` (search), `workspace=<id>` (one workspace), `shared=true` ...\"; :103 \"`workspace` is an optional filter that only narrows a read\"; :138 \"the app has no 'current workspace' state\"; :15 \"There is no active workspace in session state, cookies, client memory, or token claims that decides where a write lands.\""
             }
           ]
         },
@@ -299,16 +299,26 @@
             {
               "critic": "claude-fallback",
               "v": "pass",
-              "e": "docs/workspace-access.md:182 \"**Member cap 25** is the same on every plan ... No upgrade is offered at the cap, because no plan raises it.\" :69 \"Plans sell storage, not capabilities. The gate does not ask what plan anyone is on.\" I checked docs/workspace-access.md and answer.txt for \"seat\" and found nothing. The closest line is :181, a storage upgrade offered to the Owner, which matches the brief's storage pricing."
+              "e": "Checked A/project/docs/workspace-access.md and A/diff.txt; no seat price or seat gate. Closest line :181 \"offers an upgrade to the Owner\" is a storage upgrade, matching the brief's storage pricing. Cap left as stated, :182 \"**Member cap 25** is the same on every plan ... No upgrade is offered at the cap, because no plan raises it.\""
+            }
+          ]
+        },
+        "account-wide-agent-grant-08": {
+          "v": "fail",
+          "graded_text": "The design says the consent screen states the connection's scope, including workspaces joined later.",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "Checked A/project/docs/workspace-access.md and A/answer.txt for consent-screen content. The only mention of consent is :75 \"the usual pattern of an organization-scoped grant, where consent selects one workspace\", which describes the rejected alternative. Nothing says the consent screen states that the connection reaches all current workspaces and ones joined later; :63 puts the reach only in account settings after connecting."
             }
           ]
         }
       },
       "blocking": [
-        "[claude-fallback] Revocation is claimed to be immediate, but the design builds it on an async mirror. docs/workspace-access.md:83 says removal \"cuts their agent off from it on the very next call, because membership is read live\". Yet :49 reads role \"from the provider membership mirror\", and :175 says \"Membership and roles are owned by the auth provider and mirrored into the database by verified, idempotent webhooks.\" A late, retried or out-of-order membership.deleted webhook leaves the removed member's agent with access until the mirror catches up. Nothing covers event ordering or reconciling deletes. The test at :177 (\"removal from a workspace cuts access on the next call\") would only pass if it mutates the DB directly.",
-        "[claude-fallback] Agent refusals leak the workspace name to people who only have a share. docs/workspace-access.md:103 promises \"`workspace` is `null` for share-only documents, so the agent never learns workspace details the person cannot see\". But :193 lets agents reach shared documents \"subject to the document's workspace agent policy\", and the refusal at :129 is \"Acme Studio's owner has turned off access for connected agents\". The refusal at :130, \"This connection is not set up to reach Acme Studio\", has the same problem. A share-only recipient's agent is told the hidden workspace's name.",
-        "[claude-fallback] Shared documents and narrowed reach contradict each other. docs/workspace-access.md:65 requires \"connection reaches workspace\" for every agent call. :63 says the *only these workspaces* list is picked from \"my workspaces\". A share-only document's workspace can never be on that list. So, as written, any narrowed connection silently loses every shared document, and the design doesn't say whether that is intended.",
-        "[claude-fallback] Concurrent edits are left unsafe. docs/workspace-access.md:111 marks `update_document` as replacing the whole content, and :203 defers protection: \"Should `update_document` take an expected version to avoid an agent overwriting a person's concurrent edit? Not designed here.\" Building the design as written lets an agent silently erase a person's concurrent edits."
+        "[claude-fallback] A/project/docs/workspace-access.md:80 \"Audience is enforced only if the provider actually mints one (check a real token before writing the check, and say in code why it is conditional).\" It does not commit to audience binding. Built as written, the MCP server could accept an access token minted for another client or resource on the same provider instance, and that token would then reach every one of the person's workspaces under the account-wide grant (:85).",
+        "[claude-fallback] A/project/docs/workspace-access.md:115 marks create_document \"not idempotent\", and :204 leaves \"Should `create_document` accept an idempotency key so an agent's retry does not create a duplicate?\" as an open question. Agents retry calls, so building it as written creates duplicate documents.",
+        "[claude-fallback] A/project/docs/workspace-access.md:111 update_document is a full content replace, and :203 \"Should `update_document` take an expected version to avoid an agent overwriting a person's concurrent edit? Not designed here.\" Under concurrency, an agent write silently overwrites a person's edit."
       ],
       "minor": []
     },

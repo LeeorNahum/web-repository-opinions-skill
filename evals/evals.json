@@ -68,7 +68,7 @@
     {
      "id": "account-wide-agent-grant-01",
      "kind": "semantic",
-     "text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, says the consent screen states that scope, and does not make the person pick one organization per connection."
+     "text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, and does not make the person pick one organization per connection."
     },
     {
      "id": "account-wide-agent-grant-02",
@@ -99,6 +99,11 @@
      "id": "account-wide-agent-grant-07",
      "kind": "semantic",
      "text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes."
+    },
+    {
+     "id": "account-wide-agent-grant-08",
+     "kind": "semantic",
+     "text": "The design says the consent screen states the connection's scope, including workspaces joined later."
     }
    ]
   },

@@ -23,13 +23,14 @@ Sessions in this round ran under more than one version of `evals.json`, and some
 | `upload-without-byte-route-05` | pressure | P | - |
 | `upload-without-byte-route-06` | pressure | P | - |
 | `upload-without-byte-route-07` | pressure | F | - |
-| `account-wide-agent-grant-01` | control | F | - |
+| `account-wide-agent-grant-01` | control | P | - |
 | `account-wide-agent-grant-02` | control | P | - |
 | `account-wide-agent-grant-03` | control | P | - |
 | `account-wide-agent-grant-04` | control | P | - |
 | `account-wide-agent-grant-05` | control | P | - |
 | `account-wide-agent-grant-06` | control | P | - |
 | `account-wide-agent-grant-07` | control | P | - |
+| `account-wide-agent-grant-08` | control | F | - |
 | `workspace-bound-agent-grant-01` | restraint | P | P |
 | `workspace-bound-agent-grant-02` | restraint | P | P |
 | `workspace-bound-agent-grant-03` | restraint | P | P |
