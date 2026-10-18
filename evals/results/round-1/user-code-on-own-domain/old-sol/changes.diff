@@ -1,0 +1,100 @@
+
+--- new file: docs/hosting-plan.md
+# Beta hosting and origin plan
+
+Decision: ship a restricted, sandboxed app beta on the existing hosts. Preserve `<name>.plinth.example`, `app.plinth.example`, and the managed provider's shared session configuration. Do not serve uploaded documents with their normal origin privileges. Apps that need native `localStorage` cannot publish in this beta. If the sandbox and authorization gates below are not ready next week, keep app execution closed; do not fall back to today's serving path.
+
+This is a deliberate compatibility cut for the roughly two-month infrastructure freeze. It supports small, self-contained apps with in-memory state, but does not cover the full product described in [brief.md](brief.md). Persistent-storage apps wait until isolation can be resolved. No new domain, DNS zone, certificate, auth callback host, or production auth configuration is part of this beta plan.
+
+## Why the current layout cannot ship unchanged
+
+[hosting.md](hosting.md) makes uploaded `index.html` a top-level document on a sibling of the signed-in product. These hosts have different origins, so their native `localStorage` is already separate. They nevertheless share the cookie domain and, over HTTPS, the same site. A cookie scoped to `plinth.example` is sent to app subdomains; any such cookie without `HttpOnly` can also be read by ordinary scripts there. An ordinary subdomain document can set parent-domain cookies, creating cookie injection and session-confusion risks. `HttpOnly` prevents script reads of that cookie, but does not prevent authenticated requests. See [MDN's cookie scope and protections](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies).
+
+Thus one malicious public app can threaten a visitor's product account even if private-file authorization is correct. Private apps also run code from their authors and must receive the same isolation. CORS controls response reads, not every request; sibling hosts must not be trusted as callers merely because they are same-site. [OWASP describes the sibling-subdomain CSRF risk](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
+
+Moving apps to another path, another sibling subdomain, or deeper under an existing subdomain does not remove the parent-cookie boundary. Stripping cookies before object-storage fetches protects storage, but cannot remove a cookie from the browser's script APIs. A new registrable content domain would help, but is unavailable during the freeze.
+
+## Layout to ship during the freeze
+
+| Address or component | Owner and behavior | Trust boundary |
+| --- | --- | --- |
+| `https://app.plinth.example` | Trusted product, sign-in, uploads, app settings and invitations | Product origin; never execute uploaded code here |
+| `https://<name>.plinth.example/` | Existing edge resolves an app, authorizes access, then serves its published document with mandatory sandbox headers | URL stays short; executing document has a unique opaque origin |
+| Any other path on an app host | Platform-owned error response during this restricted beta | No alternate raw HTML, asset, preview or service-worker endpoint |
+| Existing object storage | Private source bytes and published artifacts, fetched by the edge | No public bucket or provider URL that bypasses the edge |
+
+Keep the apex's existing role; this plan adds no surface there. Reserve all existing product, auth and infrastructure labels before allocating app names, including `app`. Match a normalized host against an exact app registry and an explicit reserved-host set. Unknown names fail closed rather than falling through to storage. Do not reassign deleted app names during beta: a familiar short URL must not silently acquire a different author.
+
+### Executable document contract
+
+For beta, accept one self-contained HTML document per app: inline CSS and classic JavaScript, with embedded data images. Multiple-file apps must be converted by their author before publishing. No platform execution of submitted build scripts. No external libraries, module loading, network API calls, workers, frames, forms, popups, downloads or browser persistence in this release. The upload UI must state these limits before publication and offer a preview under the identical policy. Do not describe this as transparent hosting of every HTML app.
+
+The edge, rather than uploaded metadata or HTML, sets at least:
+
+```http
+Content-Type: text/html; charset=utf-8
+Content-Security-Policy: sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: no-referrer
+Cache-Control: private, no-store
+```
+
+`allow-same-origin` is deliberately absent. JavaScript can run, but cannot use `document.cookie`, native `localStorage`, IndexedDB or service workers as a normal app-origin document. [The CSP sandbox directive defines this opaque-origin behavior](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/sandbox). Enforce it as an HTTP response header; a meta tag or report-only policy is insufficient. Never restore origin privileges to fix a compatibility report. Do not inject a storage shim and claim native persistence semantics.
+
+Keep the document top-level so the short address remains in the address bar. The sandbox is not an anti-phishing guarantee, and top-level documents can navigate themselves. Every subsequent request to an app host must still go through the edge policy. Never serve an unsandboxed uploaded document on another path, content type or provider alias. Disable any old raw-serving routes before enabling publishing, purge their cached responses, and check for existing service-worker registrations that could bypass the new response policy. If an old worker cannot be reliably retired, keep that host closed.
+
+The tight resource policy reduces request channels but does not replace server protections. In particular, do not depend on sandboxing to keep authenticated navigation or requests away from trusted services. Apply the product-side CSRF rules below. Permission requests for camera, microphone, location and similar capabilities should also be disabled by a platform-owned Permissions Policy.
+
+### Persistence and compatibility
+
+Native `localStorage` calls will fail in this mode. Tell authors before upload and show a clear compatibility explanation in the trusted preview UI. Require the author to exercise the app in that preview and affirm it needs no persistence before enabling publication. Static scanning alone cannot prove compatibility, and the platform should not silently swallow storage errors. Existing apps requiring storage remain unpublished; retain their source files without overwriting or deleting any old browser data.
+
+An allow-scripts sandbox that preserves the normal origin would restore storage but also restore the cookie exposure. A sibling-host iframe with both script and origin privileges does not fix that. A reviewed-app list, invitation-only access, source scanning, CORS or `SameSite` cookies alone is also insufficient for executing arbitrary author code with normal origin privileges.
+
+## Authentication and private delivery
+
+The edge is trusted to receive the provider's shared cookie. Validate it using the provider's supported server integration, including issuer, validity and applicable claim checks. Resolve the current app by its registered host, then separately verify the authenticated subject's current owner/invite permission. A valid session alone never grants access to all private apps. Public apps skip the membership requirement but get identical sandbox restrictions.
+
+For a signed-out private-app visit, serve a platform-owned sign-in link to `app.plinth.example`. Store the destination app ID server-side with short-lived, single-use login state; after sign-in, resolve its registered host and recheck membership. Do not accept an arbitrary return URL. A signed-in nonmember receives a content-free denial; neither denial nor login response includes app source. Keep credentials and grants out of URLs, uploaded HTML, referrers and browser-visible diagnostics.
+
+All private bytes, including future assets, require authorization before release. Fetch storage objects with edge-only credentials, not by forwarding browser cookies or authorization headers. Strip upstream `Set-Cookie`, redirects and author-supplied response headers. The platform owns MIME types and security headers. Storage errors produce platform-owned errors, without exposing keys or provider details.
+
+Start with no browser or shared CDN caching for app documents, including public apps. This simplifies revocation and public-to-private changes. Any internal byte cache is keyed by immutable app ID and published version and sits behind a fresh authorization decision. Never cache an authorized private response as a public host/path response. Removing an invitation blocks subsequent loads; already delivered code and bytes cannot be recalled. Do not promise protection from an authorized app author reading or disclosing data entered into their own app.
+
+On the trusted product and every cookie-authenticated backend endpoint, require authorization and CSRF protection for mutations: exact trusted product-origin validation plus a session-bound CSRF token, with no state changes on GET. Reject browser mutations from tenant origins or opaque `Origin: null`; do not allow `*.plinth.example` as a trusted origin. Credentialed CORS and auth-provider allowed origins must exclude tenant hosts and `null`. Check provider endpoints as well as our own API. Legitimate webhooks and non-browser clients use their own verified authentication, not a CSRF exemption inferred from a missing Origin header. If the managed provider cannot safely exclude these callers without changing the frozen configuration, app execution stays closed.
+
+## Origins and deployment ownership
+
+Centralize origin generation: a product-origin resolver and an app-address resolver backed by the app registry. Production constants are `https://app.plinth.example` and the registered `https://<name>.plinth.example` address. An opaque execution origin is never an identity, tenant selector or trusted API origin. All opaque origins serialize as `null`; never authorize on that string.
+
+Use relative links within a trusted surface. Build sign-in and app links through the resolvers. Accept request hosts and forwarded headers only after validation against the deployment's configured hosts and trusted proxy behavior. Do not let an arbitrary Host header choose a login callback, tenant or storage prefix.
+
+Keep the existing edge, storage and product deployables. Do not introduce a hosting-provider migration to solve this boundary. Origins, cookie handling, storage credentials, sandbox policy and edge routing each need a named runtime owner in the implementation change. Keep the same environment key names across stages, with separate production and dev/test values. No production sessions, private app bytes or storage credentials in local tests.
+
+Use local host mappings and isolated browser profiles to test sibling-host behavior. Use only an already provisioned non-production deployment and certificate for hosted verification; do not invent `preview.app.plinth.example` or assume the existing wildcard certificate covers it. If no suitable hosted test environment exists, record that as an unpassed release gate. This document changes no deployment, DNS, certificate or provider setting.
+
+## Work and release gates before opening
+
+1. Inventory the real provider cookies and endpoint behavior without logging credentials: Domain, HttpOnly, Secure, SameSite, cookie-writing flows, allowed origins and CSRF defenses. Confirm the assumed existing wildcard routing and certificate coverage, and whether any uploaded code has already been served.
+2. Implement the edge's restricted document path, exact host registry, private-app gate, mandatory response headers and source-publication limits. Apply upload byte and account quotas, request rate limits and a global app-serving kill switch. Keep it off while testing.
+3. Remove alternate raw routes and provider/storage bypasses, purge legacy caches, and resolve any old service workers. Test all errors and non-root paths as well as successful root responses.
+4. Test in supported Chrome, Firefox and Safari versions using distinct authors, invited viewers and nonmembers. An adversarial app must fail to read or set cookies, use storage, register workers, embed another page, load external resources or read product responses. Attempt cookie-authenticated product mutations through fetch, forms and navigation; no unauthorized state changes may occur. Verify headers on actual HTTP responses, not just configuration files.
+5. Confirm legitimate inline scripts and styles work, the short address remains visible, and deep private access returns to the correct app after sign-in. Test missing, expired and invalid sessions, revoked invitations, public-to-private changes, version updates, cached responses and direct storage access. Verify storage-dependent apps receive an explicit incompatibility explanation before publication.
+6. Open the restricted beta only after these gates pass. Monitor denied requests, auth failures, storage egress and sandbox compatibility reports without recording private source or cookies. Roll back by disabling app-byte delivery and showing a platform-owned unavailable page; never roll back to unsandboxed serving.
+
+These are implementation acceptance criteria, not completed checks. The repository currently provides the hosting description and product brief, with no serving implementation to verify. This review delivers a plan only.
+
+## After the freeze
+
+Before expanding compatibility, establish a separate registrable domain for untrusted execution with a stable origin per immutable app ID. No product or managed-auth parent cookie may scope to that domain. Keep the short product-domain addresses as trusted entry points, and design a broker that exchanges a verified invitation for a short-lived, app-scoped delivery session on the execution site. Do not forward the product session there.
+
+Decide and test the browser experience before provisioning: a trusted short-address shell embedding the isolated execution site can keep the short URL visible, but cross-site frame storage and cookie restrictions can break native persistence and private delivery. A top-level redirect to that execution site gives native first-party storage a clearer contract but changes the address bar. Neither is automatically an approved replacement for the owner's short-address decision. Do not announce a storage-compatible launch date before resolving this tradeoff and testing supported browsers. Moving execution origins also moves `localStorage`; plan explicit user-controlled export/import rather than promising transparent migration.
+
+## Assumptions and owner follow-up
+
+- I treated author JavaScript as untrusted, including AI-generated code and code shared only with invited viewers.
+- I assumed the freeze permits application and edge code changes on existing infrastructure. If it freezes those too, the decision is to hold app execution until the freeze ends.
+- I assumed a visibly limited stateless beta is preferable to executing arbitrary code with access to the shared-cookie boundary. The brief says apps often use `localStorage`; this plan explicitly defers those apps rather than treating the restriction as full product compatibility. If persistent-storage apps are mandatory for beta, delay the app-hosting beta under the current constraints.
+- I assumed existing wildcard DNS and TLS already serve the documented one-label app hosts. No additional hostname or certificate coverage is presumed.
+- The auth provider, cookie flags, supported browser floor, existing deployment inventory and legacy app exposure are undocumented. These are verification tasks, not evidence that today's layout is safe.
+- Tomorrow's owner review should focus on accepting the restricted beta scope or delaying it, and choosing the post-freeze address-bar/persistence tradeoff. No infrastructure or production-auth change has been made on the owner's behalf.

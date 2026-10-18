@@ -1,0 +1,81 @@
+{
+  "session": "1-workspace-bound-agent-grant-old-sol",
+  "eval": "workspace-bound-agent-grant",
+  "arm": "old",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": null,
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 100.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "auth",
+      "bootstrap",
+      "data-model",
+      "http-apis",
+      "ids",
+      "integration-onboarding",
+      "model-context-protocol",
+      "modularity",
+      "origins",
+      "routing",
+      "source-of-truth",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 168376,
+    "cached_input_tokens": 143104,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 4298,
+    "reasoning_output_tokens": 216
+  },
+  "changed": [
+    "docs/agent-access.md"
+  ],
+  "assertions": {
+    "workspace-bound-agent-grant-01": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "A/project/docs/agent-access.md:7: \"Authorize each MCP connection for exactly one firm workspace, one human member, and one client installation. Require an explicit approval by a current Admin of that firm before the connection can access data. A consultant serving three firms creates three independent connections with three separate approvals and credential families.\" Firm chosen at consent, line 18: \"presents an explicit firm picker populated from their verified current memberships ... Never silently choose the last active organization\"; line 19 stores \"an immutable workspace ID, provider organization ID\"; line 20: \"A current Admin opens the request within that firm's signed-in workspace ... Revalidate Admin membership in the target firm at the approval commit.\""
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-02": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "A/project/docs/agent-access.md:47-53, 'For every call': step 2 \"Load the exact connection and generation. Require an active, unexpired approval, active workspace and user, and no revocation. Do not rely on a token's old approval or role claims.\"; step 3 \"Check current provider membership and role in the bound firm. For the initial design, perform an authoritative check on each operation and fail closed if it is unavailable. An asynchronously updated webhook mirror alone cannot promise immediate removal.\"; line 58: \"`read_workpaper { id }` ... Resolve by both workspace and workpaper ID\"; line 71: \"Membership removal, user deletion/closure, or workspace deletion disables the affected connections and refresh families.\"; line 73: \"Check revocation on every HTTP request and tool invocation, including existing MCP sessions.\""
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-03": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "Checked A/project/docs/agent-access.md (only new file; A/diff.txt adds nothing else; brief.md unchanged). Line 24: \"Approval is per connection, not per client application, email domain, consultant account, or all firms. Adding another firm ... requires a new approval.\" Line 61: \"Keep these tool schemas free of a workspace selector. The verified credential selects the firm ... There is no MCP `switch_workspace` operation.\" Closest to breaking it, line 93: \"A host authorized independently for two firms could combine data it has already retrieved\" -- this describes two separate single-firm connections on one host, not a connection whose scope spans firms, and the doc explicitly states it cannot prevent it with token isolation."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

@@ -1,0 +1,75 @@
+{
+  "session": "1-workspace-bound-agent-grant-old-opus",
+  "eval": "workspace-bound-agent-grant",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": null,
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 110.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "auth",
+      "domains",
+      "model-context-protocol",
+      "source-of-truth",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 30358,
+    "cache_read_input_tokens": 124390,
+    "output_tokens": 8367,
+    "total_cost_usd": 0.435122,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/agent-access.md"
+  ],
+  "assertions": {
+    "workspace-bound-agent-grant-01": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/agent-access.md:12: \"Each MCP connection is authorized for exactly one firm workspace. The consultant picks that workspace when they consent ... every tool call is refused until an Admin of that firm approves the grant ... A consultant who works for three firms has three separate grants, each approved by its own firm's Admin.\" Reinforced by :17 \"Choosing a different firm means a new authorization of the same resource, which produces a new token bound to that other firm\", :60 \"One grant per (workspace, consultant, client)\", and approval flow :67 \"On consent they pick one firm\" / :70 \"An Admin opens Settings \u2192 Agent connections in that firm's workspace ... They approve ... or deny it\"."
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-02": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "B/project/docs/agent-access.md gate, every tool call: :81 \"3. Confirm the consultant is a current member of that workspace and look up their role.\", :82 \"4. Load the grant for (workspace, subject, client) and require `approved`.\", :84 \"6. Run the product operation scoped to that workspace. Every query is filtered by `workspaceId` inside the operation itself, not only checked beforehand.\", :86 \"A workpaper ID that belongs to another firm returns the same \\\"not found\\\" as an ID that doesn't exist.\" Removal cuts existing connections: :63 \"Role and membership are read live from the provider-backed membership at every call, so removing someone from a firm, or changing their role, takes effect on the next call with no sync job.\""
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-03": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "Checked B/project/docs/agent-access.md, B/answer.txt, B/diff.txt (only change is the new doc; brief.md unchanged). No multi-firm scope is offered: :33 \"No tool takes a `workspace` or `firm` argument\", :34 a token without verified organization context is refused. Closest to breaking it: :17 \"One canonical OAuth protected resource for every firm. There is no per-firm URL or path.\" \u2014 but the same line binds each token to one firm (\"a new token bound to that other firm\"); and :126 ID-JAG \"doesn't replace firm Admin approval: a grant is still required\", and grants are per workspace (:49 \"workspaceId the firm\")."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

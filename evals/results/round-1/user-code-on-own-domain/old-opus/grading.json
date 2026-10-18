@@ -1,0 +1,104 @@
+{
+  "session": "1-user-code-on-own-domain-old-opus",
+  "eval": "user-code-on-own-domain",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
+    "fixture": "cf95ce9da7951479",
+    "base_fixture": "9a72a07420d785e3",
+    "evals": "3ecf030566f1db17",
+    "harness": "785b750b15ab7e37"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 385.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "auth",
+      "dns",
+      "domains",
+      "object-storage",
+      "origins"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 31779,
+    "cache_read_input_tokens": 157376,
+    "output_tokens": 11347,
+    "total_cost_usd": 0.5126952,
+    "num_turns": 8
+  },
+  "changed": [
+    "docs/hosting-plan.md"
+  ],
+  "assertions": {
+    "user-code-on-own-domain-01": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "The layout that ships keeps user code on plinth.example. A/project/docs/hosting-plan.md:24 maps \"`<name>.plinth.example` | One user app per name, streamed by the edge from object storage | **The app author (untrusted)**\". The separate domain shows up only as a post-freeze \"durable layout\" (line 84), and the plan won't commit to it. Line 90 says \"Only the owner can weigh these, so this plan doesn't pick for them\", and line 94 still lists \"C. Ship this plan and keep `plinth.example` permanently\". Line 93 (option B) only says addresses \"may change after the beta\". A separate domain listed among alternatives and deferred to the owner doesn't count as chosen."
+        }
+      ]
+    },
+    "user-code-on-own-domain-02": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/hosting-plan.md:7 says \"To the browser, every `<name>.plinth.example` app and `app.plinth.example` are the **same site**\". Line 10: \"Any app can set cookies on `plinth.example` that `app.plinth.example` will receive (cookie tossing or session fixation)\". Line 11: \"`SameSite` cookies don't protect `app.plinth.example` from requests made by user apps, because those requests are same-site\". Line 9: \"any app author can read the session of anyone who opens their app\". Together these cover same-site, parent-domain cookie setting, same-site requests, session fixation, and reaching session tokens."
+        }
+      ]
+    },
+    "user-code-on-own-domain-03": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "No Plinth-owned page on `<name>.plinth.example` frames content from another domain. I checked A/project/docs/hosting-plan.md and A/answer.txt. The nearest line is hosting-plan.md:92, \"launch apps there ... Short addresses survive if the domain is short\". That replaces the plinth.example short address instead of keeping it as a framing shell. During the beta, line 24 serves the untrusted app itself at `<name>.plinth.example`."
+        }
+      ]
+    },
+    "user-code-on-own-domain-04": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/hosting-plan.md:84 gives \"`<name>.<user-content domain>` | User apps, with the user-content domain listed on the Public Suffix List so each app is its own site\". Line 65 adds that `localStorage`, IndexedDB and service workers \"are all bound to the origin `https://<name>.plinth.example`. That keeps apps isolated from each other\". Each app gets one label, so it has its own origin and storage."
+        }
+      ]
+    },
+    "user-code-on-own-domain-05": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "The plan has no sandbox and no opaque origin. I checked A/project/docs/hosting-plan.md and A/answer.txt: neither contains `sandbox`, `allow-same-origin` or opaque-origin serving. The edge header rules at lines 73-75 cover only `Content-Type`/`nosniff`, `Set-Cookie` and `Access-Control-Allow-Credentials`. The beta keeps serving people's code as the top-level document on plinth.example subdomains. Line 24 does this, and line 93 says \"B. Ship this plan on `plinth.example`\". The plan never states the storage cost of a sandbox."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude-fallback] During the beta, untrusted HTML/JS stays the top-level same-origin document on `<name>.plinth.example`, which is same-site with `app.plinth.example`. Every defense against that is containment, as A/project/docs/hosting-plan.md:79 admits: \"Every mitigation above is containment. Phishing pages under our own name, cookie tossing against anything we add later ... all stay possible as long as user code runs under `plinth.example`\". An opaque-origin CSP sandbox fits inside the freeze and would remove that same-site script context. The plan never considers it.",
+    "[claude-fallback] Cookie tossing against the auth provider's own cookies stays open. Line 37 protects only \"Cookies we own on `app.plinth.example` use the `__Host-` prefix\". The provider's cookies (line 23, \"Provider's own host-only cookies\") are not `__Host-` cookies we control. App script can still set `Domain=plinth.example` cookies that shadow them, which is login CSRF or session fixation. Line 10 names that threat as fixed, but nothing in the plan closes it for provider cookies.",
+    "[claude-fallback] The plan refuses to commit to the hosting layout, which is the question it was asked. A/project/docs/hosting-plan.md:90: \"Only the owner can weigh these, so this plan doesn't pick for them\". It then lists three options, including \"C. Ship this plan and keep `plinth.example` permanently\" (line 94). An engineer building tomorrow has no settled target layout.",
+    "[claude-fallback] No option keeps both the decided short address and isolation. Option A (line 92) moves apps to a new domain and drops `<name>.plinth.example`: \"Short addresses survive if the domain is short\". Options B and C keep user code on plinth.example. The brief's decision (\"Every app gets a short address, `<name>.plinth.example`\", fixture/docs/brief.md) could be kept with a plinth.example shell page framing the content domain. The plan never offers this, so option A overrides a stated decision without needing to.",
+    "[claude-fallback] Option B accepts a later move that throws away visitors' data. A/project/docs/hosting-plan.md:86 says moving \"changes every app's origin, so every visitor's `localStorage` for every app is left behind\". Line 93 still recommends shipping on plinth.example and telling users \"local data may not carry over\". The plan wants storage kept tied to permanent names (section 5) and plans to abandon those origins anyway, which contradicts itself."
+  ],
+  "minor": []
+}

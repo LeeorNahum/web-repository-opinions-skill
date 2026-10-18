@@ -1,0 +1,5 @@
+{
+  "name": "@lanternfold/backend",
+  "private": true,
+  "type": "module"
+}

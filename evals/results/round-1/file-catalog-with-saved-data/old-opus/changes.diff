@@ -1,0 +1,598 @@
+
+--- new file: docs/mcp-tools.md
+# Fernpage MCP tool catalog
+
+This is the tool surface that AI agents use to build and maintain Fernpage sites. `docs/brief.md` wins over this document. If they disagree, fix this document.
+
+Status: **draft, written while the owner was away.** I made the calls I had to and marked each one. They are all listed under [Assumptions](#assumptions) and [Open questions](#open-questions) at the end. The owner should review those first.
+
+## Server
+
+- Endpoint: `https://mcp.<domain>/mcp`. This is its own protocol app (`apps/mcp`, Hono plus the official MCP SDK). The product domain isn't decided yet.
+- Transport: stateless, buffered JSON responses. No streaming or subscription tools. Agents don't need live pushes: they read, act, and read again.
+- Auth: standard MCP OAuth against the auth provider. During consent the user picks one workspace, and the token acts in that workspace. To act in a different workspace, the user authorizes again. It's the same resource, not a second server.
+- Catalog: every caller sees the same static list of tools. The server checks authorization on every call. A call it refuses gets a typed error, never a hidden tool.
+- Every tool calls the same product capabilities that the browser app and the visitor runtime SDK use. Writes made through MCP land in the same reactive database, so every open page sees saved-data changes live.
+
+## Conventions
+
+**Naming.** Tool names are `verb_noun` in snake_case. The noun is plural when the tool takes a list (`create_files`), and singular for single-item reads (`read_file`, `get_entry`). Collection reads use `list_`.
+
+**Identity.**
+
+| Thing | Identity | Notes |
+| --- | --- | --- |
+| Workspace | `workspace_id`, 12-character Base58 | Stable, opaque. |
+| Site | `site_id`, 12-character Base58 | Stable, opaque. Names and titles are never accepted where something gets destroyed. |
+| File | `site_id` + `path` | The path *is* the file's identity, because it is the file's public URL. Paths are relative (`index.html`, `img/cake.jpg`), case-sensitive, `/`-separated, with no leading `/`, no `..`, and at most 512 bytes. The `_fernpage/` prefix is reserved. |
+| Collection | `site_id` + `collection` name | Declared in the site's data rules. Names match `^[a-z][a-z0-9_]{0,39}$`. |
+| Entry | `site_id` + `collection` + `entry_id` | The server generates a 12-character Base58 ID, unless the caller supplied a key when creating the entry (see `create_entries`). |
+
+Reads may resolve by name. For example, `list_sites` takes a `search` string, and its results carry stable IDs. Every write and delete takes stable IDs.
+
+**Revisions and concurrency.** Files, entries, and the data-rules document each carry an opaque `revision` string. A tool that replaces or patches existing state takes `expected_revision`. If the state has moved on, the tool refuses with `revision_conflict` and returns the current revision. For entries it also returns the current value, so the agent can re-apply its change without another read. Visitors may be writing saved data at the same moment an agent is, so entry updates always make the agent choose (see `update_entries`).
+
+**Batches.** A tool that takes a list runs the product's single-item operation once per item. Each item gets its own authorization, validation, and quota check. Results come back one per item, in input order, typed by `status`, with failures inline. Successes are never rolled back because a sibling failed. The one exception is `create_site`, which is all-or-nothing (see below). If authorization is refused before anything lands, the whole call fails with the re-auth challenge.
+
+```ts
+type ToolError = {
+  code: ErrorCode;
+  message: string;            // product copy: says what failed and the next move
+  [detail: string]: unknown;  // measured facts, e.g. { size_bytes, limit_bytes }
+};
+type Failed = { status: "failed"; error: ToolError };
+```
+
+**Annotations.** These follow MCP `readOnlyHint`, `destructiveHint`, `idempotentHint`, and `openWorldHint`, and they describe the tool's worst possible effect. A tool is `openWorldHint: true` when it can fetch a caller-supplied URL. Annotations are hints for the host. The server's authorization gate is what enforces access.
+
+**No confirmation arguments.** Nothing asks for `confirm: true`. Approval belongs to the host, and authority belongs to the server. Every tool is safe to run unattended.
+
+**File content input.** When a tool accepts file bytes, they come in a tagged `source`:
+
+```ts
+type FileSource =
+  | { type: "text"; text: string }        // UTF-8 text: HTML, CSS, JS, JSON, SVG, ...
+  | { type: "url"; url: string }          // primary path for images, fonts, any binary or large file
+  | { type: "base64"; data: string };     // tiny binaries only, ≤ 64 KB decoded
+```
+
+Prefer `url` for anything that isn't text. The server fetches it with SSRF protections: HTTPS only, no private or link-local addresses, a 15 s timeout, and the per-file size cap. The server sets `content_type` from the file extension.
+
+## Shared resource schemas
+
+These are the same shapes the HTTP API and the browser app use.
+
+```ts
+type Workspace = {
+  id: string;
+  name: string;
+  role: "owner" | "member";
+};
+
+type Site = {
+  id: string;
+  workspace_id: string;
+  url: string;              // public address, minted by the server; never build it yourself
+  app_url: string;          // the site in the browser app (where Trash restore lives)
+  status: "live" | "trashed";
+  purge_at: string | null;  // ISO time; set only while trashed
+  // Derived from index.html on every read, never stored separately:
+  title: string;            // <title>, else "Untitled site"
+  description: string | null;  // <meta name="description">
+  favicon_path: string | null; // <link rel="icon"> href, if it resolves to a site file
+  file_count: number;
+  total_bytes: number;
+  data: {
+    rules_revision: string;
+    collections: Array<{ name: string; entry_count: number; bytes: number }>;
+    total_bytes: number;
+  };
+  created_at: string;
+  updated_at: string;
+};
+
+type FileInfo = {
+  path: string;
+  url: string;              // public URL of this file
+  content_type: string;
+  size_bytes: number;
+  revision: string;         // changes whenever the content changes
+  updated_at: string;
+};
+
+type Entry = {
+  id: string;
+  collection: string;
+  value: Record<string, JsonValue>;  // a JSON object, ≤ 32 KB serialized
+  created_by: Author;
+  updated_by: Author;
+  revision: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type Author =
+  | { kind: "visitor"; visitor_id: string }                      // anonymous browser identity from the runtime SDK
+  | { kind: "member"; user_id: string; via: "app" | "agent" };   // a workspace member, directly or through an agent
+
+type DataRules = {
+  revision: string;
+  collections: Record<string, CollectionRules>;
+};
+
+type CollectionRules = {
+  read:   Access;   // who may read entries
+  create: Access;   // who may add entries
+  update: Access;   // who may change an entry
+  delete: Access;   // who may remove an entry
+};
+
+// Applies to visitors. Workspace members, and agents acting for them, may always do everything.
+type Access =
+  | "anyone"    // any visitor
+  | "creator"   // only the visitor who created the entry (for create: same as "anyone")
+  | "owner";    // no visitor; workspace members only
+```
+
+The brief's two examples, written as rules:
+
+```json
+{
+  "collections": {
+    "checklist": { "read": "anyone", "create": "owner", "update": "anyone",  "delete": "owner" },
+    "rsvps":     { "read": "creator", "create": "anyone", "update": "creator", "delete": "creator" },
+    "settings":  { "read": "anyone", "create": "owner", "update": "owner",   "delete": "owner" }
+  }
+}
+```
+
+## Catalog at a glance
+
+| Tool | Does | readOnly | destructive | idempotent | openWorld |
+| --- | --- | :-: | :-: | :-: | :-: |
+| `list_workspaces` | Lists workspaces this connection may act in | ✓ | | ✓ | |
+| `list_sites` | Lists sites in a workspace | ✓ | | ✓ | |
+| `get_site` | Gets one site with derived metadata and a data summary | ✓ | | ✓ | |
+| `create_site` | Creates and publishes a site from its first files | | | | ✓ |
+| `delete_site` | Moves a site to Trash for 30 days | | ✓ | ✓ | |
+| `list_files` | Lists a site's files with revisions | ✓ | | ✓ | |
+| `read_file` | Reads one file | ✓ | | ✓ | |
+| `create_files` | Adds new files; refuses existing paths | | | | ✓ |
+| `replace_files` | Replaces existing files' whole content | | ✓ | | ✓ |
+| `edit_file` | Applies small find-and-replace edits to one text file | | ✓ | | |
+| `delete_files` | Removes files from a site | | ✓ | ✓ | |
+| `get_data_rules` | Reads the site's saved-data rules | ✓ | | ✓ | |
+| `set_data_rules` | Replaces the site's saved-data rules | | ✓ | | |
+| `list_entries` | Lists or searches saved-data entries in a collection | ✓ | | ✓ | |
+| `get_entry` | Gets one saved-data entry | ✓ | | ✓ | |
+| `create_entries` | Adds saved-data entries (seeding) | | | | |
+| `update_entries` | Patches saved-data entries | | ✓ | | |
+| `delete_entries` | Removes specific saved-data entries | | ✓ | ✓ | |
+| `delete_all_entries` | Empties one collection | | ✓ | ✓ | |
+
+That's 19 tools. Each description below begins with a sentence written for deferred tool search: verb first, then nouns.
+
+---
+
+## Workspaces
+
+### `list_workspaces`
+
+> List the Fernpage workspaces this connection can create and manage sites in.
+
+```ts
+input:  {}
+output: { workspaces: Workspace[] }
+```
+
+In practice this returns the one workspace chosen at consent. The tool exists so agents can discover the `workspace_id` instead of guessing it, and so the catalog keeps working if one connection is later allowed into several workspaces.
+
+## Sites
+
+### `list_sites`
+
+> List and search Fernpage sites in a workspace by title.
+
+```ts
+input: {
+  workspace_id: string;
+  search?: string;    // case-insensitive match on title; narrows only
+  cursor?: string;
+  limit?: number;     // default 25, max 100
+}
+output: { sites: Site[]; next_cursor: string | null }
+```
+
+Trashed sites are excluded. When several sites match a search, the agent picks one by `id`.
+
+### `get_site`
+
+> Get a Fernpage site's URL, title, description, favicon, file totals, and saved-data summary.
+
+```ts
+input:  { site_id: string }
+output: { site: Site }
+```
+
+Title, description, and favicon come from `index.html` every time the site is read. To change them, edit `index.html`. No tool sets them directly. A trashed site still resolves here, with `status: "trashed"` and `purge_at`, so an agent can explain what happened and point the user to `app_url`.
+
+### `create_site`
+
+> Create and publish a new Fernpage site in a workspace from its index.html and any other starting files.
+
+```ts
+input: {
+  workspace_id: string;
+  files: Array<{ path: string; source: FileSource }>;  // 1–50 items; must include "index.html"
+}
+output: { site: Site; files: FileInfo[] }
+```
+
+- One `index.html` is enough. The site goes live at `site.url` as soon as the call returns.
+- **All or nothing.** If any file fails (bad path, fetch failure, too large), no site is created, and the error lists every failing item. A half-built new site has no value. Add more files afterwards with `create_files`.
+- Not idempotent: every successful call makes a new site. After a timeout or an unknown outcome, check `list_sites` before retrying.
+- Errors: `index_required`, `invalid_path`, `duplicate_path`, `too_large`, `fetch_failed`, `quota_exceeded`, `forbidden`.
+
+### `delete_site`
+
+> Delete a Fernpage site by moving it to Trash, where it can be restored in the browser app for 30 days.
+
+```ts
+input:  { site_id: string }
+output: { status: "trashed"; site_id: string; purge_at: string; app_url: string }
+```
+
+- While a site is in Trash, its URL stops serving, and its files and saved data are kept untouched. After 30 days, both are permanently purged by a bounded, resumable deletion job.
+- **There is no restore tool.** Restoring happens only in the browser app. The result includes `app_url` so the agent can tell the user where to go.
+- Calling it on a site that's already trashed returns the same result (idempotent).
+- Any other tool called on a trashed site fails with `site_in_trash`, which includes `app_url`.
+
+## Files
+
+### `list_files`
+
+> List a Fernpage site's files with their paths, sizes, content types, and revisions.
+
+```ts
+input: {
+  site_id: string;
+  prefix?: string;    // e.g. "img/"; narrows only
+  cursor?: string;
+  limit?: number;     // default 200, max 1000
+}
+output: { files: FileInfo[]; next_cursor: string | null }
+```
+
+This is the cheap way to get the `revision` values that `replace_files` needs.
+
+### `read_file`
+
+> Read one file from a Fernpage site: text content inline, or a download link for binary files.
+
+```ts
+input:  { site_id: string; path: string }
+output:
+  | { kind: "text";   file: FileInfo; text: string }                        // text files ≤ 512 KB
+  | { kind: "binary"; file: FileInfo; download_url: string; expires_at: string }
+```
+
+This tool reads one file at a time on purpose, so a single call can't flood the agent's context. A text file over 512 KB fails with `too_large` and reports its `size_bytes`.
+
+### `create_files`
+
+> Add new files to a Fernpage site; refuses any path that already exists.
+
+```ts
+input: {
+  site_id: string;
+  files: Array<{ path: string; source: FileSource }>;  // 1–50 items
+}
+output: {
+  results: Array<
+    | { status: "created"; path: string; file: FileInfo }
+    | ({ path: string } & Failed)   // already_exists, invalid_path, too_large, fetch_failed, quota_exceeded
+  >;
+}
+```
+
+Because it never overwrites, an agent that thinks it's adding a file can't destroy one by accident. `already_exists` returns the existing file's `revision` and names `replace_files` as the next step.
+
+### `replace_files`
+
+> Replace the whole content of existing files on a Fernpage site.
+
+```ts
+input: {
+  site_id: string;
+  files: Array<{
+    path: string;
+    source: FileSource;
+    expected_revision: string;   // required; get it from list_files or a previous write
+  }>;                            // 1–50 items
+}
+output: {
+  results: Array<
+    | { status: "replaced"; path: string; file: FileInfo }
+    | { status: "unchanged"; path: string; file: FileInfo }   // new content was byte-identical
+    | ({ path: string } & Failed)  // not_found, revision_conflict, too_large, fetch_failed, quota_exceeded
+  >;
+}
+```
+
+- Refuses paths that don't exist (`not_found`, which names `create_files`). It never creates a file by accident.
+- `expected_revision` is required so the agent never silently overwrites a change made in the browser app, or by another agent, since its last read.
+- Replacing `index.html` updates the site's title, description, and favicon.
+
+### `edit_file`
+
+> Edit one text file on a Fernpage site by replacing exact snippets, for small changes without resending the file.
+
+```ts
+input: {
+  site_id: string;
+  path: string;
+  edits: Array<{
+    find: string;      // exact text; must occur exactly once in the file at apply time
+    replace: string;
+  }>;                  // 1–20 edits, applied in order, all or nothing
+}
+output: { status: "edited"; file: FileInfo; applied: number }
+```
+
+- This is the tool for the brief's "often one small edit". The `find` anchors check themselves, so the tool needs no `expected_revision`. If the file changed so a snippet no longer matches, the edit fails cleanly.
+- Errors: `not_found`, `not_text`, `find_not_found` (with the edit index), `find_ambiguous` (with the edit index and match count), `too_large`.
+
+### `delete_files`
+
+> Remove files from a Fernpage site.
+
+```ts
+input: {
+  site_id: string;
+  paths: string[];     // 1–100 items
+}
+output: {
+  results: Array<
+    | { status: "deleted"; path: string }
+    | ({ path: string } & Failed)   // not_found, index_required
+  >;
+}
+```
+
+- `index.html` can't be deleted (`index_required`): a site always has one. To change it, use `replace_files` or `edit_file`. To remove the whole site, use `delete_site`.
+- A path that doesn't exist is reported as `not_found`, so typos get noticed instead of passing silently.
+- File deletion is permanent. Only whole sites go to Trash.
+
+## Saved data
+
+Agents get the same entry-by-entry view of saved data that visitors get. The difference is permissions: an agent acts for a workspace member, so data rules never limit it. Each agent write is its own transaction, with nothing like an "edit the whole dataset" operation. That way visitors writing at the same moment are never clobbered wholesale, and every open page updates live, entry by entry.
+
+### `get_data_rules`
+
+> Get the rules that decide which visitors may read, create, update, or delete each saved-data collection on a Fernpage site.
+
+```ts
+input:  { site_id: string }
+output: { rules: DataRules }
+```
+
+### `set_data_rules`
+
+> Replace a Fernpage site's saved-data rules, declaring its collections and who may write them.
+
+```ts
+input: {
+  site_id: string;
+  collections: Record<string, CollectionRules>;   // the complete new rule set
+  expected_revision: string;                      // from get_data_rules or get_site
+}
+output: { rules: DataRules }
+```
+
+- Declaring a collection here is how it comes into existence. Entries can only live in declared collections.
+- **Leaving out a collection that still has entries fails** with `collection_has_entries` (which includes the counts). Rules never delete data implicitly. Empty the collection with `delete_all_entries` first.
+- Changes apply to visitor requests at once.
+- Errors: `revision_conflict`, `invalid_rules`, `collection_has_entries`.
+
+### `list_entries`
+
+> List or search saved-data entries in a Fernpage site's collection, such as RSVPs or checklist items.
+
+```ts
+input: {
+  site_id: string;
+  collection: string;
+  search?: string;            // case-insensitive substring over string values; narrows only
+  created_by?: "visitor" | "member";
+  cursor?: string;
+  limit?: number;             // default 50, max 200
+}
+output: { entries: Entry[]; next_cursor: string | null; total: number }
+```
+
+Entries are ordered by `created_at`, oldest first. `search` is how an agent finds "the RSVP with the misspelled name" without paging through everything.
+
+### `get_entry`
+
+> Get one saved-data entry from a Fernpage site by its ID.
+
+```ts
+input:  { site_id: string; collection: string; entry_id: string }
+output: { entry: Entry }
+```
+
+### `create_entries`
+
+> Add saved-data entries to a Fernpage site's collection, for example to seed a checklist or initial settings.
+
+```ts
+input: {
+  site_id: string;
+  collection: string;
+  entries: Array<{
+    key?: string;   // caller-chosen ID, ^[a-z0-9][a-z0-9_-]{0,63}$, e.g. "main" for a settings entry
+    value: Record<string, JsonValue>;
+  }>;               // 1–100 items
+}
+output: {
+  results: Array<
+    | { status: "created"; entry: Entry }
+    | ({ index: number; key?: string } & Failed)  // already_exists, too_large, collection_not_declared, quota_exceeded
+  >;
+}
+```
+
+- If `key` is left out, the server generates an ID. A `key` that is already taken fails with `already_exists`. It never overwrites the existing entry, and the error names `update_entries`.
+- Fixed keys exist for settings-style data: the site's JavaScript can read `settings/main` directly without searching for it.
+- `collection_not_declared` names `set_data_rules` as the next step.
+
+### `update_entries`
+
+> Change fields of existing saved-data entries on a Fernpage site, such as correcting a misspelled RSVP name or changing a setting.
+
+```ts
+input: {
+  site_id: string;
+  collection: string;
+  updates: Array<{
+    entry_id: string;
+    patch: Record<string, JsonValue>;   // JSON Merge Patch (RFC 7396): listed fields set, null removes a field
+    expected_revision: string | null;   // required: a revision, or null to apply on top of whatever is current
+  }>;                                   // 1–100 items
+}
+output: {
+  results: Array<
+    | { status: "updated"; entry: Entry }
+    | { status: "unchanged"; entry: Entry }
+    | ({ entry_id: string } & Failed)   // not_found, revision_conflict (with current entry), too_large
+  >;
+}
+```
+
+- **`expected_revision` is a required field.** The agent must decide, for each entry, how to treat visitor writes that happen concurrently:
+  - Pass a revision when the change depends on what the agent read, such as rewriting a name it looked at. If a visitor edited the entry in between, the item fails with `revision_conflict` and returns the current entry, so the agent can re-check and retry.
+  - Pass `null` for a change that stands on its own, such as setting `settings/main.rsvp_deadline`. The merge patch touches only the listed fields, so a visitor ticking a different field of the same entry is kept.
+- `updated_by` records `{ kind: "member", via: "agent" }`. `created_by` never changes, so an RSVP the agent corrects still belongs to the visitor who created it.
+
+### `delete_entries`
+
+> Remove specific saved-data entries from a Fernpage site's collection by ID, such as test RSVPs.
+
+```ts
+input: {
+  site_id: string;
+  collection: string;
+  entry_ids: string[];   // 1–100 items
+}
+output: {
+  results: Array<
+    | { status: "deleted"; entry_id: string }
+    | ({ entry_id: string } & Failed)   // not_found
+  >;
+}
+```
+
+Entry deletion is permanent and appears live on every open page.
+
+### `delete_all_entries`
+
+> Delete every saved-data entry in one collection of a Fernpage site, such as clearing test data before launch.
+
+```ts
+input:  { site_id: string; collection: string }
+output: { status: "emptied"; collection: string; deleted: number; kept_concurrent: number }
+```
+
+- Deletes the entries that existed when the call started. Entries that visitors create while it runs are kept and counted in `kept_concurrent`, so a real RSVP that arrives mid-clear isn't lost.
+- The collection and its rules stay. Only entries are removed.
+- This is a separate tool, rather than an option on `delete_entries`, so leaving out an argument can never turn "delete these" into "delete everything".
+- Permanent. Calling it on an already-empty collection returns `deleted: 0`.
+
+---
+
+## Error codes
+
+Each `message` is product copy that names the failed action and the next move, and quotes the measured value instead of echoing the rejected input. Raw provider, database, or framework errors never reach the agent.
+
+| Code | Meaning / next move |
+| --- | --- |
+| `not_found` | No such site, file, entry, or collection in this workspace. |
+| `forbidden` | This connection can't act on that workspace or site. Authorize the right workspace. |
+| `site_in_trash` | The site is in Trash. Restore it at `app_url` in the browser app. |
+| `already_exists` | Path or key is taken. The error carries the current `revision` and names the replace or update tool. |
+| `revision_conflict` | The state changed since it was read. The error carries the current revision, plus the current entry for saved data. |
+| `invalid_path` | The path breaks the path rules. The error names the rule. |
+| `duplicate_path` | The same path appears twice in one call. |
+| `index_required` | The site needs `index.html`: missing from `create_site`, or a delete was attempted. |
+| `not_text` | `edit_file` was called on a binary file. |
+| `find_not_found` / `find_ambiguous` | The `edit_file` snippet matched 0 times, or more than once. The error carries the edit index and match count. |
+| `too_large` | Over a size limit. The error carries `size_bytes` and `limit_bytes`. |
+| `fetch_failed` | Fetching a `source.url` failed. The error carries the HTTP status or a timeout. |
+| `quota_exceeded` | Over the site or workspace limit. The error carries usage and limit. |
+| `collection_not_declared` | Declare the collection with `set_data_rules` first. |
+| `collection_has_entries` | Rules would drop a collection that still has entries. Empty it first. |
+| `invalid_rules` | The rules document is malformed. The error names the field. |
+
+## Limits
+
+These are provisional and live in the domain package, not in env.
+
+| Limit | Value |
+| --- | --- |
+| Files per write call | 50 |
+| Inline (`text` + `base64`) bytes per call | 2 MB |
+| `base64` per file | 64 KB decoded |
+| File size | 25 MB |
+| Site files total | 200 MB |
+| `read_file` inline text | 512 KB |
+| Entries per write call | 100 |
+| Entry value | 32 KB serialized |
+| Saved data per site | 5 MB |
+| Collections per site | 20 |
+
+A hidden internal quota and an edge rate limit apply to every account on top of these.
+
+## Typical flows
+
+**Build a site.** Call `list_workspaces`, then `create_site` with `index.html`, `style.css`, and `app.js` as `text`, plus images as `url`. If the site keeps data, call `get_data_rules`, then `set_data_rules`, then `create_entries` to seed. Finally, give the user `site.url`.
+
+**Small change.** Call `edit_file`. Call `read_file` first only if the agent doesn't already know the exact text to anchor on.
+
+**Fix a misspelled RSVP.** Call `list_entries` with `search: "Jhon"`, then `update_entries` with `{ patch: { name: "John" }, expected_revision: <from list> }`.
+
+**Clear test data before launch.** Call `get_site` to see collection counts. Then either call `delete_all_entries` on each collection, or call `list_entries` and `delete_entries` for specific entries.
+
+**Change a setting.** Call `update_entries` on `settings` with `entry_id: "main"`, `patch: { … }`, and `expected_revision: null`.
+
+**Remove the site.** Call `delete_site` and relay `purge_at` and `app_url` to the user.
+
+---
+
+## Assumptions
+
+These are calls I made without the owner. Each is easy to reverse before implementation.
+
+1. **One workspace per connection.** The user picks it at OAuth consent, following the repo's tenancy model. `list_workspaces` still exists, and every site-creating call takes an explicit `workspace_id`.
+2. **Sites go live immediately.** There's no draft, preview, or publish step, because the brief says one `index.html` is enough to publish.
+3. **Site URLs are minted by the server.** Agents read `site.url` and never build one. The URL scheme isn't designed here.
+4. **No tool for title, description, or favicon.** The brief says they come from `index.html`, so they are derived on read and changed by editing that file.
+5. **`index.html` can't be deleted** on its own. Removing a site goes through `delete_site`, so a live site never ends up with nothing to serve.
+6. **Separate create, replace, and edit tools for files**, instead of a single upsert. An agent can't overwrite a file it believed was new. `replace_files` requires a revision.
+7. **File deletion and entry deletion are permanent.** The brief defines Trash only for whole sites.
+8. **Data rules are a dedicated settings document**, not a file in the site. I read the brief's "rules a site declares in its settings" as site settings. Rules are security-bearing and validated on their own, and they aren't served publicly.
+9. **"Site settings" as saved data** (from the brief's examples) means entries in a collection, by convention `settings/main`. They are kept separate from the data rules.
+10. **The rule model is coarse.** Each collection gets per-operation access of `anyone`, `creator`, or `owner`, which covers both of the brief's examples. Workspace members, and their agents, always have full access. There's no per-field rules or value-schema validation yet.
+11. **Visitors can be limited on reads too.** I added a `read` rule so RSVP details can stay private (`"creator"`). The brief only mentions write rules, but leaving RSVPs world-readable seemed like the wrong default.
+12. **A visitor's identity is anonymous, per browser,** and comes from the runtime SDK. "The site owner" in the brief means a signed-in workspace member.
+13. **Entry values are JSON objects** with optional caller-chosen keys. Updates use JSON Merge Patch, which keeps concurrent visitor edits to other fields.
+14. **Trashed sites stop serving** and keep their saved data until the purge.
+15. **All limits in the Limits table are placeholders.**
+
+## Open questions
+
+- What does a site's public URL look like, and can the user choose an address (`ana-and-ben.<domain>`)? If they can, a `create_site` address field and a rename tool would follow. A rename would return the new URL.
+- Should file changes be versioned so an agent, or the user, can roll back a bad edit? This would add `list_file_versions` and `restore_file_version`. The brief doesn't mention history.
+- Should there be a `move_file` tool? Today a rename is `create_files` followed by `delete_files`.
+- Should visitors get rate limits or entry caps per collection, beyond the internal quota, for sites anyone can write to?
+- Should `delete_entries` and `delete_all_entries` be undoable for a short window, the way sites are?
+- Should an Agent Skill ("building a Fernpage site") ship next to the server, to teach these flows and the runtime SDK's client API?

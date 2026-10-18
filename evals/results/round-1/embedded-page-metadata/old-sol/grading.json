@@ -1,0 +1,114 @@
+{
+  "session": "1-embedded-page-metadata-old-sol",
+  "eval": "embedded-page-metadata",
+  "arm": "old",
+  "model": "sol",
+  "model_id": "gpt-6.1-sol",
+  "effort": "medium",
+  "served_model": null,
+  "requested_model": "gpt-6.1-sol",
+  "cli": "codex-cli 0.162.1",
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
+    "fixture": "d7ae70ba58a24853",
+    "base_fixture": "9a72a07420d785e3",
+    "evals": "d2eaa332a5543766",
+    "harness": "33da7f56dbd36d12"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 190.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "auth",
+      "background-jobs",
+      "data-deletion",
+      "data-model",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "modularity",
+      "object-storage",
+      "origins",
+      "product-ux",
+      "public-discovery",
+      "quota",
+      "rendering",
+      "routing",
+      "seo",
+      "social-metadata",
+      "source-of-truth",
+      "uploads"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 386450,
+    "cached_input_tokens": 360448,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 5695,
+    "reasoning_output_tokens": 215
+  },
+  "changed": [
+    "docs/metadata.md"
+  ],
+  "assertions": {
+    "embedded-page-metadata-01": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:30 \"Parse the submitted HTML with an HTML parser at each published revision, without executing scripts. Store a normalized metadata snapshot tied to that revision\"; :53 \"The iframe's `<title>` and favicon do not supply the outer document's identity. The wrapper sets its own title and icon from the published snapshot.\"; :65 \"The canonical outer URL returns complete tags in its initial HTML, using the published snapshot without executing the embedded page.\" The bridge at :55-57 only updates the current viewer's tab and \"do[es] not overwrite the published metadata snapshot\", so shipped metadata does not depend on the person's script."
+        }
+      ]
+    },
+    "embedded-page-metadata-02": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:20 \"Description and social card | Page-specific | Page-specific | Generic Tessel text and brand image only\"; :22 Unlisted row \"`noindex, nofollow, noarchive`; absent from sitemap and discovery lists\"; :24 \"Do not block the unlisted route in `robots.txt`: crawlers need to read its `noindex` directive, and link expanders need its tags.\"; :106 \"Public \u2192 unlisted removes indexing/discovery ... its rich card remains allowed.\""
+        }
+      ]
+    },
+    "embedded-page-metadata-03": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:18 Private \"`Tessel` and Tessel icon, for every request\"; :75 \"For private and unavailable pages use title `Tessel`, description `Create and share interactive pages on Tessel.`, the Tessel icon, and a fixed Tessel brand card with generic alt text. Omit content-specific canonical/OG URLs and all content-derived structured data.\"; :65 \"Use this behavior for all user agents; crawler detection must not be the security boundary.\"; :61 \"Private initial HTML, hydration data, redirect/login responses, JSON-LD, and HTTP headers contain no page-derived identity, even for a member request.\""
+        }
+      ]
+    },
+    "embedded-page-metadata-04": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "fail",
+          "e": "The renderer half is covered (A/project/docs/metadata.md:87 \"no member session, no API keys, and no ambient infrastructure credentials\"; :88 \"Authorization at the backend also refuses mutations from a preview principal\"; :89-90 outbound network blocked, \"disable ... access to local/internal services\"). The second half is not: :94 concedes \"These measures stop Tessel preview generation from voting, but cannot prove that every arbitrary public browser is human. An external service that executes a public page as a normal visitor remains a reason to require explicit actions and backend abuse controls for live mutations.\" and only says \"Live-page code should commit a vote only after a deliberate interaction\", which is advice to page authors that Tessel does not enforce. Nothing stops a chat app's preview fetcher that runs the page's script from casting a vote, and the #251 check at :117 tests only \"preview execution\", meaning Tessel's own renderer."
+        }
+      ]
+    },
+    "embedded-page-metadata-05": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:39 \"Image | Valid authored `og:image`, then safe rendered screenshot, then a generated page card\"; :81 \"Always provide an image. Generate a 1200 \u00d7 630 PNG page card immediately from the resolved subject and description\"; :7 \"Publishing one HTML file remains sufficient: no manifest, screenshot upload, or separate metadata form is required.\""
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude] Issue #251 is only fixed for Tessel's own renderer. A/project/docs/metadata.md:94 \"These measures stop Tessel preview generation from voting, but cannot prove that every arbitrary public browser is human. An external service that executes a public page as a normal visitor remains a reason to require explicit actions and backend abuse controls for live mutations.\" The bug report (\"one vote every time someone pasted its link\") describes exactly that kind of external preview loader. The design leaves the fix to page authors (\"Live-page code should commit a vote only after a deliberate interaction\") and pushes a runtime-enforced rule, such as requiring user activation before writes, off to an unspecified later step. An engineer building it as written ships a poll that still gains phantom votes from any unfurler that runs JavaScript."
+  ],
+  "minor": []
+}

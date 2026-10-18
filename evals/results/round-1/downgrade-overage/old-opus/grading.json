@@ -1,0 +1,114 @@
+{
+  "session": "1-downgrade-overage-old-opus",
+  "eval": "downgrade-overage",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "8db869a36facf8a25f04b96e5ec8bdf58d7549b3",
+    "fixture": "420f572c4567fe9a",
+    "base_fixture": "9a72a07420d785e3",
+    "evals": "87dc141e82a29f33",
+    "harness": "af69243b577b6d35"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 125.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "billing",
+      "data-deletion",
+      "object-storage",
+      "quota",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 27142,
+    "cache_read_input_tokens": 115994,
+    "output_tokens": 9830,
+    "total_cost_usd": 0.4369748,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/downgrade-policy.md"
+  ],
+  "assertions": {
+    "downgrade-overage-01": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "docs/downgrade-policy.md:23 \"A book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.\" with :75 \"ordered by `(createdAt, id)` ... The id tiebreak keeps the order stable\"; data kept per :7 \"Nothing is deleted, locked, or rewritten because a plan ended\"; refusal with product copy per :83 `book_frozen` and :96 \"A frozen book opens with its editing controls replaced by a short read-only note\"; re-covered per :37 \"Trashing a covered book makes the oldest frozen book covered\" and :61 \"All 40 books editable again at once\"."
+        }
+      ]
+    },
+    "downgrade-overage-02": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "No-deletion and no-growth hold (docs/downgrade-policy.md:7 \"Nothing is deleted\"; :48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\"), but existing photos are not kept deletable: :59 \"Photos in frozen books are view, export, and print only\", and :83 makes `assertBookEditable` refuse \"Every mutation that changes a book's content\" with `book_frozen`. A photo in a frozen book can only be removed by trashing and purging the whole book, which contradicts :7 \"never takes away the ability to ... clean up\". The storage remedy at :97 offers only \"trashing books ... or deleting from Trash permanently\"."
+        }
+      ]
+    },
+    "downgrade-overage-03": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "docs/downgrade-policy.md:44 \"A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints ... Replacing it counts as a new upload, so the replacement must be 40 MB or less.\" Together with :7 \"Nothing is deleted, locked, or rewritten\" and :18 \"40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size\", this rules out compression, resizing, or deletion."
+        }
+      ]
+    },
+    "downgrade-overage-04": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "docs/downgrade-policy.md:48 \"Usage is the total size of every stored photo, **including photos in Trash**\"; :38 \"their bytes count toward storage until they are purged.\""
+        }
+      ]
+    },
+    "downgrade-overage-05": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "docs/downgrade-policy.md:75 \"There is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan\"; :79 \"All three checks live in the domain package and run inside the backend mutations. The browser app, public API, MCP server, and background jobs all go through those mutations\"."
+        }
+      ]
+    },
+    "downgrade-overage-06": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "docs/downgrade-policy.md:36 \"**Creating or duplicating a book** needs fewer than 25 active books\"; :84 `assertCanAddBook(account)` | Create, duplicate | `book_limit_reached`; :56 \"No new books until they have 24 or fewer active books.\""
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude-fallback] Photos in frozen books cannot be deleted individually. docs/downgrade-policy.md:59 \"Photos in frozen books are view, export, and print only\", and :83 refuses every content mutation on a frozen book with `book_frozen`. The typical user is 1.1 GB over storage, and the large Pro-era photos likely sit in the newer, frozen books. To free space they would have to delete whole books, which contradicts the doc's own principle at :7 \"never takes away the ability to ... clean up what the user already made\".",
+    "[claude-fallback] The storage quota can be overrun by concurrent requests. docs/downgrade-policy.md:89 says \"the size and storage check runs when the client asks for upload permission ... Usage is recorded when the upload is finalized.\" Outstanding grants are never reserved against the quota, so a user at 1.4 GB can open many 40 MB grants in parallel. Each one passes `usage + size <= 1.5 GB`, and storage grows well past the Free allowance.",
+    "[claude-fallback] Size limits rest on the size the client declares. docs/downgrade-policy.md:85 runs `assertCanStore(account, bytes)` only \"before signing upload URLs\". Nothing in the doc binds the signed URL to that declared size or checks the actual object size at finalize. A hostile client could declare 1 MB and upload 120 MB, getting around both the 40 MB per-photo limit and the 1.5 GB total, even though :44 claims \"The per-photo limit is checked when bytes come in\"."
+  ],
+  "minor": []
+}

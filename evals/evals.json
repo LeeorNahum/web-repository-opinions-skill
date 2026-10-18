@@ -1,0 +1,435 @@
+{
+ "skill_name": "web-repository-opinions",
+ "evals": [
+  {
+   "id": 1,
+   "name": "upload-without-byte-route",
+   "fixture": "upload",
+   "role": "pressure",
+   "opinions": [
+    "uploads",
+    "agent-tool-design"
+   ],
+   "prompt": "Bug reports 412, 418, and 421 in docs/issues.md are all about getting images into Kitepost from agents. Work out how files should get into Kitepost from the MCP server, the HTTP API, and the CLI, write the design to docs/upload-design.md, and change packages/mcp/src/tools/upload-image.ts to match it. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "A design that routes each caller to a route that really moves bytes (CLI reads local files, HTTP sends bytes, MCP fetches an HTTPS URL or a documented host attachment, or takes small bounded inline content), refuses a bare path or sandbox URI with an honest capability error, bounds server-side URL fetches, keeps the browser flow, and a tool that never reports success without stored bytes.",
+   "assertions": [
+    {
+     "id": "upload-without-byte-route-01",
+     "kind": "semantic",
+     "text": "The design states that a file path or sandbox URI sent by a remote agent does not transfer the file's bytes, and the changed MCP tool no longer reads a caller-supplied path from the server's file system."
+    },
+    {
+     "id": "upload-without-byte-route-02",
+     "kind": "semantic",
+     "text": "The design gives each caller a route that moves bytes: the CLI reads local files and uploads them, HTTP clients send the bytes (multipart or a signed direct upload), and the remote MCP tool accepts a fetchable HTTPS URL or a host's documented file attachment reference."
+    },
+    {
+     "id": "upload-without-byte-route-03",
+     "kind": "semantic",
+     "text": "When an MCP caller has no supported byte route, the tool returns an explicit error that names the routes that do work, and the changed tool code cannot report success unless validated bytes were stored (the empty-buffer success path is gone)."
+    },
+    {
+     "id": "upload-without-byte-route-04",
+     "kind": "semantic",
+     "text": "Inline base64 or other inline content through the model is either refused or capped at a stated small size, so a multi-megabyte photo is never routed through model context."
+    },
+    {
+     "id": "upload-without-byte-route-05",
+     "kind": "semantic",
+     "text": "If the server fetches any URL, including one a host gives for an attachment, the design names enforced limits: blocking private and internal addresses, a redirect limit with each hop rechecked, a streamed size cap at the product's file limit, a timeout, and validation of the actual bytes or type. It never describes URL input as unbounded."
+    },
+    {
+     "id": "upload-without-byte-route-06",
+     "kind": "semantic",
+     "text": "Nothing in the design changes the browser's drag-and-drop flow, and the design states that every route it defines ends in the same authorization, quota, validation, and finalize step the browser flow uses before an image counts as added."
+    },
+    {
+     "id": "upload-without-byte-route-07",
+     "kind": "semantic",
+     "text": "Upload staging and completion stay in the HTTP API and CLI: an agent that can run commands is pointed at the CLI or HTTP upload, and the MCP catalog gains no separate tools for starting, signing, or finalizing an upload."
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "name": "account-wide-agent-grant",
+   "fixture": "workspaces",
+   "role": "pressure",
+   "opinions": [
+    "workspace-tenancy",
+    "routing",
+    "billing",
+    "query-state",
+    "model-context-protocol"
+   ],
+   "prompt": "Design the authorization model behind our MCP tools, including the create tool we still need, and the workspace handling on the library page. Write it to docs/workspace-access.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "An account-wide agent grant chosen explicitly and stated at consent, with every call verified server-side against live membership, role, and share, creation taking an explicit verified workspace ID, revocation reaching existing credentials, individual shares not exposing siblings, and a library whose all-workspaces default and filters are URL state that never grant access.",
+   "assertions": [
+    {
+     "id": "account-wide-agent-grant-01",
+     "kind": "semantic",
+     "text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, says the consent screen states that scope, and does not make the person pick one organization per connection."
+    },
+    {
+     "id": "account-wide-agent-grant-02",
+     "kind": "semantic",
+     "text": "Every tool call resolves the target workspace or document and checks live membership, role, and individual share on the server at call time. A single organization claim in a token is not treated as proof of access to any other workspace."
+    },
+    {
+     "id": "account-wide-agent-grant-03",
+     "kind": "semantic",
+     "text": "The create tool takes an explicit destination workspace ID, and the server verifies the caller may create in that workspace before creating. The design does not say a client-supplied workspace ID must never be used."
+    },
+    {
+     "id": "account-wide-agent-grant-04",
+     "kind": "semantic",
+     "text": "Removing a membership or an individual share takes effect for an already connected agent without reconnecting."
+    },
+    {
+     "id": "account-wide-agent-grant-05",
+     "kind": "semantic",
+     "text": "An individually shared document gives access to that document only, never to its workspace's other documents or member list, through the UI and the agent alike."
+    },
+    {
+     "id": "account-wide-agent-grant-06",
+     "kind": "semantic",
+     "text": "The library shows documents from every workspace the person belongs to by default, with workspace and shared filters held in URL query state, filters only narrow what is shown, and no active-workspace session state is introduced as an authority for browsing or for the agent connection."
+    },
+    {
+     "id": "account-wide-agent-grant-07",
+     "kind": "semantic",
+     "text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes."
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "name": "workspace-bound-agent-grant",
+   "fixture": "bound",
+   "role": "restraint",
+   "opinions": [
+    "workspace-tenancy",
+    "model-context-protocol",
+    "auth"
+   ],
+   "prompt": "Consultants on Harbor Ledger belong to several firms' workspaces. Design how their agents' MCP connections are authorized, and write it to docs/agent-access.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "Each connection bound to one firm workspace chosen at consent and approved by that firm's Admin, a separate connection per firm, and per-call verification that the target is in the bound workspace with live membership and role.",
+   "assertions": [
+    {
+     "id": "workspace-bound-agent-grant-01",
+     "kind": "semantic",
+     "text": "Each agent connection is bound to one firm workspace chosen at consent and approved by that firm's Admin, and a consultant who works for several firms makes a separate connection for each."
+    },
+    {
+     "id": "workspace-bound-agent-grant-02",
+     "kind": "semantic",
+     "text": "The server checks on every call that the target belongs to the connection's bound workspace and that the consultant's membership and role are still live, so removal from a firm cuts off an existing connection."
+    },
+    {
+     "id": "workspace-bound-agent-grant-03",
+     "kind": "semantic",
+     "text": "The design offers no connection whose scope spans more than one firm."
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "name": "solo-product-without-workspaces",
+   "fixture": "solo",
+   "role": "restraint",
+   "opinions": [
+    "workspace-tenancy",
+    "bootstrap",
+    "routing",
+    "auth"
+   ],
+   "prompt": "Plan the auth setup, data ownership, and URL structure for Marrow Journal's signed-in app, and write it to docs/architecture.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "Entries owned directly by the user account, no workspace or organization layer, and private routes that are not nested under a workspace segment.",
+   "assertions": [
+    {
+     "id": "solo-product-without-workspaces-01",
+     "kind": "semantic",
+     "text": "Journal data is owned by the user account directly, with no workspace, organization, team, or membership layer, and the auth provider's organization feature is not used."
+    },
+    {
+     "id": "solo-product-without-workspaces-02",
+     "kind": "semantic",
+     "text": "Signed-in routes are not nested under a workspace, organization, or account-scope segment."
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "name": "downgrade-overage",
+   "fixture": "downgrade",
+   "role": "pressure",
+   "opinions": [
+    "billing",
+    "quota",
+    "data-model"
+   ],
+   "prompt": "Pro cancellations are starting to come in. Write docs/downgrade-policy.md: exactly what a cancelled user can and can't do with what they already have once the paid period ends, and how the backend enforces it. Use the typical case in docs/brief.md to check the rules. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "Deterministic coverage of books with uncovered ones suspended not deleted, a stated rule for aggregate storage overage and for photos above the new single-photo limit that deletes nothing and stops growth, Trash counted, and server-side enforcement derived from the current plan for every surface.",
+   "assertions": [
+    {
+     "id": "downgrade-overage-01",
+     "kind": "semantic",
+     "text": "A stable, deterministic order (such as oldest first) decides which 25 books stay covered. Books beyond that keep all their data, are refused gated operations with a clear product message rather than deleted, and become covered again as soon as the plan or freed capacity allows."
+    },
+    {
+     "id": "downgrade-overage-02",
+     "kind": "semantic",
+     "text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted, existing photos stay at least readable and deletable, and storage cannot keep growing past the Free allowance while the account is over it."
+    },
+    {
+     "id": "downgrade-overage-03",
+     "kind": "semantic",
+     "text": "The policy states an explicit rule for existing photos above the new 40 MB single-photo limit: they are kept and stay readable, with no compression, resizing, or deletion, and new uploads must meet the 40 MB limit."
+    },
+    {
+     "id": "downgrade-overage-04",
+     "kind": "semantic",
+     "text": "Bytes held in Trash count toward the total storage allowance during the downgrade."
+    },
+    {
+     "id": "downgrade-overage-05",
+     "kind": "semantic",
+     "text": "Coverage and limits are derived from the current plan when a request arrives and enforced on the server for the browser app, the API, and the MCP connection alike, rather than kept as a lock flag stamped on each book."
+    },
+    {
+     "id": "downgrade-overage-06",
+     "kind": "semantic",
+     "text": "A cancelled account cannot create a book while it holds 25 or more books."
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "name": "file-catalog-with-saved-data",
+   "fixture": "catalog",
+   "role": "pressure",
+   "opinions": [
+    "agent-tool-design",
+    "model-context-protocol"
+   ],
+   "prompt": "Design the MCP tool catalog for agents that build and maintain Fernpage sites, using docs/brief.md: tool names, argument schemas, and what each tool does, including how agents work with saved data. Write it to docs/mcp-tools.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "Saved data exposed as file paths through the same read, write, exact-edit, and delete-file tools as source and assets, no required idempotency, revision, or confirmation arguments, server-side protection against stale overwrites of visitor writes, explicit-path file deletion separate from site deletion, and no metadata arguments that duplicate index.html.",
+   "assertions": [
+    {
+     "id": "file-catalog-with-saved-data-01",
+     "kind": "semantic",
+     "text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database."
+    },
+    {
+     "id": "file-catalog-with-saved-data-02",
+     "kind": "semantic",
+     "text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read."
+    },
+    {
+     "id": "file-catalog-with-saved-data-03",
+     "kind": "semantic",
+     "text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass."
+    },
+    {
+     "id": "file-catalog-with-saved-data-04",
+     "kind": "semantic",
+     "text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site."
+    },
+    {
+     "id": "file-catalog-with-saved-data-05",
+     "kind": "semantic",
+     "text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time."
+    },
+    {
+     "id": "file-catalog-with-saved-data-06",
+     "kind": "semantic",
+     "text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html."
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "name": "distinct-operations-need-tools",
+   "fixture": "counter",
+   "role": "restraint",
+   "opinions": [
+    "agent-tool-design",
+    "model-context-protocol",
+    "failure-and-retries"
+   ],
+   "prompt": "Agents need to do the two new things in docs/brief.md. Extend the tool catalog in docs/mcp-tools.md for them, and keep the catalog as small as makes sense. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "Content search with familiar text-search semantics, a separate print-order tool protected against duplicate charges on retry, no generic execution tool, and the existing file tools unchanged.",
+   "assertions": [
+    {
+     "id": "distinct-operations-need-tools-01",
+     "kind": "semantic",
+     "text": "Agents can search page content across the workspace in one call, through a dedicated search tool or a content query on a listing tool, with explicit scope and pagination, instead of reading pages one by one. The query uses familiar text-search semantics (plain text, phrase, or regular expression) rather than a bespoke query language."
+    },
+    {
+     "id": "distinct-operations-need-tools-02",
+     "kind": "semantic",
+     "text": "Placing a print order is its own tool, not a file write, a special path, or a flag on an existing tool, because it charges money and ships goods."
+    },
+    {
+     "id": "distinct-operations-need-tools-03",
+     "kind": "semantic",
+     "text": "A retried print-order call after a timeout cannot charge twice: the design states an idempotency key, a single-use quote or order ID, or an equivalent server-side guard."
+    },
+    {
+     "id": "distinct-operations-need-tools-04",
+     "kind": "semantic",
+     "text": "The catalog adds no generic execute, run, or action tool."
+    },
+    {
+     "id": "distinct-operations-need-tools-05",
+     "kind": "semantic",
+     "text": "The existing five file tools keep their names, and each behaves as before for calls that use only its current arguments."
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "name": "quota-reservation-under-concurrency",
+   "fixture": "quota",
+   "role": "pressure",
+   "opinions": [
+    "quota",
+    "uploads",
+    "failure-and-retries",
+    "ai-model-routing"
+   ],
+   "prompt": "Design how uploads and summaries are counted against the storage cap (see docs/brief.md), write it to docs/quota-accounting.md, and update packages/backend/src/uploads.ts to match. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "An atomic reservation at upload start, commit of the verified size on durable finalize, release on failure or expiry, idempotent finalize, and a clear separation between the user's storage quota and the provider cost a failed summary still incurs.",
+   "assertions": [
+    {
+     "id": "quota-reservation-under-concurrency-01",
+     "kind": "semantic",
+     "text": "Starting an upload atomically reserves its declared size against remaining capacity, counting other open reservations, so parallel uploads cannot together pass the cap. A check of used plus size alone is identified as insufficient."
+    },
+    {
+     "id": "quota-reservation-under-concurrency-02",
+     "kind": "semantic",
+     "text": "Finalize commits usage from the verified stored size and turns the reservation into usage, and a failed, abandoned, or expired upload releases its reservation through a stated cleanup path."
+    },
+    {
+     "id": "quota-reservation-under-concurrency-03",
+     "kind": "semantic",
+     "text": "A retried finalize counts the upload's size once, not twice, in both the design and the changed code."
+    },
+    {
+     "id": "quota-reservation-under-concurrency-04",
+     "kind": "semantic",
+     "text": "The user's storage quota is kept separate from the model provider's cost: the design says a failed summary can still cost the product money and records or bounds that cost, rather than promising failed work is free."
+    },
+    {
+     "id": "quota-reservation-under-concurrency-05",
+     "kind": "semantic",
+     "text": "Finalize compares the actual stored size with the reserved size and refuses or corrects a mismatch, so a client cannot reserve a small size and store a large object."
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "name": "embedded-page-metadata",
+   "fixture": "metadata",
+   "role": "pressure",
+   "opinions": [
+    "social-metadata",
+    "seo"
+   ],
+   "prompt": "Look at the open bugs in docs/issues.md and design how page icons, tab titles, and link previews should work for public, unlisted, and private Tessel pages, including preview images. Write it to docs/metadata.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "The trusted wrapper emits icon, title, and preview tags in its initial HTML from the page's own HTML, public and unlisted pages get rich previews (unlisted still noindex), private pages give unauthorized requests a generic card, and preview rendering runs isolated with no data writes or private network access.",
+   "assertions": [
+    {
+     "id": "embedded-page-metadata-01",
+     "kind": "semantic",
+     "text": "Tessel's own wrapper page emits the icon, title, and link preview tags in its initial server-rendered HTML, taken from the person's HTML when it is saved, rather than relying on the person's script or the inner document."
+    },
+    {
+     "id": "embedded-page-metadata-02",
+     "kind": "semantic",
+     "text": "Public and unlisted pages get page-specific previews, and unlisted pages keep noindex while still getting their real preview card."
+    },
+    {
+     "id": "embedded-page-metadata-03",
+     "kind": "semantic",
+     "text": "A private page answers any request not authorized for it, link-preview fetchers included, with a generic card that names only the product and carries no title, text, or image from the page."
+    },
+    {
+     "id": "embedded-page-metadata-04",
+     "kind": "semantic",
+     "text": "Preview images are rendered in an environment that cannot write saved data or cause other side effects, and cannot reach private or internal networks or credentials, and a page load no person started, such as a link-preview fetcher running the page's script, cannot add saved data such as a poll vote."
+    },
+    {
+     "id": "embedded-page-metadata-05",
+     "kind": "semantic",
+     "text": "A page's own preview image is used when it declares one, and otherwise a preview is generated, so publishing never requires making an image."
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "name": "user-code-on-own-domain",
+   "fixture": "hosting",
+   "role": "pressure",
+   "opinions": [
+    "domains",
+    "auth",
+    "origins"
+   ],
+   "prompt": "Before the beta opens, review how we serve people's apps (docs/hosting.md) and write the hosting and origin layout we should ship to docs/hosting-plan.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "People's code moves off every subdomain of the product's domain to a separate registrable domain with a label per app, the short address stays as the product's own page framing that content, the same-site cookie and login-CSRF reason is given, and until the domain can be set up after the freeze an opaque-origin sandbox is used at the cost of browser storage.",
+   "assertions": [
+    {
+     "id": "user-code-on-own-domain-01",
+     "kind": "semantic",
+     "text": "The target layout serves people's HTML and JavaScript from a separate registrable domain, not from any subdomain of plinth.example."
+    },
+    {
+     "id": "user-code-on-own-domain-02",
+     "kind": "semantic",
+     "text": "The reason given is that every subdomain of one registrable domain is the same site: script on a sibling subdomain can set cookies for the parent domain and ride same-site requests, which lets it interfere with sign-in (login CSRF or session confusion) or reach session tokens."
+    },
+    {
+     "id": "user-code-on-own-domain-03",
+     "kind": "semantic",
+     "text": "The short <name>.plinth.example address is kept as Plinth's own page, which frames the app served from the other domain, so visitors still see the Plinth address."
+    },
+    {
+     "id": "user-code-on-own-domain-04",
+     "kind": "semantic",
+     "text": "Each app gets its own origin on the content domain, such as a label per app, so one app cannot read another's storage."
+    },
+    {
+     "id": "user-code-on-own-domain-05",
+     "kind": "semantic",
+     "text": "Until the separate domain can be set up after the freeze, people's code runs with an opaque origin, through a sandbox (for example a CSP sandbox header) without allow-same-origin, and the plan says this costs the apps their browser storage. It does not keep serving people's code as the top-level document on plinth.example subdomains during the beta."
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "name": "established-precondition-contract",
+   "fixture": "precondition",
+   "role": "restraint",
+   "opinions": [
+    "http-apis",
+    "agent-tool-design"
+   ],
+   "prompt": "Partners keep asking to change single rows (see docs/brief.md). Design the API addition and write it to docs/row-updates.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "A row-level update endpoint that keeps the published conditional-request contract, so a partner's write based on a stale read fails with 412 instead of overwriting another editor's change.",
+   "assertions": [
+    {
+     "id": "established-precondition-contract-01",
+     "kind": "semantic",
+     "text": "The new row update requires a precondition from the caller (If-Match with the document's ETag, or a row-level equivalent) and answers a stale one with 412, matching the existing PUT contract."
+    },
+    {
+     "id": "established-precondition-contract-02",
+     "kind": "semantic",
+     "text": "The existing PUT and its required If-Match stay unchanged."
+    }
+   ]
+  }
+ ]
+}

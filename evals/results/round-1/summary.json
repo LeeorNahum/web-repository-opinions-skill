@@ -1,0 +1,1793 @@
+{
+  "round": "1",
+  "recorded": "2026-10-17T21:07:37-04:00",
+  "skill_commit": "738936d01659448e19e26243f5257f7e92a23041",
+  "same_family_graded": [
+    "1-account-wide-agent-grant-old-opus",
+    "1-distinct-operations-need-tools-old-opus",
+    "1-downgrade-overage-old-opus",
+    "1-embedded-page-metadata-old-opus",
+    "1-established-precondition-contract-old-opus",
+    "1-file-catalog-with-saved-data-old-opus",
+    "1-quota-reservation-under-concurrency-old-opus",
+    "1-solo-product-without-workspaces-old-opus",
+    "1-upload-without-byte-route-old-opus",
+    "1-user-code-on-own-domain-old-opus",
+    "1-workspace-bound-agent-grant-old-opus"
+  ],
+  "unfinished": [
+    {
+      "session": "1-upload-without-byte-route-old-sol",
+      "reason": "not run yet"
+    },
+    {
+      "session": "1-account-wide-agent-grant-old-sol",
+      "reason": "not run yet"
+    },
+    {
+      "session": "1-downgrade-overage-old-sol",
+      "reason": "not run yet"
+    },
+    {
+      "session": "1-quota-reservation-under-concurrency-old-sol",
+      "reason": "not run yet"
+    },
+    {
+      "session": "1-established-precondition-contract-old-sol",
+      "reason": "not run yet"
+    }
+  ],
+  "sessions": [
+    {
+      "session": "1-upload-without-byte-route-old-opus",
+      "eval": "upload-without-byte-route",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": "2.1.302 (Claude Code)",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "1cb46008003edbaa75b9ebba53c440799f4429b4",
+        "fixture": "fc59cabac6826db2",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "3ecf030566f1db17",
+        "harness": "14b970dad6b274d5"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 470.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "agent-tool-design",
+          "http-apis",
+          "model-context-protocol",
+          "modularity",
+          "object-storage",
+          "quota",
+          "uploads",
+          "user-facing-errors"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 16,
+        "cache_creation_input_tokens": 37693,
+        "cache_read_input_tokens": 258564,
+        "output_tokens": 16352,
+        "total_cost_usd": 0.6803608,
+        "num_turns": 10
+      },
+      "changed": [
+        "docs/upload-design.md",
+        "packages/mcp/src/product.ts",
+        "packages/mcp/src/tools/upload-image.ts"
+      ],
+      "assertions": {
+        "upload-without-byte-route-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/upload-design.md: \"The MCP server is remote (`mcp.kitepost.example/mcp`). The agent's file lives in a chat app's sandbox (`/mnt/data/photo.jpg`, 412) or a coding agent's sandbox (`sandbox:/workspace/out/chart.png`, 418), and our server cannot see either one.\" and Principle 1 \"A remote server never takes a file path.\" In packages/mcp/src/tools/upload-image.ts the diff removes `import { readFile } from \"node:fs/promises\";` and `const bytes = await readFile(input.path)...`; no tool schema has a path field, and the header comment says \"no tool takes a path.\""
+            }
+          ]
+        },
+        "upload-without-byte-route-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/upload-design.md CLI: \"For each file it stats the file, sniffs the type locally, calls create, PUTs, and finalizes\" / \"This is the only surface that reads local paths\". HTTP: \"POST /v1/boards/{board_id}/uploads ... PUT {put_url} (raw bytes, straight to object storage...) POST /v1/uploads/{upload_id}/finalize\" (signed direct upload). MCP: \"`add_image_from_url {board_id, url, filename?}` | The image is already at a public URL.\", implemented as `addImageFromUrl` in packages/mcp/src/tools/upload-image.ts calling `uploads.importFromUrl`."
+            }
+          ]
+        },
+        "upload-without-byte-route-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "packages/mcp/src/tools/upload-image.ts: `NOT_A_PATH = \"Kitepost's server cannot read files on your machine or sandbox. If the file has a public https URL, pass that URL. Otherwise call create_image_upload, PUT the file from where it lives, then call finalize_image_upload.\"`, returned via `refuse(\"invalid_input\", NOT_A_PATH)` for non-http input. The `Buffer.alloc(0)` fallback is deleted. Every success path goes through `uploads.finalize` / `importFromUrl` / `storeInline`, and product.ts documents finalize as \"Verifies the stored object (present, declared size, sniffed type)\". `encoded.length === 0` is refused. Design: \"If the bytes never arrived it returns `bytes_missing` with instructions instead of creating a broken image.\" Weakness: a stale client calling the removed `upload_image` gets a generic \"unknown tool\" rather than this error (design assumption 1)."
+            }
+          ]
+        },
+        "upload-without-byte-route-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "packages/mcp/src/tools/upload-image.ts: `export const MAX_INLINE_BYTES = 64 * 1024;` and `if (bytes.length > MAX_INLINE_BYTES) return refuse(\"too_large\", ... \"Use create_image_upload and PUT the file, or add_image_from_url if it is online.\")`. docs/upload-design.md: \"`upload_small_image` ... inline base64, capped at **64 KB decoded**.\" and \"A 6 MB photo goes through the signed PUT\"."
+            }
+          ]
+        },
+        "upload-without-byte-route-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/upload-design.md, `uploads.importFromUrl` row: \"Guards: https/http only, DNS resolved and checked before connecting (no private, loopback, link-local, or metadata ranges, re-checked on each redirect), at most 3 redirects, 30 s total timeout, streamed with a hard 20 MB cut-off ... then the same begin/finalize rules\". The finalize rules include \"Sniffs the magic bytes against the declared type\". URL input is never described as unbounded."
+            }
+          ]
+        },
+        "upload-without-byte-route-06": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/upload-design.md Principle 2: \"The browser flow the brief describes (sign a PUT, upload bytes directly to object storage, finalize) becomes the shared product capability `uploads.*`. ... Authorization, the 20 MB / type limits, quota, and the storage ledger are enforced there once\"; Principle 4: \"A tool or endpoint reports success only after finalize has confirmed...\". importFromUrl and storeInline use \"the same begin/finalize rules\". Browser: \"move the browser app onto it. The browser flow is the same, so this is a refactor, not a behaviour change.\""
+            }
+          ]
+        },
+        "upload-without-byte-route-07": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "packages/mcp/src/tools/upload-image.ts adds `name: \"create_image_upload\"` (\"get a signed URL to PUT the file to\") and `name: \"finalize_image_upload\"`, exported in `imageUploadTools = [addImageFromUrl, createImageUpload, finalizeImageUpload, uploadSmallImage]`. docs/upload-design.md: \"There are four single-purpose tools\". The MCP catalog gains tools for starting/signing and finalizing an upload, and agents with a shell are pointed at those tools (\"`curl -T chart.png` to the signed URL, then finalize\") rather than at the CLI or HTTP upload."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] MCP catalog duplicates the HTTP staging flow: packages/mcp/src/tools/upload-image.ts registers `create_image_upload` and `finalize_image_upload`, and docs/upload-design.md sends shell-capable agents through them (\"418: The coding agent has a shell, so it can `curl -T chart.png` to the signed URL, then finalize\"). Upload staging and completion should stay in the HTTP API/CLI (`kitepost upload`). Instead a second, model-driven multi-step protocol ships, with a bearer `put_url` written into transcripts.",
+        "[claude-fallback] The quota can be overrun under concurrency. docs/upload-design.md: \"Quota is gated at begin and charged at finalize\" and `uploads.begin` \"Checks ... quota headroom (gate before)\". Nothing reserves headroom at begin, and finalize is not said to re-check the quota. Parallel begins, including the design's own CLI \"concurrency 4\", can each pass the 2 GB check and then all finalize past the limit.",
+        "[claude-fallback] Validation can be bypassed by re-PUTting after finalize. docs/upload-design.md signs \"one PUT bound to that key, `Content-Type`, and `Content-Length`, valid for 15 minutes\", and finalize only \"HEADs the object ... Sniffs the magic bytes\". Nothing invalidates the signed URL, moves the object to an immutable key, or locks it after finalize. A caller can finalize with a valid PNG, then PUT different bytes of the same length to the still-valid URL, and the board serves bytes that were never validated."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-account-wide-agent-grant-old-opus",
+      "eval": "account-wide-agent-grant",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": "2.1.302 (Claude Code)",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
+        "fixture": "f43e39fe46e81e7a",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "87dc141e82a29f33",
+        "harness": "af69243b577b6d35"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 160.0,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "agent-tool-design",
+          "app-surface",
+          "auth",
+          "billing",
+          "bootstrap",
+          "data-model",
+          "ids",
+          "model-context-protocol",
+          "product-ux",
+          "query-state",
+          "routing",
+          "source-of-truth",
+          "workspace-tenancy"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 12,
+        "cache_creation_input_tokens": 41532,
+        "cache_read_input_tokens": 180996,
+        "output_tokens": 12864,
+        "total_cost_usd": 0.6257832,
+        "num_turns": 9
+      },
+      "changed": [
+        "docs/workspace-access.md"
+      ],
+      "assertions": {
+        "account-wide-agent-grant-01": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "The scope itself is right. docs/workspace-access.md:73 \"one OAuth connection covers every workspace the person belongs to\". :63 \"*all my workspaces*, which is derived live from membership, so joining a new client workspace needs no reconnect\". Shared documents are included through :103 \"across all your workspaces and documents shared with you\" and Assumption 5 (:193). Nothing asks the person to pick an org per connection (:79 \"No per-workspace resources or paths\"). But the design never says the consent screen states this scope. The only mention of consent is :75 \"the usual pattern of an organization-scoped grant, where consent selects one workspace\", which describes the rejected pattern. The consent text for the chosen grant is never specified, so this required part is missing."
+            }
+          ]
+        },
+        "account-wide-agent-grant-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/workspace-access.md:73 \"Each tool call names the workspace or document it acts on, and the gate checks membership for that specific target on that call\". :17 \"Roles, membership, and agent reach are read live at each call\". :65 \"allowed = (role grants it OR share grants it) AND ...\". :81 \"If the token carries an organization claim, it is **ignored for authorization**. It never selects or limits a workspace.\""
+            }
+          ]
+        },
+        "account-wide-agent-grant-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/workspace-access.md:115 \"`workspace` is **required** and takes a workspace ID ... an omitted workspace is a validation error\". The server checks it: :14 \"Selecting never grants. A workspace you are not a member of is refused even if you name it\", the role table at :51-55 grants create only to Owner and Editor, and :128 refuses Viewers. Nothing forbids client-supplied IDs: :14 lists \"a tool argument\" as a valid way to select the target."
+            }
+          ]
+        },
+        "account-wide-agent-grant-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/workspace-access.md:83 \"Removing someone from a workspace cuts their agent off from it on the very next call, because membership is read live.\" Shares are covered by :17 \"Nothing is cached as a grant that a later change could leave stale\" together with :174, which runs `authorize` (share route included, :57) inside the transaction of each call. Neither path needs a reconnect. The share case relies on the general principle only, and the tests at :177 cover only membership removal (see minor)."
+            }
+          ]
+        },
+        "account-wide-agent-grant-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/workspace-access.md:57 \"A share grants exactly one document to exactly one person ... It never grants `workspace.list`, `document.create`, `document.share`, or sight of any other document in that workspace.\" The gate is shared by every surface: :13 \"Every read and write, from the web app, the MCP server, or a background job, goes through the same `authorize` function\". On the agent side, :103 returns \"`workspace` is `null` for share-only documents\". Members are hidden too: :147 \"`/w/<id>/members` | Workspace members (Owner/Editor see it...)\"."
+            }
+          ]
+        },
+        "account-wide-agent-grant-06": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/workspace-access.md:144 \"`/documents` | The library: every document the person can reach, across all workspaces and shares\". :158 \"Filters, in this URL order: `q` (search), `workspace=<id>` (one workspace), `shared=true`\". Filters only narrow and the URL grants nothing: :151 \"The URL never grants\". :103 \"`workspace` is an optional filter that only narrows a read\". No active-workspace state: :15 \"There is no active workspace in session state, cookies, client memory, or token claims\". :138 \"the app has no 'current workspace' state\"."
+            }
+          ]
+        },
+        "account-wide-agent-grant-07": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/workspace-access.md:182 \"**Member cap 25** is the same on every plan ... No upgrade is offered at the cap, because no plan raises it.\" :69 \"Plans sell storage, not capabilities. The gate does not ask what plan anyone is on.\" I checked docs/workspace-access.md and answer.txt for \"seat\" and found nothing. The closest line is :181, a storage upgrade offered to the Owner, which matches the brief's storage pricing."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] Revocation is claimed to be immediate, but the design builds it on an async mirror. docs/workspace-access.md:83 says removal \"cuts their agent off from it on the very next call, because membership is read live\". Yet :49 reads role \"from the provider membership mirror\", and :175 says \"Membership and roles are owned by the auth provider and mirrored into the database by verified, idempotent webhooks.\" A late, retried or out-of-order membership.deleted webhook leaves the removed member's agent with access until the mirror catches up. Nothing covers event ordering or reconciling deletes. The test at :177 (\"removal from a workspace cuts access on the next call\") would only pass if it mutates the DB directly.",
+        "[claude-fallback] Agent refusals leak the workspace name to people who only have a share. docs/workspace-access.md:103 promises \"`workspace` is `null` for share-only documents, so the agent never learns workspace details the person cannot see\". But :193 lets agents reach shared documents \"subject to the document's workspace agent policy\", and the refusal at :129 is \"Acme Studio's owner has turned off access for connected agents\". The refusal at :130, \"This connection is not set up to reach Acme Studio\", has the same problem. A share-only recipient's agent is told the hidden workspace's name.",
+        "[claude-fallback] Shared documents and narrowed reach contradict each other. docs/workspace-access.md:65 requires \"connection reaches workspace\" for every agent call. :63 says the *only these workspaces* list is picked from \"my workspaces\". A share-only document's workspace can never be on that list. So, as written, any narrowed connection silently loses every shared document, and the design doesn't say whether that is intended.",
+        "[claude-fallback] Concurrent edits are left unsafe. docs/workspace-access.md:111 marks `update_document` as replacing the whole content, and :203 defers protection: \"Should `update_document` take an expected version to avoid an agent overwriting a person's concurrent edit? Not designed here.\" Building the design as written lets an agent silently erase a person's concurrent edits."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-workspace-bound-agent-grant-old-opus",
+      "eval": "workspace-bound-agent-grant",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 110.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "agent-tool-design",
+          "auth",
+          "domains",
+          "model-context-protocol",
+          "source-of-truth",
+          "workspace-tenancy"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 30358,
+        "cache_read_input_tokens": 124390,
+        "output_tokens": 8367,
+        "total_cost_usd": 0.435122,
+        "num_turns": 7
+      },
+      "changed": [
+        "docs/agent-access.md"
+      ],
+      "assertions": {
+        "workspace-bound-agent-grant-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "B/project/docs/agent-access.md:12: \"Each MCP connection is authorized for exactly one firm workspace. The consultant picks that workspace when they consent ... every tool call is refused until an Admin of that firm approves the grant ... A consultant who works for three firms has three separate grants, each approved by its own firm's Admin.\" Reinforced by :17 \"Choosing a different firm means a new authorization of the same resource, which produces a new token bound to that other firm\", :60 \"One grant per (workspace, consultant, client)\", and approval flow :67 \"On consent they pick one firm\" / :70 \"An Admin opens Settings \u2192 Agent connections in that firm's workspace ... They approve ... or deny it\"."
+            }
+          ]
+        },
+        "workspace-bound-agent-grant-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "B/project/docs/agent-access.md gate, every tool call: :81 \"3. Confirm the consultant is a current member of that workspace and look up their role.\", :82 \"4. Load the grant for (workspace, subject, client) and require `approved`.\", :84 \"6. Run the product operation scoped to that workspace. Every query is filtered by `workspaceId` inside the operation itself, not only checked beforehand.\", :86 \"A workpaper ID that belongs to another firm returns the same \\\"not found\\\" as an ID that doesn't exist.\" Removal cuts existing connections: :63 \"Role and membership are read live from the provider-backed membership at every call, so removing someone from a firm, or changing their role, takes effect on the next call with no sync job.\""
+            }
+          ]
+        },
+        "workspace-bound-agent-grant-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "Checked B/project/docs/agent-access.md, B/answer.txt, B/diff.txt (only change is the new doc; brief.md unchanged). No multi-firm scope is offered: :33 \"No tool takes a `workspace` or `firm` argument\", :34 a token without verified organization context is refused. Closest to breaking it: :17 \"One canonical OAuth protected resource for every firm. There is no per-firm URL or path.\" \u2014 but the same line binds each token to one firm (\"a new token bound to that other firm\"); and :126 ID-JAG \"doesn't replace firm Admin approval: a grant is still required\", and grants are per workspace (:49 \"workspaceId the firm\")."
+            }
+          ]
+        }
+      },
+      "blocking": [],
+      "minor": []
+    },
+    {
+      "session": "1-workspace-bound-agent-grant-old-sol",
+      "eval": "workspace-bound-agent-grant",
+      "arm": "old",
+      "model": "sol",
+      "model_id": "gpt-6.1-sol",
+      "effort": "medium",
+      "served_model": null,
+      "requested_model": "gpt-6.1-sol",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 100.0,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "agent-tool-design",
+          "auth",
+          "bootstrap",
+          "data-model",
+          "http-apis",
+          "ids",
+          "integration-onboarding",
+          "model-context-protocol",
+          "modularity",
+          "origins",
+          "routing",
+          "source-of-truth",
+          "workspace-tenancy"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 168376,
+        "cached_input_tokens": 143104,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4298,
+        "reasoning_output_tokens": 216
+      },
+      "changed": [
+        "docs/agent-access.md"
+      ],
+      "assertions": {
+        "workspace-bound-agent-grant-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "A/project/docs/agent-access.md:7: \"Authorize each MCP connection for exactly one firm workspace, one human member, and one client installation. Require an explicit approval by a current Admin of that firm before the connection can access data. A consultant serving three firms creates three independent connections with three separate approvals and credential families.\" Firm chosen at consent, line 18: \"presents an explicit firm picker populated from their verified current memberships ... Never silently choose the last active organization\"; line 19 stores \"an immutable workspace ID, provider organization ID\"; line 20: \"A current Admin opens the request within that firm's signed-in workspace ... Revalidate Admin membership in the target firm at the approval commit.\""
+            }
+          ]
+        },
+        "workspace-bound-agent-grant-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "A/project/docs/agent-access.md:47-53, 'For every call': step 2 \"Load the exact connection and generation. Require an active, unexpired approval, active workspace and user, and no revocation. Do not rely on a token's old approval or role claims.\"; step 3 \"Check current provider membership and role in the bound firm. For the initial design, perform an authoritative check on each operation and fail closed if it is unavailable. An asynchronously updated webhook mirror alone cannot promise immediate removal.\"; line 58: \"`read_workpaper { id }` ... Resolve by both workspace and workpaper ID\"; line 71: \"Membership removal, user deletion/closure, or workspace deletion disables the affected connections and refresh families.\"; line 73: \"Check revocation on every HTTP request and tool invocation, including existing MCP sessions.\""
+            }
+          ]
+        },
+        "workspace-bound-agent-grant-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "Checked A/project/docs/agent-access.md (only new file; A/diff.txt adds nothing else; brief.md unchanged). Line 24: \"Approval is per connection, not per client application, email domain, consultant account, or all firms. Adding another firm ... requires a new approval.\" Line 61: \"Keep these tool schemas free of a workspace selector. The verified credential selects the firm ... There is no MCP `switch_workspace` operation.\" Closest to breaking it, line 93: \"A host authorized independently for two firms could combine data it has already retrieved\" -- this describes two separate single-firm connections on one host, not a connection whose scope spans firms, and the doc explicitly states it cannot prevent it with token isolation."
+            }
+          ]
+        }
+      },
+      "blocking": [],
+      "minor": []
+    },
+    {
+      "session": "1-solo-product-without-workspaces-old-opus",
+      "eval": "solo-product-without-workspaces",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 145.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "admin",
+          "app-surface",
+          "auth",
+          "billing",
+          "bootstrap",
+          "data-deletion",
+          "data-model",
+          "domains",
+          "ids",
+          "legal-pages",
+          "live-data",
+          "loading-states",
+          "modularity",
+          "monorepo-layout",
+          "naming",
+          "origins",
+          "product-ux",
+          "query-state",
+          "rendering",
+          "routing",
+          "search-indexing",
+          "source-of-truth",
+          "spa-feel",
+          "stack",
+          "workspace-tenancy"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 12,
+        "cache_creation_input_tokens": 48141,
+        "cache_read_input_tokens": 193228,
+        "output_tokens": 12484,
+        "total_cost_usd": 0.6735016,
+        "num_turns": 10
+      },
+      "changed": [
+        "docs/architecture.md"
+      ],
+      "assertions": {
+        "solo-product-without-workspaces-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/architecture.md:11 \"**No workspace or organization layer.** ... The user is the tenant.\"; line 35 \"**Organizations off.** Personal accounts only. This matches the no-teams rule, and it means no session ever carries an organization context.\"; schema line 111 \"userId -> users (owner, immutable)\" with no workspace/org/membership table among users, entries, subscriptions, webhookEvents, closures (lines 102-125). Only role is the owner (line 75: \"There is a single role (the account owner), so capabilities are only named, not assignable\")."
+            }
+          ]
+        },
+        "solo-product-without-workspaces-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/architecture.md:170 \"**No tenancy segment.** A workspace-based product would use `/w/<workspaceId>/entries/<id>`. There is exactly one possible owner here ... Ownership comes from the verified session, never from the URL.\" Route table lines 157-166 lists only /, /auth, /today, /entries, /entries/<id>, /search, /settings, /settings/account, /settings/subscription, /settings/preferences. Checked architecture.md, answer.txt and diff.txt; the closest line to breaking it is the counter-example `/w/<workspaceId>/entries/<id>` at line 170, which is explicitly rejected."
+            }
+          ]
+        }
+      },
+      "blocking": [],
+      "minor": []
+    },
+    {
+      "session": "1-solo-product-without-workspaces-old-sol",
+      "eval": "solo-product-without-workspaces",
+      "arm": "old",
+      "model": "sol",
+      "model_id": "gpt-6.1-sol",
+      "effort": "medium",
+      "served_model": null,
+      "requested_model": "gpt-6.1-sol",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "4bcbac9b6eb25b84b25e9cb6305621b4de25270e"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 125.0,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "app-surface",
+          "auth",
+          "billing",
+          "bootstrap",
+          "data-deletion",
+          "data-model",
+          "domains",
+          "environment",
+          "ids",
+          "live-data",
+          "loading-states",
+          "modularity",
+          "naming",
+          "origins",
+          "provider-setup",
+          "query-state",
+          "rendering",
+          "routing",
+          "source-of-truth",
+          "spa-feel",
+          "stack",
+          "workspace-tenancy"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 233785,
+        "cached_input_tokens": 197760,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5239,
+        "reasoning_output_tokens": 213
+      },
+      "changed": [
+        "docs/architecture.md"
+      ],
+      "assertions": {
+        "solo-product-without-workspaces-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/architecture.md:9 \"The application user is the ownership boundary. Every entry belongs directly to that user for its lifetime.\" and :11 \"Do not create workspaces, organizations, memberships, invitations, roles, shared journals, tenant switchers, or personal-workspace wrappers. Do not enable Clerk Organizations.\" The data model agrees: :60 `entries` has \"immutable `ownerUserId`\" with no tenant column; :45 \"No organization or separate account container is created.\"; :79 \"These are fixed owner capabilities, not a configurable role or membership system.\"; :85 \"no seats, team billing, organization payer\". No code was changed (diff.txt holds only docs/architecture.md), so nothing shipped contradicts this."
+            }
+          ]
+        },
+        "solo-product-without-workspaces-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/architecture.md:97-108 route table lists only flat paths: `/`, `/auth`, `/today`, `/entries`, `/entries/:id`, `/search`, `/settings`, `/settings/account`, `/settings/journal`, `/settings/billing`. :112 \"There is no `/u/:userId`, `/w/:workspaceId`, username path, date-based entry alias, or public share route.\" :11 \"An account ID or workspace ID is unnecessary in routes: the verified identity supplies the account context.\" The closest any line comes to breaking it is the `app.<owned-domain>` origin at :93, which is a host, not a path segment for account scope. Checked B/project/docs/architecture.md and B/diff.txt; no other files changed."
+            }
+          ]
+        }
+      },
+      "blocking": [],
+      "minor": []
+    },
+    {
+      "session": "1-downgrade-overage-old-opus",
+      "eval": "downgrade-overage",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": "2.1.302 (Claude Code)",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "8db869a36facf8a25f04b96e5ec8bdf58d7549b3",
+        "fixture": "420f572c4567fe9a",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "87dc141e82a29f33",
+        "harness": "af69243b577b6d35"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 125.0,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "billing",
+          "data-deletion",
+          "object-storage",
+          "quota",
+          "source-of-truth",
+          "uploads",
+          "user-facing-errors"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 27142,
+        "cache_read_input_tokens": 115994,
+        "output_tokens": 9830,
+        "total_cost_usd": 0.4369748,
+        "num_turns": 7
+      },
+      "changed": [
+        "docs/downgrade-policy.md"
+      ],
+      "assertions": {
+        "downgrade-overage-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/downgrade-policy.md:23 \"A book is **covered** when it is among the 25 oldest active (not in Trash) books by creation time. The rest are **frozen**.\" with :75 \"ordered by `(createdAt, id)` ... The id tiebreak keeps the order stable\"; data kept per :7 \"Nothing is deleted, locked, or rewritten because a plan ended\"; refusal with product copy per :83 `book_frozen` and :96 \"A frozen book opens with its editing controls replaced by a short read-only note\"; re-covered per :37 \"Trashing a covered book makes the oldest frozen book covered\" and :61 \"All 40 books editable again at once\"."
+            }
+          ]
+        },
+        "downgrade-overage-02": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "No-deletion and no-growth hold (docs/downgrade-policy.md:7 \"Nothing is deleted\"; :48 \"While usage plus the size of an incoming upload is more than 1.5 GB, the upload is refused\"), but existing photos are not kept deletable: :59 \"Photos in frozen books are view, export, and print only\", and :83 makes `assertBookEditable` refuse \"Every mutation that changes a book's content\" with `book_frozen`. A photo in a frozen book can only be removed by trashing and purging the whole book, which contradicts :7 \"never takes away the ability to ... clean up\". The storage remedy at :97 offers only \"trashing books ... or deleting from Trash permanently\"."
+            }
+          ]
+        },
+        "downgrade-overage-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/downgrade-policy.md:44 \"A photo stored under Pro (up to 120 MB) keeps working wherever it already is: it renders, exports, prints ... Replacing it counts as a new upload, so the replacement must be 40 MB or less.\" Together with :7 \"Nothing is deleted, locked, or rewritten\" and :18 \"40 MB per photo | New uploads, including replacing a photo | Photos already stored, at any size\", this rules out compression, resizing, or deletion."
+            }
+          ]
+        },
+        "downgrade-overage-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/downgrade-policy.md:48 \"Usage is the total size of every stored photo, **including photos in Trash**\"; :38 \"their bytes count toward storage until they are purged.\""
+            }
+          ]
+        },
+        "downgrade-overage-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/downgrade-policy.md:75 \"There is no `locked`, `frozen`, or `overLimit` column and no job that sets one. On each check, coverage is computed from the current plan\"; :79 \"All three checks live in the domain package and run inside the backend mutations. The browser app, public API, MCP server, and background jobs all go through those mutations\"."
+            }
+          ]
+        },
+        "downgrade-overage-06": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/downgrade-policy.md:36 \"**Creating or duplicating a book** needs fewer than 25 active books\"; :84 `assertCanAddBook(account)` | Create, duplicate | `book_limit_reached`; :56 \"No new books until they have 24 or fewer active books.\""
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] Photos in frozen books cannot be deleted individually. docs/downgrade-policy.md:59 \"Photos in frozen books are view, export, and print only\", and :83 refuses every content mutation on a frozen book with `book_frozen`. The typical user is 1.1 GB over storage, and the large Pro-era photos likely sit in the newer, frozen books. To free space they would have to delete whole books, which contradicts the doc's own principle at :7 \"never takes away the ability to ... clean up what the user already made\".",
+        "[claude-fallback] The storage quota can be overrun by concurrent requests. docs/downgrade-policy.md:89 says \"the size and storage check runs when the client asks for upload permission ... Usage is recorded when the upload is finalized.\" Outstanding grants are never reserved against the quota, so a user at 1.4 GB can open many 40 MB grants in parallel. Each one passes `usage + size <= 1.5 GB`, and storage grows well past the Free allowance.",
+        "[claude-fallback] Size limits rest on the size the client declares. docs/downgrade-policy.md:85 runs `assertCanStore(account, bytes)` only \"before signing upload URLs\". Nothing in the doc binds the signed URL to that declared size or checks the actual object size at finalize. A hostile client could declare 1 MB and upload 120 MB, getting around both the 40 MB per-photo limit and the 1.5 GB total, even though :44 claims \"The per-photo limit is checked when bytes come in\"."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-file-catalog-with-saved-data-old-opus",
+      "eval": "file-catalog-with-saved-data",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 240.2,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "agent-skills",
+          "agent-tool-design",
+          "bulk-actions",
+          "data-deletion",
+          "data-model",
+          "http-apis",
+          "ids",
+          "live-data",
+          "model-context-protocol",
+          "naming",
+          "object-storage",
+          "quota",
+          "source-of-truth",
+          "uploads",
+          "user-facing-errors",
+          "workspace-tenancy"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 14,
+        "cache_creation_input_tokens": 46945,
+        "cache_read_input_tokens": 210189,
+        "output_tokens": 21048,
+        "total_cost_usd": 0.8386138000000001,
+        "num_turns": 9
+      },
+      "changed": [
+        "docs/mcp-tools.md"
+      ],
+      "assertions": {
+        "file-catalog-with-saved-data-01": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "A/project/docs/mcp-tools.md catalog table lines 162-169 add separate saved-data tools: \"| `list_entries` | Lists or searches saved-data entries in a collection |\", \"| `create_entries` |\", \"| `update_entries` | Patches saved-data entries |\", \"| `delete_entries` |\", \"| `delete_all_entries` | Empties one collection |\", plus `get_data_rules`/`set_data_rules`. Line 366: \"Agents get the same entry-by-entry view of saved data that visitors get... with nothing like an \\\"edit the whole dataset\\\" operation.\" Saved data is never reached through read_file/replace_files/edit_file/delete_files as JSON file paths."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-02": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "A/project/docs/mcp-tools.md line 308 (replace_files): \"expected_revision: string;   // required; get it from list_files or a previous write\"; line 385 (set_data_rules): \"expected_revision: string;\"; line 458 (update_entries): \"expected_revision: string | null;   // required\"; line 470: \"**`expected_revision` is a required field.**\" These are required caller-supplied revision tokens, not server-enforced staleness checks."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-03": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "A/project/docs/mcp-tools.md line 472: \"Pass `null` for a change that stands on its own... The merge patch touches only the listed fields, so a visitor ticking a different field of the same entry is kept.\" With expected_revision null, a visitor's write to the same field made after the agent's read is silently overwritten (field-level last-writer-wins); the conflict path (line 471) is only taken if the agent opts in. There is also no saved-data file whose whole-file write is reconciled."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/mcp-tools.md line 350 (delete_files): \"paths: string[];     // 1\u2013100 items\"; line 355: \"not_found, index_required\" so no path widens; line 239 delete_site is its own tool \"input:  { site_id: string }\"; line 320 (replace_files): \"Refuses paths that don't exist... It never creates a file by accident.\"; create_site (line 222) is the only site-creating tool and no update tool takes an optional workspace/site that would create one. Closest risk: line 500 delete_all_entries \"input:  { site_id: string; collection: string }\", but it is a separate tool with no omitted-argument widening (line 506)."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-05": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "A/project/docs/mcp-tools.md line 128: \"// Applies to visitors. Workspace members, and agents acting for them, may always do everything.\"; line 366: \"an agent acts for a workspace member, so data rules never limit it.\"; line 582: \"There's no per-field rules or value-schema validation yet.\" Agent writes are not checked against the site's declared rules or validation at all, and there is no whole-file write checked entry by entry."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-06": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/mcp-tools.md line 215 (get_site): \"Title, description, and favicon come from `index.html` every time the site is read. To change them, edit `index.html`. No tool sets them directly.\"; Assumption 4 line 576. Checked create_site input (line 222-225: only workspace_id and files) and all 19 tools in the table at lines 149-169; none takes title/description/favicon. Closest line: line 78-80 Site output fields \"title\", \"description\", \"favicon_path\" marked \"Derived from index.html on every read, never stored separately\"."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] A/project/docs/mcp-tools.md lines 162-169 build a parallel entries/collections API (list_entries, get_entry, create_entries, update_entries, delete_entries, delete_all_entries, get_data_rules, set_data_rules) instead of exposing saved data as files through the same file tools, doubling the surface agents must learn and the authorization paths the server must keep consistent.",
+        "[claude-fallback] A/project/docs/mcp-tools.md line 458-459 and 472: update_entries accepts \"expected_revision: string | null\" where null means \"apply on top of whatever is current\", so an agent correcting a field a visitor just changed silently clobbers the visitor's write; conflict protection depends on the agent choosing correctly rather than being enforced by the server.",
+        "[claude-fallback] A/project/docs/mcp-tools.md line 128: \"Workspace members, and agents acting for them, may always do everything.\" plus Workspace.role \"owner\" | \"member\" (line 67) and Assumption 12 (line 584) \"\\\"The site owner\\\" in the brief means a signed-in workspace member\": the brief says an RSVP entry can be edited \"only by the visitor who created it or by the site owner\"; A widens that to every workspace member and exempts agents from the declared rules and from any validation (line 582), so agent writes can store entries the site's rules would reject.",
+        "[claude-fallback] A/project/docs/mcp-tools.md line 308 and 321: replace_files makes \"expected_revision: string;   // required\" a caller-supplied token, so an agent retrying after a lost response with the old revision gets revision_conflict on its own successful write, and staleness depends on the agent threading tokens instead of server-tracked reads."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-file-catalog-with-saved-data-old-sol",
+      "eval": "file-catalog-with-saved-data",
+      "arm": "old",
+      "model": "sol",
+      "model_id": "gpt-6.1-sol",
+      "effort": "medium",
+      "served_model": null,
+      "requested_model": "gpt-6.1-sol",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 170.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "agent-skills",
+          "agent-tool-design",
+          "auth",
+          "bulk-actions",
+          "data-deletion",
+          "data-model",
+          "failure-and-retries",
+          "ids",
+          "live-data",
+          "model-context-protocol",
+          "modularity",
+          "naming",
+          "quota",
+          "source-of-truth",
+          "workspace-tenancy"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 207320,
+        "cached_input_tokens": 178816,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 9719,
+        "reasoning_output_tokens": 733
+      },
+      "changed": [
+        "docs/mcp-tools.md"
+      ],
+      "assertions": {
+        "file-catalog-with-saved-data-01": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "fail",
+              "e": "B/project/docs/mcp-tools.md:5 \"Agents build static sites by editing files and maintain live saved data through separate entry tools. Saved data is never a file\"; the catalog defines separate `data_list`, `data_get`, `data_create`, `data_update`, `data_delete` tools (B/project/docs/mcp-tools.md:219-269) and a `collection` $def (B/project/docs/mcp-tools.md:26), so saved data is not reached through the file read/write/edit/delete tools."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-02": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "fail",
+              "e": "B/project/docs/mcp-tools.md:56 \"Every update/delete supplies `expectedRevision`.\" and B/project/docs/mcp-tools.md:58 \"Every mutation requires `requestId`.\"; every mutation schema lists them as required, e.g. `file_edit` B/project/docs/mcp-tools.md:172 \"required\":[\"siteId\",\"path\",\"expectedRevision\",\"replacements\",\"requestId\"] and `site_delete` B/project/docs/mcp-tools.md:120 \"required\":[\"siteId\",\"expectedRevision\",\"requestId\"]. Required idempotency keys and revision tokens are exactly what the assertion excludes."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/mcp-tools.md:259 \"The entry revision protects the entire entry, including nested fields. If a visitor writes anything between the read and commit, return `CONFLICT`, even when the changed fields differ. Reread, preserve the visitor's latest values, and reconsider the requested repair.\" plus B/project/docs/mcp-tools.md:56 \"A stale revision returns `CONFLICT` ... and changes nothing.\" A visitor write made after the agent's read makes the agent's write fail with a conflict, so it is not last-writer-wins. (The unit is an entry, not a file, but the conflict guarantee itself is spelled out.)"
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "`file_delete` B/project/docs/mcp-tools.md:179 \"Delete exactly one existing file by canonical path and revision.\" with required `path` (B/project/docs/mcp-tools.md:182) and B/project/docs/mcp-tools.md:185 \"No recursive or prefix deletion.\"; whole-site deletion is the separate `site_delete` (B/project/docs/mcp-tools.md:115-123); B/project/docs/mcp-tools.md:279 \"No optional path or omitted entry ID can turn a narrow delete into a site-wide delete.\"; `file_update` B/project/docs/mcp-tools.md:165 \"Requires an existing path; never creates one implicitly.\" and no tool upserts a site (only `site_create` creates one). One exact path per call meets the nonempty, exact-target substance, though it is not a list. Closest omitted-widens case: `files_list` B/project/docs/mcp-tools.md:135 \"omitted or empty means all paths\", but that is a read only."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-05": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "fail",
+              "e": "There is no whole-file saved-data write to check entry by entry: B/project/docs/mcp-tools.md:217 \"There is no whole-store get/set, reset, replace, import, or delete-by-filter tool.\" Also, agent writes are not limited to the site's declared rules: B/project/docs/mcp-tools.md:209 \"Owners always retain administrative read/write capability.\" and B/project/docs/mcp-tools.md:60 \"Saved-data maintenance requires owner-equivalent permission\". No site-declared validation is applied to agent writes at all; `value` is any object (B/project/docs/mcp-tools.md:30)."
+            }
+          ]
+        },
+        "file-catalog-with-saved-data-06": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/mcp-tools.md:10 \"Title, description, and favicon are derived from `index.html`. There are no parallel metadata setters.\"; `site_create` B/project/docs/mcp-tools.md:113 \"There is no title, description, favicon, template, or publishing mode argument.\"; `settings_get` B/project/docs/mcp-tools.md:197 \"It does not contain title, description, or favicon.\" I checked every input schema in B/project/docs/mcp-tools.md (lines 78-267): none has a title, description, or favicon property. `sites_list` only returns them read-only (B/project/docs/mcp-tools.md:91)."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude] Saved data gets a second, parallel API instead of the file tools: B/project/docs/mcp-tools.md:5 \"maintain live saved data through separate entry tools. Saved data is never a file\". It adds five `data_*` tools plus `settings_get`/`settings_update` on top of the file tools (B/project/docs/mcp-tools.md:189-269). Agents must learn two mutation models, and an engineer building it ships the duplicated surface.",
+        "[claude] Stale-write safety and retry dedupe are pushed onto tokens the agent has to hold: B/project/docs/mcp-tools.md:56 \"Every update/delete supplies `expectedRevision`\" and B/project/docs/mcp-tools.md:58 \"Every mutation requires `requestId`\", required even on `site_delete` (B/project/docs/mcp-tools.md:120) and `site_create` (B/project/docs/mcp-tools.md:110). An agent that loses the revision, or reuses a requestId on a different input, gets `REQUEST_ID_REUSED`/`CONFLICT` instead of the server detecting staleness from its own read record.",
+        "[claude] Agent writes bypass the site's declared write rules and validation: B/project/docs/mcp-tools.md:209 \"Owners always retain administrative read/write capability\" with `value` as an unconstrained object (B/project/docs/mcp-tools.md:30). Nothing checks an agent's data write against the site's rules or validation, so an agent can store values or shapes that the site's own rules would reject from any person one entry at a time.",
+        "[claude] The design rewrites the runtime SDK contract, which is out of scope for an MCP catalog: B/project/docs/mcp-tools.md:259 \"The browser SDK must also use revision-checked mutations, or an equivalent atomic field operation\". With revision-checked SDK writes, concurrent visitors ticking the same shared checklist item (brief: \"anyone may tick a shared checklist item\") conflict with each other, and the 'or equivalent' leaves the choice uncommitted."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-distinct-operations-need-tools-old-opus",
+      "eval": "distinct-operations-need-tools",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 75.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "agent-tool-design",
+          "background-jobs",
+          "billing",
+          "bulk-actions",
+          "failure-and-retries",
+          "model-context-protocol",
+          "physical-commerce",
+          "search-indexing",
+          "user-facing-errors"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 24558,
+        "cache_read_input_tokens": 121674,
+        "output_tokens": 5299,
+        "total_cost_usd": 0.32681879999999996,
+        "num_turns": 8
+      },
+      "changed": [
+        "docs/mcp-tools.md"
+      ],
+      "assertions": {
+        "distinct-operations-need-tools-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/mcp-tools.md:6 adds a dedicated tool: \"| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page titles and Markdown content across the workspace, or within `folder` and its subfolders. Returns `{ results: [{ path, title, snippet }], next_cursor? }`, best match first. Default 20 per page.\" That gives explicit scope (whole workspace or `folder` and its subfolders) and pagination (cursor/limit/next_cursor). Query semantics are ordinary text search, at A/project/docs/mcp-tools.md:15: \"`query` matches case-insensitively. Every word must appear in the page, and a `\\\"quoted phrase\\\"` must appear exactly.\" That is plain text plus phrase, not a bespoke query language."
+            }
+          ]
+        },
+        "distinct-operations-need-tools-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/mcp-tools.md:11 adds a separate tool: \"| `order_prints` | `{ idempotency_key, paths[], copies, ship_to }` | Orders `copies` printed, bound copies of the listed pages ... charges the workspace's card on file, and ships them to `ship_to`. Requires the Editor role.\" It is not a flag on write_page or a special path. The rows for write_page, edit_page and delete_pages (lines 8-10) are byte-identical to fixture/docs/mcp-tools.md."
+            }
+          ]
+        },
+        "distinct-operations-need-tools-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/mcp-tools.md:22: \"`idempotency_key` is required. ... resend the same one when retrying a call that timed out or returned no answer. A repeat call with a key the workspace has already used returns the original order with `replayed: true` and charges nothing. Reusing a key with different `paths`, `copies`, or `ship_to` is refused.\" Line 27 also covers an in-flight retry: \"To get the outcome of a `processing` order, call again with the same `idempotency_key`.\""
+            }
+          ]
+        },
+        "distinct-operations-need-tools-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "Checked A/project/docs/mcp-tools.md, A/project/AGENTS.md, A/diff.txt and A/answer.txt. The catalog has exactly seven tools (list_pages, search_pages, read_page, write_page, edit_page, delete_pages, order_prints), and a grep for execute|run_|action in A/project/docs finds nothing. The closest the deliverable comes to a generic tool is the narrowly named order_prints row (A/project/docs/mcp-tools.md:11). A/answer.txt also explicitly turns down further tools: \"I left out a separate price-quote tool, an order-status tool and a confirmation flag.\""
+            }
+          ]
+        },
+        "distinct-operations-need-tools-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "diff -r fixture A/project shows only two added rows (search_pages after line 5, order_prints after line 9) and the new sections. The five original rows are unchanged, e.g. A/project/docs/mcp-tools.md:5 \"| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |\" and :10 \"| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |\". A/answer.txt confirms: \"The other five tools are unchanged.\""
+            }
+          ]
+        }
+      },
+      "blocking": [],
+      "minor": []
+    },
+    {
+      "session": "1-distinct-operations-need-tools-old-sol",
+      "eval": "distinct-operations-need-tools",
+      "arm": "old",
+      "model": "sol",
+      "model_id": "gpt-6.1-sol",
+      "effort": "medium",
+      "served_model": null,
+      "requested_model": "gpt-6.1-sol",
+      "cli": null,
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 75.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "agent-tool-design",
+          "auth",
+          "background-jobs",
+          "billing",
+          "definition-of-done",
+          "failure-and-retries",
+          "model-context-protocol",
+          "modularity",
+          "search-indexing"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 117801,
+        "cached_input_tokens": 99456,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3006,
+        "reasoning_output_tokens": 356
+      },
+      "changed": [
+        "docs/mcp-tools.md"
+      ],
+      "assertions": {
+        "distinct-operations-need-tools-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/mcp-tools.md adds one workspace-wide search tool with scope and pagination: \"| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page Markdown content in the active workspace. Returns ranked `{ path, title, snippet }` matches and `next_cursor`. Default 20, maximum 100 results per call. |\". Scope: \"`folder`, if supplied, restricts results to that folder and its descendants.\" The query is ordinary plain-text search, not a custom query language: \"Search is case-insensitive, normalizes whitespace, and requires all query terms to occur in the Markdown content; it is literal token search without regex or query operators.\" It also forbids the page-by-page approach: \"Do not implement search by listing and reading each page.\""
+            }
+          ]
+        },
+        "distinct-operations-need-tools-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/mcp-tools.md gives placement its own tool: \"| `place_print_order` | `{ quote_id, idempotency_key }` | Charges the workspace card and submits the quoted bound copies for fulfillment. ... Requires Editor permission. |\". It is not a flag on another tool: \"`place_print_order` accepts only a quote ID and retry key: there is no price refresh, destination change, or confirmation flag inside this tool.\" The file tools (write_page and the rest) are unchanged."
+            }
+          ]
+        },
+        "distinct-operations-need-tools-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/mcp-tools.md states both an idempotency key and a server-side guard: \"Before any external effect, atomically store an order record and bind `(workspace, idempotency_key)` to its quote ID. Concurrent identical calls converge on that record. ... Enforce at most one order per quote, even under a different key; return `quote_already_ordered`\". The row says: \"Repeating the same request returns the same order without another charge or package.\" The keys are passed on to the providers: \"Persist stable payment and fulfillment operation keys on the order, and propagate them through the billing and print-partner adapters.\""
+            }
+          ]
+        },
+        "distinct-operations-need-tools-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "I checked B/project/docs/mcp-tools.md and B/diff.txt. The only tools added are search_pages, quote_print_order, place_print_order, and get_print_order. The closest line is a refusal of one: \"add no per-folder search, generic action dispatcher, confirmation tool, or separate retry tool.\" Searching for execute/run_/action found no tool by those names."
+            }
+          ]
+        },
+        "distinct-operations-need-tools-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/mcp-tools.md lines 5-9 match the fixture byte for byte. Example: \"| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |\" and \"| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |\". B/diff.txt shows these rows only as unchanged context. Nothing changes existing tool behavior: \"Existing page-tool permissions remain as defined by the product.\" The other files (AGENTS.md, brief.md, package.json, pnpm-workspace.yaml) are identical to the fixture (cmp)."
+            }
+          ]
+        }
+      },
+      "blocking": [],
+      "minor": []
+    },
+    {
+      "session": "1-quota-reservation-under-concurrency-old-opus",
+      "eval": "quota-reservation-under-concurrency",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": "2.1.302 (Claude Code)",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "9b723e3712137fdadfb0625eeab7023f9c8d3193",
+        "fixture": "e90d67d597185779",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "87dc141e82a29f33",
+        "harness": "af69243b577b6d35"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 175.0,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "ai-model-routing",
+          "background-jobs",
+          "billing",
+          "bulk-actions",
+          "data-deletion",
+          "definition-of-done",
+          "failure-and-retries",
+          "object-storage",
+          "quota",
+          "source-of-truth",
+          "uploads",
+          "user-facing-errors"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 22,
+        "cache_creation_input_tokens": 37101,
+        "cache_read_input_tokens": 370004,
+        "output_tokens": 13765,
+        "total_cost_usd": 0.6461968000000001,
+        "num_turns": 14
+      },
+      "changed": [
+        "docs/quota-accounting.md",
+        "packages/backend/src/ctx.ts",
+        "packages/backend/src/errors.ts",
+        "packages/backend/src/uploads.ts"
+      ],
+      "assertions": {
+        "quota-reservation-under-concurrency-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/quota-accounting.md:9 names the old check as insufficient: \"`startUpload` checked `used + size <= cap`, but `used` only grows at finalize. The CLI sends 8 starts at once, so all 8 passed against the same `used`\". Line 37: \"Reject with `QuotaExceeded` if `used + reserved + size > cap`\" and line 39: \"Add `size` to `reserved`\". The code matches at packages/backend/src/uploads.ts:48 `if (account.used + reserved + input.size > account.cap) throw new QuotaExceeded();` and :54 `ctx.db.accounts.patch(account.id, { reserved: reserved + input.size })`. Atomicity comes from the stated serializable-transaction assumption, with a fallback, in docs/quota-accounting.md:77: \"If the database isn't transactional, the patches have to become atomic conditional increments\". The same assumption is in ctx.ts:1-2."
+            }
+          ]
+        },
+        "quota-reservation-under-concurrency-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "Commit at finalize: docs/quota-accounting.md:50 \"Otherwise move `size` from `reserved` to `used`, mark it `ready`\", which runs only after the head check at :48-49. The code is uploads.ts:75 `const object = await ctx.storage.head(upload.id);`, then :90 `patch(account.id, { used: account.used + upload.size, reserved })` once `object.size === upload.size`. Failed uploads release: uploads.ts:84 `patch(account.id, { reserved })` on mismatch. Abandoned or expired uploads release through a named sweep, docs/quota-accounting.md:56 \"For each one it deletes the object, releases `reserved`, and marks the upload `failed/abandoned`\", in uploads.ts:99-109 `expireStaleUploads`. The sweep is not yet wired to a scheduler (doc :94), but the cleanup path is stated and implemented."
+            }
+          ]
+        },
+        "quota-reservation-under-concurrency-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "Design: docs/quota-accounting.md:46 \"Return success without doing anything if the upload is already `ready`. Retries are safe.\" and :67 \"Retried finalizes never queue another one.\" Code: packages/backend/src/uploads.ts:72 `if (upload.status === \"ready\") return { uploadId: upload.id, status: \"ready\" as const };`, which runs before the counter patch at :90. Two concurrent finalizes are serialized by the per-handler transaction assumption (ctx.ts:1-2)."
+            }
+          ]
+        },
+        "quota-reservation-under-concurrency-04": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "The doc keeps storage and provider cost apart (docs/quota-accounting.md:69 \"The storage cap doesn't bound summary spend\"). It never says that a failed summary has already cost money, and it neither records nor bounds that cost. Line 68 says only \"A failed summary isn't retried automatically, because it's paid provider work. It retries only on user action, through the same code path\". That leaves user-triggered retries of a failing summary unlimited, and no cost ledger is designed. The only bound that would cap spend is deferred, at :87 \"Open decisions for the owner \u2014 1. Summary ceiling. How many summaries an account may generate ...\", and a deferred option does not count as chosen."
+            }
+          ]
+        },
+        "quota-reservation-under-concurrency-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "docs/quota-accounting.md:49 \"If the stored size doesn't match the declared size, delete the object, release the reservation, mark it `failed/upload`, and return `UploadSizeMismatch`.\" Code: packages/backend/src/uploads.ts:82-86 `if (object.size !== upload.size) { await ctx.storage.delete(upload.id); ... throw new UploadSizeMismatch(); }`. The signed URL also binds Content-Length (ctx.ts:7 \"The signed URL must bind Content-Length to `size`\")."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] Summary cost is unbounded at launch. docs/quota-accounting.md:68 \"It retries only on user action, through the same code path\" allows unlimited paid retries of a failing summary, and :69 admits \"Someone can upload a file, delete it, and upload again ... generating unlimited paid summaries\". The bound is deferred to the owner (:87 \"Summary ceiling ... It's needed before the free plan opens\") instead of being set, though the prompt asked for the calls to be made. The retry path is also contradictory: \"the same code path\" means finalize, which is a no-op for `ready` uploads (uploads.ts:72), so no defined retry mechanism exists and none is limited."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-embedded-page-metadata-old-opus",
+      "eval": "embedded-page-metadata",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": "2.1.302 (Claude Code)",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
+        "fixture": "d7ae70ba58a24853",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "d2eaa332a5543766",
+        "harness": "eb8f641adb4b7cc3"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 180.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "background-jobs",
+          "data-model",
+          "domains",
+          "ids",
+          "object-storage",
+          "origins",
+          "public-discovery",
+          "rendering",
+          "routing",
+          "seo",
+          "social-metadata"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 12,
+        "cache_creation_input_tokens": 38860,
+        "cache_read_input_tokens": 170414,
+        "output_tokens": 13986,
+        "total_cost_usd": 0.6247307999999999,
+        "num_turns": 8
+      },
+      "changed": [
+        "docs/metadata.md"
+      ],
+      "assertions": {
+        "embedded-page-metadata-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "B/project/docs/metadata.md:37 \"Metadata is resolved **once per published version**, on the server, and stored with that version. Requests never re-parse the HTML.\"; :92 \"The wrapper renders the resolved title and icon in its server HTML (public and unlisted)\"; :105 \"The wrapper is server rendered for every visibility. Its `<head>` is built only from the stored metadata of the current published version\"; :109-127 list the wrapper's <title>, icon, og:* and twitter:* tags. Sources are the saved HTML parsed statically (:44 \"The `<title>` in the HTML, parsed statically without running any script\"), not the person's script at request time or the inner document."
+            }
+          ]
+        },
+        "embedded-page-metadata-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "B/project/docs/metadata.md:26 \"| Preview card | Full card: title, description, image | Full card: title, description, image | Generic Tessel card only |\" and :27 \"| `robots` | `index` | `noindex` | `noindex` |\"; :31 \"Unlisted pages get the full card because anyone holding the link can already open them, and preview fetchers ignore `noindex` anyway.\""
+            }
+          ]
+        },
+        "embedded-page-metadata-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "B/project/docs/metadata.md:132 \"Private, and every response to someone who may not open the page (signed out, not a member, page removed, or no longer shared):\" followed by :135-141 `<title>Tessel</title>` / og:title \"Tessel\" / og:image \"{Tessel brand card}\", and :144 \"No description, no page title, no page icon, no page image.\" Side paths are covered too: :151 icon/card routes \"Private, removed, or no longer shared: serve the generic Tessel image\" and :160 the frame URL \"Without a valid token the user-content origin returns the same content-free response\"."
+            }
+          ]
+        },
+        "embedded-page-metadata-04": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "The no-saves half is met (B/project/docs/metadata.md:84 \"writes report success to the page but are never stored\"; :166 \"A page's writes are held until a person has interacted with the page frame\"). The network/credential half is not. The only isolation rule for the headless render is :83 \"no access to anything inside Tessel except the page's own user-content origin and the runtime\". It says nothing about private or internal networks (RFC1918, cloud metadata endpoints) or about credentials, and it does not say whether the hostile page script may reach the open internet. The publish-time server fetch of author-chosen URLs has no restriction at all: :69 \"External icons are fetched once by the server.\" and :74 \"`og:image` or `twitter:image` declared in the HTML, copied into Tessel storage at publish time\". The doc also never says where or how the generated 1200x630 card (:75) is rendered."
+            }
+          ]
+        },
+        "embedded-page-metadata-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "B/project/docs/metadata.md:74 \"`og:image` or `twitter:image` declared in the HTML, copied into Tessel storage\" ranks above :75 \"A **generated card**: 1200\u00d7630, showing the Tessel mark, the word Tessel, and the resolved page title\"; :77 \"The generated card is the default. Nobody has to make an image\"."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] SSRF at publish: B/project/docs/metadata.md:69 \"External icons are fetched once by the server.\" and :74 copy author-declared `og:image`/`twitter:image` URLs into Tessel storage. There is no rule that blocks private, loopback, link-local, or metadata addresses, and no rule for redirects or DNS rebinding. A hostile author can point an icon at an internal endpoint. If the response passes the PNG/SVG/ICO/WebP check, Tessel stores it and serves it publicly from its own icon route.",
+        "[claude-fallback] The snapshot render has no network or credential isolation: B/project/docs/metadata.md:83 \"runs a headless browser in an isolated job ... no access to anything inside Tessel except the page's own user-content origin and the runtime\". Hostile author script runs on Tessel infrastructure with no stated block on internal or private networks beyond Tessel's own, and nothing says the job holds no credentials.",
+        "[claude-fallback] Edge caching contradicts revocation. B/project/docs/metadata.md:148 says \"Each request checks the page's **current** visibility\", but :150 makes those same routes \"cacheable at the edge\", and :29 lets the public/unlisted wrapper use a \"Shared cache allowed, purged on republish or visibility change\". Edge-cached hits never reach the origin's visibility check. Until the purge has propagated, a page just made private still serves its titled wrapper and card to preview fetchers, which brings back bug 233. :186 \"They must return the generic card immediately\" cannot hold under this caching."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-embedded-page-metadata-old-sol",
+      "eval": "embedded-page-metadata",
+      "arm": "old",
+      "model": "sol",
+      "model_id": "gpt-6.1-sol",
+      "effort": "medium",
+      "served_model": null,
+      "requested_model": "gpt-6.1-sol",
+      "cli": "codex-cli 0.162.1",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
+        "fixture": "d7ae70ba58a24853",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "d2eaa332a5543766",
+        "harness": "33da7f56dbd36d12"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 190.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "auth",
+          "background-jobs",
+          "data-deletion",
+          "data-model",
+          "failure-and-retries",
+          "http-apis",
+          "ids",
+          "modularity",
+          "object-storage",
+          "origins",
+          "product-ux",
+          "public-discovery",
+          "quota",
+          "rendering",
+          "routing",
+          "seo",
+          "social-metadata",
+          "source-of-truth",
+          "uploads"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 386450,
+        "cached_input_tokens": 360448,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5695,
+        "reasoning_output_tokens": 215
+      },
+      "changed": [
+        "docs/metadata.md"
+      ],
+      "assertions": {
+        "embedded-page-metadata-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "A/project/docs/metadata.md:30 \"Parse the submitted HTML with an HTML parser at each published revision, without executing scripts. Store a normalized metadata snapshot tied to that revision\"; :53 \"The iframe's `<title>` and favicon do not supply the outer document's identity. The wrapper sets its own title and icon from the published snapshot.\"; :65 \"The canonical outer URL returns complete tags in its initial HTML, using the published snapshot without executing the embedded page.\" The bridge at :55-57 only updates the current viewer's tab and \"do[es] not overwrite the published metadata snapshot\", so shipped metadata does not depend on the person's script."
+            }
+          ]
+        },
+        "embedded-page-metadata-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "A/project/docs/metadata.md:20 \"Description and social card | Page-specific | Page-specific | Generic Tessel text and brand image only\"; :22 Unlisted row \"`noindex, nofollow, noarchive`; absent from sitemap and discovery lists\"; :24 \"Do not block the unlisted route in `robots.txt`: crawlers need to read its `noindex` directive, and link expanders need its tags.\"; :106 \"Public \u2192 unlisted removes indexing/discovery ... its rich card remains allowed.\""
+            }
+          ]
+        },
+        "embedded-page-metadata-03": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "A/project/docs/metadata.md:18 Private \"`Tessel` and Tessel icon, for every request\"; :75 \"For private and unavailable pages use title `Tessel`, description `Create and share interactive pages on Tessel.`, the Tessel icon, and a fixed Tessel brand card with generic alt text. Omit content-specific canonical/OG URLs and all content-derived structured data.\"; :65 \"Use this behavior for all user agents; crawler detection must not be the security boundary.\"; :61 \"Private initial HTML, hydration data, redirect/login responses, JSON-LD, and HTTP headers contain no page-derived identity, even for a member request.\""
+            }
+          ]
+        },
+        "embedded-page-metadata-04": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "fail",
+              "e": "The renderer half is covered (A/project/docs/metadata.md:87 \"no member session, no API keys, and no ambient infrastructure credentials\"; :88 \"Authorization at the backend also refuses mutations from a preview principal\"; :89-90 outbound network blocked, \"disable ... access to local/internal services\"). The second half is not: :94 concedes \"These measures stop Tessel preview generation from voting, but cannot prove that every arbitrary public browser is human. An external service that executes a public page as a normal visitor remains a reason to require explicit actions and backend abuse controls for live mutations.\" and only says \"Live-page code should commit a vote only after a deliberate interaction\", which is advice to page authors that Tessel does not enforce. Nothing stops a chat app's preview fetcher that runs the page's script from casting a vote, and the #251 check at :117 tests only \"preview execution\", meaning Tessel's own renderer."
+            }
+          ]
+        },
+        "embedded-page-metadata-05": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "A/project/docs/metadata.md:39 \"Image | Valid authored `og:image`, then safe rendered screenshot, then a generated page card\"; :81 \"Always provide an image. Generate a 1200 \u00d7 630 PNG page card immediately from the resolved subject and description\"; :7 \"Publishing one HTML file remains sufficient: no manifest, screenshot upload, or separate metadata form is required.\""
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude] Issue #251 is only fixed for Tessel's own renderer. A/project/docs/metadata.md:94 \"These measures stop Tessel preview generation from voting, but cannot prove that every arbitrary public browser is human. An external service that executes a public page as a normal visitor remains a reason to require explicit actions and backend abuse controls for live mutations.\" The bug report (\"one vote every time someone pasted its link\") describes exactly that kind of external preview loader. The design leaves the fix to page authors (\"Live-page code should commit a vote only after a deliberate interaction\") and pushes a runtime-enforced rule, such as requiring user activation before writes, off to an unspecified later step. An engineer building it as written ships a poll that still gains phantom votes from any unfurler that runs JavaScript."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-user-code-on-own-domain-old-opus",
+      "eval": "user-code-on-own-domain",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": "2.1.302 (Claude Code)",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
+        "fixture": "cf95ce9da7951479",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "3ecf030566f1db17",
+        "harness": "785b750b15ab7e37"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 385.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "auth",
+          "dns",
+          "domains",
+          "object-storage",
+          "origins"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 12,
+        "cache_creation_input_tokens": 31779,
+        "cache_read_input_tokens": 157376,
+        "output_tokens": 11347,
+        "total_cost_usd": 0.5126952,
+        "num_turns": 8
+      },
+      "changed": [
+        "docs/hosting-plan.md"
+      ],
+      "assertions": {
+        "user-code-on-own-domain-01": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "The layout that ships keeps user code on plinth.example. A/project/docs/hosting-plan.md:24 maps \"`<name>.plinth.example` | One user app per name, streamed by the edge from object storage | **The app author (untrusted)**\". The separate domain shows up only as a post-freeze \"durable layout\" (line 84), and the plan won't commit to it. Line 90 says \"Only the owner can weigh these, so this plan doesn't pick for them\", and line 94 still lists \"C. Ship this plan and keep `plinth.example` permanently\". Line 93 (option B) only says addresses \"may change after the beta\". A separate domain listed among alternatives and deferred to the owner doesn't count as chosen."
+            }
+          ]
+        },
+        "user-code-on-own-domain-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/hosting-plan.md:7 says \"To the browser, every `<name>.plinth.example` app and `app.plinth.example` are the **same site**\". Line 10: \"Any app can set cookies on `plinth.example` that `app.plinth.example` will receive (cookie tossing or session fixation)\". Line 11: \"`SameSite` cookies don't protect `app.plinth.example` from requests made by user apps, because those requests are same-site\". Line 9: \"any app author can read the session of anyone who opens their app\". Together these cover same-site, parent-domain cookie setting, same-site requests, session fixation, and reaching session tokens."
+            }
+          ]
+        },
+        "user-code-on-own-domain-03": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "No Plinth-owned page on `<name>.plinth.example` frames content from another domain. I checked A/project/docs/hosting-plan.md and A/answer.txt. The nearest line is hosting-plan.md:92, \"launch apps there ... Short addresses survive if the domain is short\". That replaces the plinth.example short address instead of keeping it as a framing shell. During the beta, line 24 serves the untrusted app itself at `<name>.plinth.example`."
+            }
+          ]
+        },
+        "user-code-on-own-domain-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/hosting-plan.md:84 gives \"`<name>.<user-content domain>` | User apps, with the user-content domain listed on the Public Suffix List so each app is its own site\". Line 65 adds that `localStorage`, IndexedDB and service workers \"are all bound to the origin `https://<name>.plinth.example`. That keeps apps isolated from each other\". Each app gets one label, so it has its own origin and storage."
+            }
+          ]
+        },
+        "user-code-on-own-domain-05": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "fail",
+              "e": "The plan has no sandbox and no opaque origin. I checked A/project/docs/hosting-plan.md and A/answer.txt: neither contains `sandbox`, `allow-same-origin` or opaque-origin serving. The edge header rules at lines 73-75 cover only `Content-Type`/`nosniff`, `Set-Cookie` and `Access-Control-Allow-Credentials`. The beta keeps serving people's code as the top-level document on plinth.example subdomains. Line 24 does this, and line 93 says \"B. Ship this plan on `plinth.example`\". The plan never states the storage cost of a sandbox."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] During the beta, untrusted HTML/JS stays the top-level same-origin document on `<name>.plinth.example`, which is same-site with `app.plinth.example`. Every defense against that is containment, as A/project/docs/hosting-plan.md:79 admits: \"Every mitigation above is containment. Phishing pages under our own name, cookie tossing against anything we add later ... all stay possible as long as user code runs under `plinth.example`\". An opaque-origin CSP sandbox fits inside the freeze and would remove that same-site script context. The plan never considers it.",
+        "[claude-fallback] Cookie tossing against the auth provider's own cookies stays open. Line 37 protects only \"Cookies we own on `app.plinth.example` use the `__Host-` prefix\". The provider's cookies (line 23, \"Provider's own host-only cookies\") are not `__Host-` cookies we control. App script can still set `Domain=plinth.example` cookies that shadow them, which is login CSRF or session fixation. Line 10 names that threat as fixed, but nothing in the plan closes it for provider cookies.",
+        "[claude-fallback] The plan refuses to commit to the hosting layout, which is the question it was asked. A/project/docs/hosting-plan.md:90: \"Only the owner can weigh these, so this plan doesn't pick for them\". It then lists three options, including \"C. Ship this plan and keep `plinth.example` permanently\" (line 94). An engineer building tomorrow has no settled target layout.",
+        "[claude-fallback] No option keeps both the decided short address and isolation. Option A (line 92) moves apps to a new domain and drops `<name>.plinth.example`: \"Short addresses survive if the domain is short\". Options B and C keep user code on plinth.example. The brief's decision (\"Every app gets a short address, `<name>.plinth.example`\", fixture/docs/brief.md) could be kept with a plinth.example shell page framing the content domain. The plan never offers this, so option A overrides a stated decision without needing to.",
+        "[claude-fallback] Option B accepts a later move that throws away visitors' data. A/project/docs/hosting-plan.md:86 says moving \"changes every app's origin, so every visitor's `localStorage` for every app is left behind\". Line 93 still recommends shipping on plinth.example and telling users \"local data may not carry over\". The plan wants storage kept tied to permanent names (section 5) and plans to abandon those origins anyway, which contradicts itself."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-user-code-on-own-domain-old-sol",
+      "eval": "user-code-on-own-domain",
+      "arm": "old",
+      "model": "sol",
+      "model_id": "gpt-6.1-sol",
+      "effort": "medium",
+      "served_model": null,
+      "requested_model": "gpt-6.1-sol",
+      "cli": "codex-cli 0.162.1",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "f4694bc96903ebe5da2402a3f535a58a4d1f9206",
+        "fixture": "cf95ce9da7951479",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "3ecf030566f1db17",
+        "harness": "785b750b15ab7e37"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 255.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "abuse-resistance",
+          "auth",
+          "branches",
+          "definition-of-done",
+          "deployment",
+          "dns",
+          "domains",
+          "environment",
+          "http-apis",
+          "object-storage",
+          "origins",
+          "provider-setup",
+          "routing",
+          "runtime-truth"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 392432,
+        "cached_input_tokens": 333952,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6223,
+        "reasoning_output_tokens": 1593
+      },
+      "changed": [
+        "docs/hosting-plan.md"
+      ],
+      "assertions": {
+        "user-code-on-own-domain-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/hosting-plan.md:87 (After the freeze): \"Before expanding compatibility, establish a separate registrable domain for untrusted execution with a stable origin per immutable app ID. No product or managed-auth parent cookie may scope to that domain.\" The beta layout (line 20) still serves code on <name>.plinth.example, but only as an opaque-origin interim forced by the freeze (line 13: \"A new registrable content domain would help, but is unavailable during the freeze\"). The target is a separate registrable domain."
+            }
+          ]
+        },
+        "user-code-on-own-domain-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/hosting-plan.md:9: \"They nevertheless share the cookie domain and, over HTTPS, the same site. A cookie scoped to `plinth.example` is sent to app subdomains; any such cookie without `HttpOnly` can also be read by ordinary scripts there. An ordinary subdomain document can set parent-domain cookies, creating cookie injection and session-confusion risks. `HttpOnly` prevents script reads of that cookie, but does not prevent authenticated requests.\" Line 11 adds: \"sibling hosts must not be trusted as callers merely because they are same-site\" and cites the sibling-subdomain CSRF risk."
+            }
+          ]
+        },
+        "user-code-on-own-domain-03": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "fail",
+              "e": "B/project/docs/hosting-plan.md:89 offers framing as one of two options and picks neither: \"a trusted short-address shell embedding the isolated execution site can keep the short URL visible ... A top-level redirect to that execution site ... changes the address bar. Neither is automatically an approved replacement for the owner's short-address decision.\" Line 98 hands the choice back to the owner (\"choosing the post-freeze address-bar/persistence tradeoff\"). Line 87 (\"Keep the short product-domain addresses as trusted entry points\") never says the short address is a Plinth page that frames the app."
+            }
+          ]
+        },
+        "user-code-on-own-domain-04": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "pass",
+              "e": "B/project/docs/hosting-plan.md:87: \"establish a separate registrable domain for untrusted execution with a stable origin per immutable app ID.\" In the beta, line 20 gives each executing document \"a unique opaque origin\", and line 89 notes \"Moving execution origins also moves `localStorage`\", which treats storage as scoped to each app's origin."
+            }
+          ]
+        },
+        "user-code-on-own-domain-05": {
+          "v": "fail",
+          "votes": [
+            {
+              "critic": "claude",
+              "v": "fail",
+              "e": "Most of the assertion is met. B/project/docs/hosting-plan.md:34 sets \"Content-Security-Policy: sandbox allow-scripts; ...\", line 40 says \"`allow-same-origin` is deliberately absent\", and line 48 says \"Native `localStorage` calls will fail in this mode.\" The deciding clause fails. B keeps serving people's code as the top-level document on plinth.example subdomains during the beta. Line 42: \"Keep the document top-level so the short address remains in the address bar.\" Line 20: \"`https://<name>.plinth.example/` | Existing edge ... serves its published document with mandatory sandbox headers\"."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude] The target layout is not committed. B/project/docs/hosting-plan.md:89 lists a framing shell and a top-level redirect, then says \"Neither is automatically an approved replacement for the owner's short-address decision. Do not announce a storage-compatible launch date before resolving this tradeoff\". An engineer opening this after the freeze cannot build the post-freeze address layout from it, because the one structural question is deferred to the owner (line 98).",
+        "[claude] During the beta, author code stays the top-level document at the trusted Plinth address. B/project/docs/hosting-plan.md:42 says \"Keep the document top-level so the short address remains in the address bar. The sandbox is not an anti-phishing guarantee, and top-level documents can navigate themselves.\" So hostile code owns the entire page under a plinth.example name. It can draw a fake Plinth sign-in and send what it collects off-site by navigating itself, which `connect-src 'none'` / `form-action 'none'` (line 34) cannot stop. The plan admits this and ships it anyway, rather than keeping the short address as a Plinth-owned page around the sandboxed content."
+      ],
+      "minor": []
+    },
+    {
+      "session": "1-established-precondition-contract-old-opus",
+      "eval": "established-precondition-contract",
+      "arm": "old",
+      "model": "opus",
+      "model_id": "opus",
+      "effort": "medium",
+      "served_model": "claude-opus-5-5",
+      "requested_model": "opus",
+      "cli": "2.1.302 (Claude Code)",
+      "inputs": {
+        "skill": "90065190740b0fa1",
+        "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
+        "fixture": "438e6792903dbc11",
+        "base_fixture": "9a72a07420d785e3",
+        "evals": "3ecf030566f1db17",
+        "harness": "785b750b15ab7e37"
+      },
+      "completed": true,
+      "timed_out": false,
+      "seconds": 280.1,
+      "skill_read": true,
+      "references_read": {
+        "full": [
+          "agent-tool-design",
+          "bulk-actions",
+          "data-model",
+          "failure-and-retries",
+          "http-apis",
+          "ids",
+          "modularity",
+          "source-of-truth",
+          "user-facing-errors",
+          "versioning"
+        ],
+        "partial": []
+      },
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 25847,
+        "cache_read_input_tokens": 115845,
+        "output_tokens": 6833,
+        "total_cost_usd": 0.366645,
+        "num_turns": 7
+      },
+      "changed": [
+        "docs/row-updates.md"
+      ],
+      "assertions": {
+        "established-precondition-contract-01": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/row-updates.md:48 \"`If-Match: <row ETag>` is required.\" and :57 \"| `412` | `If-Match` does not match the current row ETag | `code: \\\"row_precondition_failed\\\"` ...\"; :18 \"A row `PUT` requires `If-Match` with the **row** ETag\". This is the row-level equivalent of the PUT contract, it answers a stale precondition with 412, and :58 answers a missing one with 428. Row ETags come from GET .../rows/{rowId} (:40)."
+            }
+          ]
+        },
+        "established-precondition-contract-02": {
+          "v": "pass",
+          "votes": [
+            {
+              "critic": "claude-fallback",
+              "v": "pass",
+              "e": "A/project/docs/row-updates.md:69 \"| Whole-document `PUT` | Document ETag (unchanged contract) | ... | Changes |\" and :19 \"A partner still holding the old document ETag gets the existing `412` on their next whole-document `PUT`, so the published contract keeps protecting them\"; :11 \"must not change how existing calls behave\". The required If-Match and the 412 stay as they are, and there is no code diff (A/diff.txt adds only docs/row-updates.md). The closest the design comes to breaking this is :32: whole-document PUT gains a new rejection, \"An `id` that does not belong to this list is rejected with `422` and `code: \\\"unknown_row_id\\\"`\". That extends the body semantics but leaves the precondition alone, and it only bites clients that send an `id` (see minor)."
+            }
+          ]
+        }
+      },
+      "blocking": [
+        "[claude-fallback] Under the brief's stated traffic, row ids churn and the per-row conflict model falls apart. A/project/docs/row-updates.md:31 says \"A row with no `id` is new and gets a fresh one\" and :33 says \"A row that is left out is deleted\". docs/brief.md says many partners \"sync price lists unattended every few minutes\", and :34 admits clients that rebuild the document \"without echoing `id` ... rows just get new ids on each `PUT`\". So each such sync deletes and re-mints every row id, and every other partner and every staff browser session holding a row id gets 404 row_not_found. This contradicts the design's own guarantees at :73 \"Two partners edit different rows. Both succeed.\" and :76 \"If that row's content did not change, the row `PUT` still succeeds.\" No lost update follows, but the feature built as written would fail routinely for exactly the concurrent-editing case it was meant to serve. The design has no fallback, such as matching rows without an id on unchanged content or a natural key."
+      ],
+      "minor": []
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+diff --git a/docs/mcp-tools.md b/docs/mcp-tools.md
+index 1425075..be8ef9e 100644
+--- a/docs/mcp-tools.md
++++ b/docs/mcp-tools.md
+@@ -7,3 +7,59 @@
+ | `write_page` | `{ path, content }` | Creates or replaces one page. |
+ | `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. |
+ | `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |
++| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page Markdown content in the active workspace. Returns ranked `{ path, title, snippet }` matches and `next_cursor`. Default 20, maximum 100 results per call. |
++| `quote_print_order` | `{ paths[], copies, shipping_address }` | Quotes printing and binding one ordered set of pages per copy. Freezes page identities and content revisions, destination, and print specification. Returns `{ quote_id, expires_at, page_count, copies, print_spec, unit_price, subtotal, shipping, tax, total, currency }`. Does not charge or submit a print order. |
++| `place_print_order` | `{ quote_id, idempotency_key }` | Charges the workspace card and submits the quoted bound copies for fulfillment. Returns the durable print-order resource below. Requires Editor permission. Repeating the same request returns the same order without another charge or package. |
++| `get_print_order` | `{ idempotency_key }` | Looks up the order by the key supplied to `place_print_order`, including after a timeout. Returns the same print-order resource, or `order_not_found`. Does not charge or submit work. |
++
++## Search contract
++
++`query` must contain at least one non-whitespace term. Search is case-insensitive, normalizes whitespace, and requires all query terms to occur in the Markdown content; it is literal token search without regex or query operators. Rank by relevance, breaking ties by path. `folder`, if supplied, restricts results to that folder and its descendants. Search excludes Trash and pages the caller cannot read, including from snippets and ranking metadata.
++
++Use a server-side full-content index across all existing pages (up to 50,000), maintained on writes, edits, moves, and Trash changes. Do not implement search by listing and reading each page. Bound snippets to 300 characters and return metadata rather than whole documents; use `read_page` for the selected content. An opaque cursor binds the query, folder, and result position; reject mismatched or expired cursors with instructions to restart. Recheck current read access before returning results. Index updates must be visible when the corresponding page mutation succeeds.
++
++## Print contract
++
++The authenticated context supplies the active workspace; arguments cannot select a card or another workspace. Enforce permissions at the shared product boundary on every call, including replays and status reads. Editors can quote and place orders; Viewers cannot. Order lookup requires Editor permission as well. Every selected page must be readable by the caller when quoting and ordering; reject the whole request before effects if any page is unavailable. Recheck the initiating principal and permissions before deferred billing or partner submission.
++
++`paths` is an ordered, nonempty list of distinct page paths. `copies` is a positive integer. `shipping_address` contains `{ recipient, line1, line2?, city, region?, postal_code, country_code }`, with a two-letter country code. Validate printable content, destination support, and partner size/copy limits before issuing a quote; report the measured limit and remedy when exceeded. No silent truncation or partial orders.
++
++A quote is immutable, scoped to its workspace and requesting principal, and expires after 15 minutes. It pins the rendered content snapshot, page order, binding specification, copies, and address. Page edits cannot silently change the print job. Return all money as integer minor units in the returned currency, including per-copy price and the complete payable total. The quote must include shipping and tax; if a firm total cannot be obtained, return `quote_unavailable` and do not enable ordering.
++
++`place_print_order` accepts only a quote ID and retry key: there is no price refresh, destination change, or confirmation flag inside this tool. Reject an expired quote, a quote belonging to another principal/workspace, unavailable content permissions, or an unavailable card before creating a new paid operation. Return `quote_expired`, `permission_denied`, or `payment_method_unavailable` with the next action. Use the frozen snapshot and exact quoted total; a changed partner price requires a new quote, never an increased charge. A replay of an already accepted order returns its existing state even if the quote has since expired.
++
++### Retry and fulfillment guarantees
++
++- The caller generates a unique `idempotency_key` for each intended order and persists it before calling. Every transport retry uses the same key and quote ID. A new key represents a new purchase intent, not a way to recover an uncertain result.
++- Before any external effect, atomically store an order record and bind `(workspace, idempotency_key)` to its quote ID. Concurrent identical calls converge on that record. Reusing a key with a different quote returns `idempotency_conflict` without effects. Enforce at most one order per quote, even under a different key; return `quote_already_ordered` with the existing order identity and original lookup key to the authorized caller.
++- Keep durable key bindings, including terminal failures, for the order lifetime and retain a deduplication tombstone afterward. Never silently reuse an expired key. Persist stable payment and fulfillment operation keys on the order, and propagate them through the billing and print-partner adapters. The product's key alone cannot prevent a duplicate at a remote provider.
++- A timeout means the external outcome may be unknown. Reconcile using the same provider operation identity before progressing. Do not create a new payment or partner order, or automatically repeat paid work, while its outcome is uncertain. If the partner cannot deduplicate or look up submissions reliably, stop in `needs_attention` for operator reconciliation rather than risk a second package. These provider capabilities are implementation prerequisites, not assumed guarantees.
++- Persist each billing and fulfillment phase so a worker crash resumes the existing operation. If payment succeeds but fulfillment definitively fails, refund through an idempotent compensation step and expose the refund state. An uncertain fulfillment outcome must be reconciled before refunding or attempting replacement. A confirmed failed order requires a new quote and explicit new purchase intent; retrying its old key only returns its existing result.
++
++The print-order resource is `{ order_id, idempotency_key, quote_id, status, total, currency, payment_status, fulfillment_status, tracking?, error? }`. IDs are stable and workspace-scoped. `status` is one of `pending`, `processing`, `submitted`, `shipped`, `delivered`, `failed`, or `needs_attention`; payment status is `pending`, `charged`, `failed`, `refund_pending`, or `refunded`; fulfillment status is `not_submitted`, `unknown`, `submitted`, `shipped`, `delivered`, or `failed`. `error`, when present, contains a product-owned code, message, and next action. Do not expose raw provider errors or card details.
++
++Return the durable order as soon as accepted; `pending` or `processing` proves acceptance only. Report partner submission only after acknowledgment and shipping only after confirmed shipment. Poll `get_print_order` with the original key to recover or follow progress. `order_not_found` means no durable record is currently visible; retry placement with the original key and quote, because an earlier request may still be arriving.
++
++## MCP annotations for additions
++
++Annotations describe effects for hosts; they do not grant authority. Advertise the same catalog to all roles and enforce permissions per call.
++
++| Tool | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
++| --- | --- | --- | --- | --- |
++| `search_pages` | true | false | true | false |
++| `quote_print_order` | false | false | false | true |
++| `place_print_order` | false | true | true | true |
++| `get_print_order` | true | false | true | false |
++
++Quoting creates a stored snapshot and may contact the partner, so it is not marked read-only. Placement is destructive because it spends money and initiates physical fulfillment, even with retry deduplication.
++
++## Assumptions and catalog size
++
++These are proposed defaults where `brief.md` leaves details open; they do not change its recorded owner decisions:
++
++- Search uses all-term token matching over Markdown, without semantic search or title-only matching. The 100-result cap and 300-character snippets keep agent responses bounded.
++- Each copy is one bound volume of the ordered pages. The server supplies one supported print/binding specification, shown in the quote; there is no format-selection tool. Actual partner limits and supported destinations remain provider configuration.
++- Quotes last 15 minutes. Prices include shipping and tax and are honored only through a firm quote. Card management, order cancellation, and reordering are outside these requests.
++- Editor-only quote and status access is a conservative default for shipping and payment information. Existing page-tool permissions remain as defined by the product.
++
++Four additions cover four distinct operations: content discovery, a non-purchasing price quote, a paid order, and recovery/status lookup. Separate quotation from spending so an agent can inspect a firm price without ordering. Separate lookup from placement so checking progress never initiates a purchase. Reuse `read_page` for full content; add no per-folder search, generic action dispatcher, confirmation tool, or separate retry tool.

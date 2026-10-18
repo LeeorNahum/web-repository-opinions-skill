@@ -1,0 +1,98 @@
+{
+  "session": "1-distinct-operations-need-tools-old-opus",
+  "eval": "distinct-operations-need-tools",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": null,
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 75.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "background-jobs",
+      "billing",
+      "bulk-actions",
+      "failure-and-retries",
+      "model-context-protocol",
+      "physical-commerce",
+      "search-indexing",
+      "user-facing-errors"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 24558,
+    "cache_read_input_tokens": 121674,
+    "output_tokens": 5299,
+    "total_cost_usd": 0.32681879999999996,
+    "num_turns": 8
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "distinct-operations-need-tools-01": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:6 adds a dedicated tool: \"| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page titles and Markdown content across the workspace, or within `folder` and its subfolders. Returns `{ results: [{ path, title, snippet }], next_cursor? }`, best match first. Default 20 per page.\" That gives explicit scope (whole workspace or `folder` and its subfolders) and pagination (cursor/limit/next_cursor). Query semantics are ordinary text search, at A/project/docs/mcp-tools.md:15: \"`query` matches case-insensitively. Every word must appear in the page, and a `\\\"quoted phrase\\\"` must appear exactly.\" That is plain text plus phrase, not a bespoke query language."
+        }
+      ]
+    },
+    "distinct-operations-need-tools-02": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:11 adds a separate tool: \"| `order_prints` | `{ idempotency_key, paths[], copies, ship_to }` | Orders `copies` printed, bound copies of the listed pages ... charges the workspace's card on file, and ships them to `ship_to`. Requires the Editor role.\" It is not a flag on write_page or a special path. The rows for write_page, edit_page and delete_pages (lines 8-10) are byte-identical to fixture/docs/mcp-tools.md."
+        }
+      ]
+    },
+    "distinct-operations-need-tools-03": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:22: \"`idempotency_key` is required. ... resend the same one when retrying a call that timed out or returned no answer. A repeat call with a key the workspace has already used returns the original order with `replayed: true` and charges nothing. Reusing a key with different `paths`, `copies`, or `ship_to` is refused.\" Line 27 also covers an in-flight retry: \"To get the outcome of a `processing` order, call again with the same `idempotency_key`.\""
+        }
+      ]
+    },
+    "distinct-operations-need-tools-04": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "Checked A/project/docs/mcp-tools.md, A/project/AGENTS.md, A/diff.txt and A/answer.txt. The catalog has exactly seven tools (list_pages, search_pages, read_page, write_page, edit_page, delete_pages, order_prints), and a grep for execute|run_|action in A/project/docs finds nothing. The closest the deliverable comes to a generic tool is the narrowly named order_prints row (A/project/docs/mcp-tools.md:11). A/answer.txt also explicitly turns down further tools: \"I left out a separate price-quote tool, an order-status tool and a confirmation flag.\""
+        }
+      ]
+    },
+    "distinct-operations-need-tools-05": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "diff -r fixture A/project shows only two added rows (search_pages after line 5, order_prints after line 9) and the new sections. The five original rows are unchanged, e.g. A/project/docs/mcp-tools.md:5 \"| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |\" and :10 \"| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |\". A/answer.txt confirms: \"The other five tools are unchanged.\""
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

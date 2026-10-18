@@ -1,0 +1,121 @@
+{
+  "session": "1-file-catalog-with-saved-data-old-opus",
+  "eval": "file-catalog-with-saved-data",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": null,
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 240.2,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-skills",
+      "agent-tool-design",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "http-apis",
+      "ids",
+      "live-data",
+      "model-context-protocol",
+      "naming",
+      "object-storage",
+      "quota",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 46945,
+    "cache_read_input_tokens": 210189,
+    "output_tokens": 21048,
+    "total_cost_usd": 0.8386138000000001,
+    "num_turns": 9
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "file-catalog-with-saved-data-01": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "A/project/docs/mcp-tools.md catalog table lines 162-169 add separate saved-data tools: \"| `list_entries` | Lists or searches saved-data entries in a collection |\", \"| `create_entries` |\", \"| `update_entries` | Patches saved-data entries |\", \"| `delete_entries` |\", \"| `delete_all_entries` | Empties one collection |\", plus `get_data_rules`/`set_data_rules`. Line 366: \"Agents get the same entry-by-entry view of saved data that visitors get... with nothing like an \\\"edit the whole dataset\\\" operation.\" Saved data is never reached through read_file/replace_files/edit_file/delete_files as JSON file paths."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-02": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "A/project/docs/mcp-tools.md line 308 (replace_files): \"expected_revision: string;   // required; get it from list_files or a previous write\"; line 385 (set_data_rules): \"expected_revision: string;\"; line 458 (update_entries): \"expected_revision: string | null;   // required\"; line 470: \"**`expected_revision` is a required field.**\" These are required caller-supplied revision tokens, not server-enforced staleness checks."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-03": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "A/project/docs/mcp-tools.md line 472: \"Pass `null` for a change that stands on its own... The merge patch touches only the listed fields, so a visitor ticking a different field of the same entry is kept.\" With expected_revision null, a visitor's write to the same field made after the agent's read is silently overwritten (field-level last-writer-wins); the conflict path (line 471) is only taken if the agent opts in. There is also no saved-data file whose whole-file write is reconciled."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-04": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md line 350 (delete_files): \"paths: string[];     // 1\u2013100 items\"; line 355: \"not_found, index_required\" so no path widens; line 239 delete_site is its own tool \"input:  { site_id: string }\"; line 320 (replace_files): \"Refuses paths that don't exist... It never creates a file by accident.\"; create_site (line 222) is the only site-creating tool and no update tool takes an optional workspace/site that would create one. Closest risk: line 500 delete_all_entries \"input:  { site_id: string; collection: string }\", but it is a separate tool with no omitted-argument widening (line 506)."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-05": {
+      "v": "fail",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "fail",
+          "e": "A/project/docs/mcp-tools.md line 128: \"// Applies to visitors. Workspace members, and agents acting for them, may always do everything.\"; line 366: \"an agent acts for a workspace member, so data rules never limit it.\"; line 582: \"There's no per-field rules or value-schema validation yet.\" Agent writes are not checked against the site's declared rules or validation at all, and there is no whole-file write checked entry by entry."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-06": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md line 215 (get_site): \"Title, description, and favicon come from `index.html` every time the site is read. To change them, edit `index.html`. No tool sets them directly.\"; Assumption 4 line 576. Checked create_site input (line 222-225: only workspace_id and files) and all 19 tools in the table at lines 149-169; none takes title/description/favicon. Closest line: line 78-80 Site output fields \"title\", \"description\", \"favicon_path\" marked \"Derived from index.html on every read, never stored separately\"."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude-fallback] A/project/docs/mcp-tools.md lines 162-169 build a parallel entries/collections API (list_entries, get_entry, create_entries, update_entries, delete_entries, delete_all_entries, get_data_rules, set_data_rules) instead of exposing saved data as files through the same file tools, doubling the surface agents must learn and the authorization paths the server must keep consistent.",
+    "[claude-fallback] A/project/docs/mcp-tools.md line 458-459 and 472: update_entries accepts \"expected_revision: string | null\" where null means \"apply on top of whatever is current\", so an agent correcting a field a visitor just changed silently clobbers the visitor's write; conflict protection depends on the agent choosing correctly rather than being enforced by the server.",
+    "[claude-fallback] A/project/docs/mcp-tools.md line 128: \"Workspace members, and agents acting for them, may always do everything.\" plus Workspace.role \"owner\" | \"member\" (line 67) and Assumption 12 (line 584) \"\\\"The site owner\\\" in the brief means a signed-in workspace member\": the brief says an RSVP entry can be edited \"only by the visitor who created it or by the site owner\"; A widens that to every workspace member and exempts agents from the declared rules and from any validation (line 582), so agent writes can store entries the site's rules would reject.",
+    "[claude-fallback] A/project/docs/mcp-tools.md line 308 and 321: replace_files makes \"expected_revision: string;   // required\" a caller-supplied token, so an agent retrying after a lost response with the old revision gets revision_conflict on its own successful write, and staleness depends on the agent threading tokens instead of server-tracked reads."
+  ],
+  "minor": []
+}

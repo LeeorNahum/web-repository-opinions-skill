@@ -1,0 +1,117 @@
+
+--- new file: docs/row-updates.md
+# Row updates for price lists
+
+Status: proposal, written without the owner available. Every call made without the owner is listed under [Assumptions](#assumptions) and [Open questions](#open-questions). `docs/brief.md` wins wherever it disagrees with this document.
+
+## Problem
+
+Partners want to change one row of a price list without sending the whole document (`docs/brief.md`, "Request"). Today the only write is `PUT /v1/price-lists/{id}`, which replaces the whole document and requires `If-Match` with the document `ETag`. A stale ETag gets `412 Precondition Failed`.
+
+Two facts from the brief constrain the design:
+
+1. **The `If-Match`/`412` contract is published and partners have built against it for two years.** Many partners sync unattended every few minutes. Whatever we add must not let a whole-document `PUT` silently overwrite a row edit, and must not change how existing calls behave.
+2. **Several partners and our own staff often edit the same list during the same hour.** If a row edit had to match the *document* ETag, any edit anywhere in the list would make every other in-flight row edit fail. That brings back the contention partners are trying to avoid. So rows need their own precondition.
+
+## Design summary
+
+- Rows get a stable, server-assigned `id`.
+- New resource `/v1/price-lists/{id}/rows/{rowId}` with `GET` and `PUT`.
+- Each row has its own strong `ETag`. A row `PUT` requires `If-Match` with the **row** ETag, so conflicts are detected per row.
+- Every successful row write also **changes the document ETag**, in the same transaction. A partner still holding the old document ETag gets the existing `412` on their next whole-document `PUT`, so the published contract keeps protecting them from lost updates.
+- The change is additive, so it stays in `/v1` and ships as a minor version of the API contract and its OpenAPI document.
+
+## Row identity
+
+The row edit must say which row it means. A position in the array is unsafe, because concurrent edits from other partners or staff can insert, delete, or reorder rows between the read and the write. A natural key (for example a SKU) is unsafe too, because partners can rename it.
+
+So every row carries an `id`: 12 characters, Base58, opaque, minted by the server through the shared entity-ID helper, never by the client.
+
+- `GET /v1/price-lists/{id}` includes `id` on every row. This is an additive field.
+- On a whole-document `PUT`:
+  - A row whose `id` matches an existing row keeps that identity.
+  - A row with no `id` is new and gets a fresh one.
+  - An `id` that does not belong to this list is rejected with `422` and `code: "unknown_row_id"`. It is never adopted.
+  - A row that is left out is deleted, as it is today.
+- Clients that rebuild the document from their own systems without echoing `id` keep working. Their rows just get new ids on each `PUT`, so they should not hold row ids across their own whole-document writes. Call this out in the changelog.
+
+## Endpoints
+
+### `GET /v1/price-lists/{id}/rows/{rowId}`
+
+`200` returns the row object, which has the same shape as one element of the document's rows array, including `id`. The response carries an `ETag` header with the row's strong ETag.
+
+Errors: `404` with `code: "price_list_not_found"` or `code: "row_not_found"`.
+
+### `PUT /v1/price-lists/{id}/rows/{rowId}`
+
+This replaces one row. The body is the full row object.
+
+- `If-Match: <row ETag>` is required.
+- The body's `id` may be omitted. If it is present, it must equal `{rowId}`. Otherwise the request gets `422` with `code: "row_id_mismatch"`.
+- The body is validated against the same row schema the whole-document `PUT` uses. There is one schema and one validator, owned by the shared price-list capability.
+
+Responses:
+
+| Status | When | Body |
+| --- | --- | --- |
+| `200` | Row replaced, or the body equals the current row | The stored row. `ETag` header carries the new row ETag. |
+| `412` | `If-Match` does not match the current row ETag | `code: "row_precondition_failed"`, with a message telling the client to `GET` the row and reapply its change |
+| `428` | `If-Match` missing | `code: "precondition_required"` |
+| `404` | List or row does not exist (including a row deleted by someone else) | `code: "price_list_not_found"` / `"row_not_found"` |
+| `422` | Body fails row validation | Same validation error shape as the whole-document `PUT` |
+
+We chose a whole-row `PUT` over `PATCH` for three reasons. Rows are small. `PUT` mirrors the semantics partners already know. And it is idempotent, so an unattended sync can retry a timed-out request safely: the retry either lands the same row again (`200`) or gets `412` if someone else changed the row in between. A field-level `PATCH` can be added later without changing any of this.
+
+## Concurrency rules
+
+| Action | Precondition it checks | Effect on row ETag | Effect on document ETag |
+| --- | --- | --- | --- |
+| Row `PUT` | Row ETag | Changes for that row only, when content changes | Changes |
+| Whole-document `PUT` | Document ETag (unchanged contract) | Changes only for rows whose content changed | Changes |
+
+Consequences:
+
+- **Two partners edit different rows.** Both succeed.
+- **Two partners edit the same row.** The second gets `412` and refetches the row.
+- **A row edit lands while another partner holds a document for a whole-document `PUT`.** That partner gets `412`, exactly as today. No lost update.
+- **A whole-document `PUT` lands while a partner holds a row ETag.** If that row's content did not change, the row `PUT` still succeeds. If it changed, or the row was removed, the partner gets `412` or `404`.
+
+**Row ETag derivation.** The row ETag is a strong ETag derived on read from a hash of `(list id, row id, canonical row content)`. It is not stored as a separate fact, so it cannot drift. One edge case: if a row goes A → B → A, an `If-Match` taken at the first A will pass. That is acceptable, because the write is then based on exactly the current content.
+
+**Atomicity.** The row write and the document version change commit in one database transaction. That transaction is the same one whole-document `PUT` uses, so the two kinds of write serialize against each other.
+
+## Where it lives
+
+- One product capability, `replacePriceListRow(listId, rowId, row, ifMatch)`, sits beside the existing whole-document replace. Both use the same row schema and the same transaction.
+- The public HTTP adapter (`api.ledgerline.example/v1`, Hono) only translates headers, status codes, and the typed error body.
+- The staff browser app calls the same capability for single-row edits, so staff and partners follow the same conflict rules. In the UI, a `row_precondition_failed` should show product copy with a "reload this row" action, never the raw error.
+- Authorization is enforced once in the capability, using the same permission as the whole-document `PUT`. Rate limits are the same gateway limits as the existing endpoints.
+
+## Contract and release
+
+- Settle the OpenAPI change first: the new path, the row schema reused from the document schema, the new error codes, and `id` added to the row schema. Then implement.
+- Keep it in `/v1` as additive, and bump the API contract's minor version.
+- The changelog for partners should cover: the new endpoint; `id` appearing on rows; the fact that row edits change the document ETag (more `412`s on stale whole-document `PUT`s is expected and correct); and the advice to echo `id` back on whole-document `PUT`.
+
+## Out of scope for now
+
+- Creating or deleting a single row. Use the whole-document `PUT` for now. The natural next step is `POST .../rows` and `DELETE .../rows/{rowId}` with `If-Match` on the row.
+- Field-level `PATCH`.
+- Batch row updates. If added later, each row would be its own item with its own precondition and result, in input order, with failures inline, rather than one all-or-nothing call.
+
+## Assumptions
+
+1. **Rows have no stable id today.** The brief describes the document only as "a few hundred rows". If rows already carry an id, use that id instead of minting new ones, and drop the "rows get new ids on `PUT`" caveat.
+2. **Adding `id` to each row in the `GET` response is safe for partners.** Additive fields are allowed in v1. A partner with a strict schema validator that rejects unknown fields would break.
+3. **A missing `If-Match` should get `428`.** This is my guess at what the whole-document `PUT` does today. If that endpoint uses a different status or error shape, the row endpoint should match it.
+4. **The error body shape and validation status (`422`) follow the existing v1 conventions.** The error codes above are new names in that shape.
+5. **Row edits use the same permission as whole-document edits.** No finer per-row permission.
+6. **It is acceptable for row edits to cause more `412`s for partners doing whole-document `PUT`s.** This is the existing contract working as designed, but partners will notice it.
+
+## Open questions
+
+1. Do rows already have a stable identifier, or a natural key partners rely on?
+2. Do any partners validate `GET` responses strictly enough that a new `id` field would break them? If so, we could add the field only when the client opts in, for example through a query parameter. That would cost an extra variant in the contract.
+3. Should row create and delete ship in the same release, or is "change one row" enough for the partners asking?
+4. Is a batch row endpoint wanted soon? It would change rate-limit planning for the unattended syncs.

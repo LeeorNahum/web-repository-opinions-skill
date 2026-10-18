@@ -1,0 +1,75 @@
+{
+  "session": "1-established-precondition-contract-old-opus",
+  "eval": "established-precondition-contract",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "skill": "90065190740b0fa1",
+    "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
+    "fixture": "438e6792903dbc11",
+    "base_fixture": "9a72a07420d785e3",
+    "evals": "3ecf030566f1db17",
+    "harness": "785b750b15ab7e37"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 280.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "bulk-actions",
+      "data-model",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "modularity",
+      "source-of-truth",
+      "user-facing-errors",
+      "versioning"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 25847,
+    "cache_read_input_tokens": 115845,
+    "output_tokens": 6833,
+    "total_cost_usd": 0.366645,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/row-updates.md"
+  ],
+  "assertions": {
+    "established-precondition-contract-01": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/row-updates.md:48 \"`If-Match: <row ETag>` is required.\" and :57 \"| `412` | `If-Match` does not match the current row ETag | `code: \\\"row_precondition_failed\\\"` ...\"; :18 \"A row `PUT` requires `If-Match` with the **row** ETag\". This is the row-level equivalent of the PUT contract, it answers a stale precondition with 412, and :58 answers a missing one with 428. Row ETags come from GET .../rows/{rowId} (:40)."
+        }
+      ]
+    },
+    "established-precondition-contract-02": {
+      "v": "pass",
+      "votes": [
+        {
+          "critic": "claude-fallback",
+          "v": "pass",
+          "e": "A/project/docs/row-updates.md:69 \"| Whole-document `PUT` | Document ETag (unchanged contract) | ... | Changes |\" and :19 \"A partner still holding the old document ETag gets the existing `412` on their next whole-document `PUT`, so the published contract keeps protecting them\"; :11 \"must not change how existing calls behave\". The required If-Match and the 412 stay as they are, and there is no code diff (A/diff.txt adds only docs/row-updates.md). The closest the design comes to breaking this is :32: whole-document PUT gains a new rejection, \"An `id` that does not belong to this list is rejected with `422` and `code: \\\"unknown_row_id\\\"`\". That extends the body semantics but leaves the precondition alone, and it only bites clients that send an `id` (see minor)."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[claude-fallback] Under the brief's stated traffic, row ids churn and the per-row conflict model falls apart. A/project/docs/row-updates.md:31 says \"A row with no `id` is new and gets a fresh one\" and :33 says \"A row that is left out is deleted\". docs/brief.md says many partners \"sync price lists unattended every few minutes\", and :34 admits clients that rebuild the document \"without echoing `id` ... rows just get new ids on each `PUT`\". So each such sync deletes and re-mints every row id, and every other partner and every staff browser session holding a row id gets 404 row_not_found. This contradicts the design's own guarantees at :73 \"Two partners edit different rows. Both succeed.\" and :76 \"If that row's content did not change, the row `PUT` still succeeds.\" No lost update follows, but the feature built as written would fail routinely for exactly the concurrent-editing case it was meant to serve. The design has no fallback, such as matching rows without an id on unchanged content or a natural key."
+  ],
+  "minor": []
+}
