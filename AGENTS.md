@@ -60,7 +60,7 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 
 ## Evaluating A Change
 
-Run the suite in `evals/` for any change to an opinion, following `evals/harness/README.md`: the old and new arms in the same round, both models, cross-provider critics, and an answer round for every blocking finding. Add a case when no case exercises the change, a request a real owner would make in a fixture project that never names the rule. Keep a restraint case beside every pressure case, so a broader rule is measured against over-application as well as against misses.
+Run the suite in `evals/` for any change to an opinion, as `evals/harness/README.md` describes, with the old and new skill compared in the same round. When no case exercises the change, add one: a request a real product owner would make, in a fixture project that never names the rule. Pair every case where the rule should change a decision with one where applying it too broadly would be wrong.
 
 ## Compatibility Posture
 

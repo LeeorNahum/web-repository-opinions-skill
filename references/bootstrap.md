@@ -14,4 +14,3 @@ Do not rely only on a signup webhook to create user-owned rows. Webhooks can lag
 
 If a first-login flow ever requires a refresh to work, the order of operations is wrong, not the timing.
 
-Prefer workspaces and memberships from the start when personal accounts, future teams, sharing, or workspace billing are plausible. Retrofitting ownership later is far more expensive than carrying a workspace boundary early.

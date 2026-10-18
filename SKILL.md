@@ -65,7 +65,7 @@ Surfaces:
 - Read [references/contact-email.md](references/contact-email.md) when a page, manifest, or profile needs a contact address, or before any personal mailbox would appear on a public surface.
 - Read [references/domain-mail.md](references/domain-mail.md) when setting up email for a domain: choosing which seat or workspace hosts it, naming its sender, routing an alias to a monitored inbox, filtering routed mail, sending and replying as the alias, or finishing its picture, logo, footer, and test send at the mailbox provider.
 - Read [references/test-identities.md](references/test-identities.md) when creating or verifying an account that is not a person: for automated testing, for a store or platform reviewer, or for provider administration.
-- Read [references/social-metadata.md](references/social-metadata.md) when building or reviewing any page a person can open without signing in, so it ships its favicon and the link preview card a pasted URL expands into, when a page frames content someone else wrote, or when exporting a brand image for any surface, provider, or profile.
+- Read [references/social-metadata.md](references/social-metadata.md) when building or reviewing any page a person can open without signing in, so it ships its favicon and the link preview card a pasted URL expands into. Also read it when a page frames content users wrote, or when exporting a brand image for any surface, provider, or profile.
 - Read [references/badges.md](references/badges.md) when a public resource should appear in a README or other Markdown as a badge, a small image with a link behind it, or when offering copyable snippets beside a share link.
 
 Identity and URLs:
@@ -73,7 +73,7 @@ Identity and URLs:
 - Read [references/routing.md](references/routing.md) when designing route paths.
 - Read [references/query-state.md](references/query-state.md) when URL-addressing search, filters, sorting, views, pagination, or explicitly selected defaults.
 - Read [references/ids.md](references/ids.md) when choosing URL identifiers for resources.
-- Read [references/domains.md](references/domains.md) when laying out apex, subdomains, and the canonical host, or deciding where HTML and JavaScript that users or their agents write is served.
+- Read [references/domains.md](references/domains.md) when laying out apex, subdomains, and the canonical host, or deciding where user-supplied HTML and JavaScript is served.
 - Read [references/origins.md](references/origins.md) when generating links or callbacks across apps and stages.
 - Read [references/http-apis.md](references/http-apis.md) when designing public HTTP APIs, OpenAPI contracts, protocol subdomains, CORS, caching, rate limits, or API-first clients.
 - Read [references/agent-skills.md](references/agent-skills.md) when publishing workflow instructions for agents on top of a product interface.

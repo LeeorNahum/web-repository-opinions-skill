@@ -6,7 +6,7 @@ Check quota before doing expensive work, reserve it when concurrent requests cou
 - For imported files, read metadata first and block early if it cannot fit.
 - For live capture where the final size is unknown, let work begin if time remains, warn near the limit, and stop when the limit is reached.
 - When more than one request against the same allowance can be in flight, reserve atomically against remaining capacity, counting reservations already open. A check alone lets parallel requests each pass and together exceed the limit. Give every reservation an expiry, so an abandoned one frees itself.
-- Record usage after the work durably succeeds, not when it is requested, from the measured result such as the stored size, and once per operation, so a retried completion counts nothing twice.
+- Record usage once per operation, after the work durably succeeds rather than when it is requested, from the measured result such as the stored size, so a retried completion counts nothing twice.
 
 Never leave the user with a generic failure when the real cause is quota. A quota stop is a clear, explained state, not a mystery error.
 
