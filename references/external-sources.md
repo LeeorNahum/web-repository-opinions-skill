@@ -48,7 +48,7 @@ Split the flow: a free, idempotent discovery read that reports what was actually
 
 Accept every level of the address a user might reasonably paste, not only the one canonical shape. If a location contains several importable things, offer them all and let the user choose any subset, because dependencies between them are the user's knowledge and not the product's. A location containing exactly one is the same flow with the review step collapsed, never a different code path.
 
-Charge quota for the whole selected batch in one decision before starting, or a per-item check will admit a batch that the limit was written to prevent.
+Check and reserve quota for the whole selected batch in one decision before starting, or a per-item check will admit a batch that the limit was written to prevent.
 
 ## Skip, Do Not Abort
 

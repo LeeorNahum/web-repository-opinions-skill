@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.41.0"
+  version: "1.42.0"
 ---
 
 # Web Repository Opinions
@@ -65,7 +65,7 @@ Surfaces:
 - Read [references/contact-email.md](references/contact-email.md) when a page, manifest, or profile needs a contact address, or before any personal mailbox would appear on a public surface.
 - Read [references/domain-mail.md](references/domain-mail.md) when setting up email for a domain: choosing which seat or workspace hosts it, naming its sender, routing an alias to a monitored inbox, filtering routed mail, sending and replying as the alias, or finishing its picture, logo, footer, and test send at the mailbox provider.
 - Read [references/test-identities.md](references/test-identities.md) when creating or verifying an account that is not a person: for automated testing, for a store or platform reviewer, or for provider administration.
-- Read [references/social-metadata.md](references/social-metadata.md) when building or reviewing any page a person can open without signing in, so it ships its favicon and the link preview card a pasted URL expands into, or when exporting a brand image for any surface, provider, or profile.
+- Read [references/social-metadata.md](references/social-metadata.md) when building or reviewing any page a person can open without signing in, so it ships its favicon and the link preview card a pasted URL expands into, when a page frames content someone else wrote, or when exporting a brand image for any surface, provider, or profile.
 - Read [references/badges.md](references/badges.md) when a public resource should appear in a README or other Markdown as a badge, a small image with a link behind it, or when offering copyable snippets beside a share link.
 
 Identity and URLs:
@@ -73,7 +73,7 @@ Identity and URLs:
 - Read [references/routing.md](references/routing.md) when designing route paths.
 - Read [references/query-state.md](references/query-state.md) when URL-addressing search, filters, sorting, views, pagination, or explicitly selected defaults.
 - Read [references/ids.md](references/ids.md) when choosing URL identifiers for resources.
-- Read [references/domains.md](references/domains.md) when laying out apex, subdomains, and the canonical host.
+- Read [references/domains.md](references/domains.md) when laying out apex, subdomains, and the canonical host, or deciding where HTML and JavaScript that users or their agents write is served.
 - Read [references/origins.md](references/origins.md) when generating links or callbacks across apps and stages.
 - Read [references/http-apis.md](references/http-apis.md) when designing public HTTP APIs, OpenAPI contracts, protocol subdomains, CORS, caching, rate limits, or API-first clients.
 - Read [references/agent-skills.md](references/agent-skills.md) when publishing workflow instructions for agents on top of a product interface.
@@ -92,7 +92,7 @@ Runtime and environment:
 Auth and data:
 
 - Read [references/auth.md](references/auth.md) when wiring authentication and social sign-in posture.
-- Read [references/workspace-tenancy.md](references/workspace-tenancy.md) when backing workspaces with the auth provider's organizations, shaping the home workspace, selecting a workspace over OAuth, or migrating existing workspaces onto organizations.
+- Read [references/workspace-tenancy.md](references/workspace-tenancy.md) when deciding whether a product needs workspaces, backing them with the auth provider's organizations, shaping the home workspace, choosing an agent grant's workspace scope, or migrating existing workspaces onto organizations.
 - Read [references/bootstrap.md](references/bootstrap.md) when ensuring user, workspace, and membership exist on authenticated entry.
 - Read [references/data-model.md](references/data-model.md) when modeling entities, names, and value precedence.
 - Read [references/source-of-truth.md](references/source-of-truth.md) when deciding which system owns which fact.
@@ -104,7 +104,7 @@ Auth and data:
 Media and jobs:
 
 - Read [references/object-storage.md](references/object-storage.md) when storing large files or deciding how stored bytes are delivered publicly.
-- Read [references/uploads.md](references/uploads.md) when moving bytes from the browser to storage.
+- Read [references/uploads.md](references/uploads.md) when moving bytes into storage from a browser, a script, a CLI, an integration, or an agent.
 - Read [references/background-jobs.md](references/background-jobs.md) when running provider-backed or long-running work.
 - Read [references/bulk-actions.md](references/bulk-actions.md) when one user action processes multiple independent items or supports partial success.
 - Read [references/data-deletion.md](references/data-deletion.md) when one deletion operation must remove a dependent data graph across bounded steps.
@@ -155,7 +155,7 @@ Operating philosophy:
 - Env holds secrets and true environment variance. Product decisions live in code.
 - Same env key names across stages. Values change by store, not the key.
 - Branches are deployment roles: `dev` is local, `preview` is hosted staging on dev resources, `main` is production.
-- Charge quota before expensive work. Expensive jobs retry only on user action. Failed states must be actionable.
+- Check quota before expensive work and charge it only after durable success. Expensive jobs retry only on user action. Failed states must be actionable.
 - User-facing failures use product-owned copy. Raw exception, provider, framework, request, and stack details stay internal.
 - A change is done when the runtime it depends on is true, not when TypeScript compiles.
 

@@ -22,7 +22,7 @@ This keeps a single canonical model: one prefix that is both the list and the pa
 
 Not every segment carries the same reading weight. A segment a person actually reads to know what they are looking at, a collection name, a tab, a view, stays a full word. A segment that exists only as routing scaffolding, one nobody reads and every eye skips past, compresses to a short, stable token, its first letter is a common choice. Shorten the segments nobody reads. Spell out the ones that name the view.
 
-Private app routes nest the item prefix under the owning tenancy scaffold, itself compressed by the rule above:
+In a product with a tenancy unit, private app routes nest the item prefix under the owning tenancy scaffold, itself compressed by the rule above:
 
 ```text
 /[scope]/[scopeId]
@@ -56,8 +56,9 @@ A view has a URL. An entity has a URL too, and the two are not always the same U
 
 The URL is the sole owner of which workspace (organization, team, account scope) a private app view addresses. Never hold the active workspace in provider session state, a cookie, or client memory as an authority the URL merely reflects.
 
-- Every private route nests under the workspace prefix (`/[workspace]/...`), so any view is a shareable snapshot of exactly where it points, including the workspace.
-- The workspace switcher is navigation: switching links to the same surface under the other workspace's prefix. It does not mutate session state and reload.
+- Every private route that addresses one workspace nests under the workspace prefix (`/[workspace]/...`), so any such view is a shareable snapshot of exactly where it points, including the workspace.
+- A view that spans workspaces, such as a library across all of them, lives outside the prefix and carries its workspace filter as query state. It needs no active workspace at all.
+- A workspace switcher, where the product has one, is navigation: switching links to the same surface under the other workspace's prefix. It does not mutate session state and reload.
 - When the auth provider carries its own active-organization session state, the app syncs that state to follow the URL segment on entry (activating the matching organization, or none for a personal workspace), then renders. A deep link into any workspace the user belongs to works from a cold session without bouncing through a chooser. The session follows the URL, never the other way around.
 - The server still authorizes by verified identity and membership. The URL selects among the workspaces the caller can already reach. It never grants access, and an unknown or unauthorized workspace segment fails to a clear product-owned screen.
 

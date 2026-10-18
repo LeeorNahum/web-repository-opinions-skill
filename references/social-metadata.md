@@ -49,3 +49,9 @@ Getting the tags onto the page:
 Public pages earn rich, specific metadata and preview cards. Private pages produce no card about their content: a generic, content-free fallback names the product and nothing else. Never leak private content into a title, description, or preview image. The split mirrors the SEO posture: detail in public, opacity in private.
 
 A page that stops being public, because sharing was turned off or the resource was removed, drops to the same content-free fallback, so a link that outlives its share cannot keep naming what it pointed at.
+
+## Content The Product Frames
+
+When a page frames content someone else wrote, the product's own outer document owns the favicon, the title, and the preview tags, because tabs and link-expanding tools read only the outer document's initial HTML. Derive them on the server from the content's own head when it is saved, and use an image the content declares before generating one. Public and unlisted items get their own card, and a private item answers every request not authorized for it, link-expanding tools included, with the content-free fallback.
+
+Render generated preview images in an isolated renderer that holds no session or credential, cannot write the product's data, and cannot reach private or internal networks, because loading content to picture it must never act on it.

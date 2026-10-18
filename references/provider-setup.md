@@ -43,6 +43,7 @@ Wire each provider as completely as its known dependencies allow, across dev/tes
 - For each hosted stage, provision credentials, fill env, then add its domain and DNS records once the stage has an origin.
 - Count a stage as done only when its dashboard state, such as allowed origins, callbacks, webhooks, and branch deploys, is set alongside its keys.
 - When a later step changes an earlier value, update every store that holds it in the same pass.
+- After cloning a provider instance from one stage to another, diff every setting between the two, because a clone can drop a setting without saying so.
 - When one provider, key, or surface is added, rotated, or removed on an onboarded product, diff the contracts against the stores and fill only the delta, across every existing stage.
 
 Adapt the order when a provider forces a different sequence.

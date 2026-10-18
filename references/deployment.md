@@ -39,6 +39,7 @@ Do this by overriding the app's build command to run the service's own deploy to
 - Let the stage's credentials decide which instance a stage reaches, never the script. A build script that names a deployment can send the wrong stage to the wrong backend. One that reads a stage-scoped key cannot.
 - Deploy the dependency from every deploying stage, including staging. A stage that builds this commit's frontend against a backend from some other commit is testing a combination that exists nowhere.
 - Give each dependent service one deployment owner so parallel app builds cannot race to publish it.
+- Give each parallel worktree or agent its own backend deployment, local or dev, and let only the integration branch push to the shared development deployment. A push deploys the pusher's functions alone and deletes the ones others added.
 - Keep local development commands for interactive work. Hosted promotion should use the automated path.
 - Where a stage shares an instance with local development, it still deploys, and a build replaces what a developer pushed from their machine until their next local push. Prefer giving the stage its own instance, and treat sharing as the thing to fix rather than a reason to skip deploying.
 - Confirm the deployed service contract before treating the branch promotion as complete.

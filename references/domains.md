@@ -4,7 +4,7 @@ Lay out hosts around one canonical origin per surface, with the primary surface 
 
 - Primary site on the apex: `example.com`. This is the default home. A product that pitches itself on a public site and does its work in a private signed-in workspace, which is nearly every SaaS, keeps the public site alone on the apex and the signed-in product on its role subdomain. The apex carries sign-in only when its public pages are the product itself, so a signed-out visitor uses the same surface a signed-in one does and signing in only adds to it.
 - Signed-in app on its own subdomain: `app.example.com`.
-- Additional surfaces on their own role subdomain: `dashboard.example.com`, `admin.example.com`, `portal.example.com`.
+- Additional product surfaces on their own role subdomain: `dashboard.example.com`, `admin.example.com`, `portal.example.com`.
 
 When the apex uses the `.app` TLD, prefer `web.` for the browser app unless a different subdomain better matches its role.
 
@@ -38,5 +38,15 @@ Staging uses a `preview.` prefix on the production host so it has real, stable o
 Use custom domains everywhere, including for staging origins, OAuth origins, and webhook URLs. Remove the auto-generated platform alias once custom domains are attached, and keep it out of any provider allowlist.
 
 The canonical production origin is a code constant, not a fallback string hidden inside a route handler.
+
+## Code Your Users Write Runs On Its Own Domain
+
+When the product serves HTML or JavaScript that its users or their agents write, serve it from a separate registrable domain, never from a subdomain of the product's own. A browser treats every subdomain of one registrable domain as the same site: script on any of them can set a cookie for the parent domain, and same-site requests carry same-site cookies. A managed auth provider that shares its session across subdomains is then exposed to whatever runs on a sibling, which can plant a session cookie that signs a visitor into another account or reach the session itself. The product's domain serves only the product's own pages, and the page at the product's address frames the content, so visitors still see that address.
+
+- Give each item its own label on the content domain, so each item has its own origin and its own storage.
+- Submit the content domain to the private section of the Public Suffix List. Until it is listed, every label on it is one site, so one item can set a cookie the others receive, and the edge sets only `__Host-` cookies.
+- Hand item code a per-item pseudonym derived on the server, never a viewer identifier that is stable across items.
+- Keep the content domain out of search, with the product's address as the canonical one.
+- Where no separate domain is available yet, serve the content with an opaque origin, through a `sandbox` Content-Security-Policy without `allow-same-origin`, and accept that it loses browser storage.
 
 Ask before changing production domains or OAuth callback hosts.

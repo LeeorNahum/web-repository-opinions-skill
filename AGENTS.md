@@ -10,6 +10,7 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 | `references/*.md` | One single concept per file, named by paradigm |
 | `assets/` | Exact copyable starter files governed by an owning reference |
 | `README.md` | Short human summary |
+| `evals/` | Behavioral cases with their assertions, fixture projects, the clean-room harness, and recorded rounds. Maintainer-only: `SKILL.md` never routes to it |
 
 One owner per opinion. Each reference owns its concept. Other files use the term or shape without restating the rule. The reference-loading map lives in `SKILL.md` once. References assume the agent already loaded what their section needs.
 
@@ -56,6 +57,10 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - **Capitalized bullets.** Start every bullet with a capital letter. Keep list voice consistent across all files.
 - **Sparing examples.** Use a concrete example only to clarify a shape or structure, never to fix a naming choice. Do not anchor a name with an example token the reader could copy verbatim instead of choosing the most accurate name for their own case.
 - **Positive rules.** State the action to take, not the mistake to avoid. Write "Use a role name for the integration" rather than "Do not name the integration after the vendor". A negative rule names the failure and quietly anchors it as the thing to copy. A positive rule points only at the correct move. A bare prohibition such as "Do not collapse the two surfaces" is weaker than "Keep each surface its own deployable". Reserve a "do not" only when no positive phrasing carries the same force, and never turn a banned example into a label the reader could lift verbatim.
+
+## Evaluating A Change
+
+Run the suite in `evals/` for any change to an opinion, following `evals/harness/README.md`: the old and new arms in the same round, both models, cross-provider critics, and an answer round for every blocking finding. Add a case when no case exercises the change, a request a real owner would make in a fixture project that never names the rule. Keep a restraint case beside every pressure case, so a broader rule is measured against over-application as well as against misses.
 
 ## Compatibility Posture
 

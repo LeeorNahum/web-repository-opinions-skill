@@ -10,10 +10,11 @@ The opinions are paradigm-named and provider-stated: sections are named for what
 - `references/` holds one single concept per file, loaded on demand.
 - `assets/` holds copyable starter files for a target repo.
 - `AGENTS.md` is the editing and maintenance contract for this skill.
+- `evals/` holds behavioral cases, their fixtures, the harness, and recorded rounds, for maintainers.
 
 ## Coverage
 
-Architecture and identity, rendering and surfaces, link previews and badges, URL state, physical commerce, HTTP APIs, MCP and agent packaging, runtime and deployment, provider onboarding, custom-domain email, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI and motion, billing and administration, and release readiness.
+Architecture and identity, isolation of code users write, rendering and surfaces, link previews and badges, URL state, physical commerce, HTTP APIs, MCP and agent packaging, runtime and deployment, provider onboarding, custom-domain email, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI and motion, billing and administration, and release readiness.
 
 ## Use
 
