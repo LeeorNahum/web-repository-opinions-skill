@@ -52,6 +52,6 @@ A page that stops being public, because sharing was turned off or the resource w
 
 ## Content The Product Frames
 
-When a page frames content its users wrote, the product's own outer document owns the favicon, the title, and the preview tags, because tabs and link-expanding tools read only the outer document's initial HTML. Derive them on the server from the content's own head when it is saved, and use an image the content declares before generating one. Public and unlisted framed content gets its own card, and private framed content answers every request not authorized for it, link-expanding tools included, with the content-free fallback.
+When a page frames content its users wrote, the product's own outer document owns the favicon, the title, and the preview tags, because the browser shows the outer document's title and icon, and link-expanding tools read only its initial HTML. Derive them on the server from the content's own head when it is saved, and use an image the content declares before generating one. Public and unlisted framed content gets its own card, and private framed content answers every request not authorized for it, link-expanding tools included, with the content-free fallback.
 
 Render generated preview images in an isolated renderer that holds no session or credential, cannot write the product's data, and cannot reach private or internal networks, because rendering the content must never let it act.
