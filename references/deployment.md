@@ -10,7 +10,7 @@ Control branch deployment explicitly. Only `main` and `preview` auto-deploy by d
 
 Each deployable app carries its own hosting config that gates deploys by branch. Apply the same branch policy to every app instead of configuring only the primary site. The exact starter file lives in `assets/vercel.json`. Copy it rather than maintaining another inline version.
 
-- `"*": false` blocks all branches by default, including `dev` and feature branches.
+- `"**": false` blocks every other branch by default, including `dev` and branch names with a slash, such as `feature/x`. The host matches branch names as globs, where `*` stops at a slash and `**` does not. A branch that matches several rules deploys when any of them is `true`, so the listed branches still deploy.
 - List explicit branches first and the wildcard last. Order is cosmetic.
 - Keep `$schema` for editor autocomplete. It is harmless at runtime.
 
