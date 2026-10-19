@@ -12,4 +12,4 @@ Never leave the user with a generic failure when the real cause is quota. A quot
 
 Charging before success means a failed job can bill a user for nothing. Checking after expensive work means you pay a provider before discovering the user had no room. Order both correctly: gate before, charge after.
 
-A product allowance and an external cost are separate ledgers. Failed work charges the user's allowance nothing, but a provider may still have billed the product for it. Bound that cost with abuse limits and record it, rather than treating failed work as free.
+A product allowance and an external cost are separate ledgers. Failed work charges the user's allowance nothing, but a provider may still have billed the product for it. Bound that cost now with a counted spend ceiling that every attempt, failed ones included, passes through, and record what each attempt cost, rather than treating failed work as free or leaving the number for later.
