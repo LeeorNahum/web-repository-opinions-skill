@@ -1,0 +1,141 @@
+{
+  "session": "4-upload-without-byte-route-old-opus",
+  "eval": "upload-without-byte-route",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "1cb46008003edbaa75b9ebba53c440799f4429b4",
+    "skill": "4171c1874df5e04b",
+    "fixture": "fc59cabac6826db2",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "32768c0779856f2e",
+    "harness": "b0031f598a9e1cb3"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 225.1,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-tool-design",
+      "bulk-actions",
+      "definition-of-done",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "model-context-protocol",
+      "modularity",
+      "object-storage",
+      "quota",
+      "routing",
+      "runtime-truth",
+      "uploads",
+      "user-facing-errors"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 20,
+    "cache_creation_input_tokens": 45834,
+    "cache_read_input_tokens": 387659,
+    "output_tokens": 17749,
+    "total_cost_usd": 0.7992638000000001,
+    "num_turns": 16
+  },
+  "changed": [
+    "docs/upload-design.md",
+    "packages/mcp/src/product.ts",
+    "packages/mcp/src/tools/upload-image.ts"
+  ],
+  "assertions": {
+    "upload-without-byte-route-01": {
+      "v": "pass",
+      "graded_text": "The design states that a file path or sandbox URI sent by a remote agent does not transfer the file's bytes, and the changed MCP tool no longer reads a caller-supplied path from the server's file system.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:7 \"The server cannot see that filesystem, and no path ever can.\" Line 21: \"The CLI runs on the user's machine, so it accepts paths. The remote MCP server does not.\" C/project/packages/mcp/src/tools/upload-image.ts has no fs import and no path read. LOCAL_INPUT_KEYS (line 11) is used only to refuse."
+        }
+      ]
+    },
+    "upload-without-byte-route-02": {
+      "v": "pass",
+      "graded_text": "The design gives each caller a route that moves bytes: the CLI reads local files and uploads them, HTTP clients send the bytes (multipart or a signed direct upload), and the remote MCP tool accepts a fetchable HTTPS URL or a host's documented file attachment reference.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:116 \"Each argument is either a local path, which goes through start \u2192 PUT \u2192 finish\". Line 100: \"POST /v1/boards/{board_id}/uploads start -> 201 { upload_id, put_url, ... }\" plus \"PUT <put_url> bytes go straight to object storage\". Line 129: MCP \"`add_image_from_url` | The image is at a public https URL. One call.\""
+        }
+      ]
+    },
+    "upload-without-byte-route-03": {
+      "v": "fail",
+      "graded_text": "When an MCP caller has no supported byte route, the tool returns an explicit error that names the routes that do work, and the changed tool code cannot report success unless validated bytes were stored (the empty-buffer success path is gone).",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "fail",
+          "e": "C/project/packages/mcp/src/tools/upload-image.ts:57 `url: z.string().url()` is required, and lines 76-82 require filename/content_type/size_bytes. An agent sending `{board_id, path: \"/mnt/data/photo.jpg\"}` (412) fails schema validation before run(), so refuseLocalInput (lines 18-21) with ROUTES_HINT never runs. `url: \"sandbox:/workspace/out/chart.png\"` (418) passes .url() and comes back as url_blocked: \"That URL can't be fetched. Use a public https link to the image file.\" (line 37), which does not name the upload route. Old upload_image callers get \"the SDK's unknown-tool error\" (design line 132). The success path is gated correctly (`result.ok ? added(result.image)`, lines 64 and 125), but the route-naming refusal is unreachable for the inputs in the bug reports."
+        }
+      ]
+    },
+    "upload-without-byte-route-04": {
+      "v": "pass",
+      "graded_text": "Inline base64 or other inline content through the model is either refused or capped at a stated small size, so a multi-megabyte photo is never routed through model context.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:144 \"421: no base64 input on any surface, not even for tiny images. The model pays the token cost before the server can refuse\". Line 23: \"No base64 field on any surface.\" upload-image.ts:11 refuses keys \"data\", \"base64\", \"data_base64\", \"bytes\"."
+        }
+      ]
+    },
+    "upload-without-byte-route-05": {
+      "v": "pass",
+      "graded_text": "If the server fetches any URL, including one a host gives for an attachment, the design names enforced limits: blocking private and internal addresses, a redirect limit with each hop rechecked, a streamed size cap at the product's file limit, a timeout, and validation of the actual bytes or type. It never describes URL input as unbounded.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:61-64 \"`https` only, on the default port. ... Resolve DNS and refuse loopback, private, link-local, CGNAT, multicast, and cloud metadata addresses. Connect to the IP that was checked, and check again on every redirect. At most 3 redirects. / Stream the body and stop at 20 MB. Overall timeout 30 s. / Judge the type by magic bytes\""
+        }
+      ]
+    },
+    "upload-without-byte-route-06": {
+      "v": "pass",
+      "graded_text": "Nothing in the design changes the browser's drag-and-drop flow, and the design states that every route it defines ends in the same authorization, quota, validation, and finalize step the browser flow uses before an image counts as added.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "C/project/docs/upload-design.md:106 \"These are the same routes the browser's drag-and-drop uses.\" Line 147: \"If the browser's routes are named differently, the client should follow those names, not the other way round.\" Line 19: \"The browser already does this: sign a PUT, upload, finalize. Every other surface uses the same flow.\" Line 27: \"All three operations run in the product API ... with the same authorization as the browser.\" URL import \"runs the same validation and finish steps\" (line 59)."
+        }
+      ]
+    },
+    "upload-without-byte-route-07": {
+      "v": "fail",
+      "graded_text": "Upload staging and completion stay in the HTTP API and CLI: an agent that can run commands is pointed at the CLI or HTTP upload, and the MCP catalog gains no separate tools for starting, signing, or finalizing an upload.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "fail",
+          "e": "C/project/docs/upload-design.md:130 \"`start_image_upload` \u2192 PUT \u2192 `finish_image_upload` | The image is a file in the agent's sandbox\". C/project/packages/mcp/src/tools/upload-image.ts:129 `export const uploadTools = [addImageFromUrl, startImageUpload, finishImageUpload];`. The MCP catalog gains separate staging and finalize tools, and start_image_upload returns `put_url` and a curl command (line 107)."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] C/project/packages/mcp/src/tools/upload-image.ts:129 `export const uploadTools = [addImageFromUrl, startImageUpload, finishImageUpload];` moves upload staging and finalize into the MCP catalog. Signed PUT URLs then pass through model context and transcripts (lines 103-107 return `put_url` and `command`), and agents are not pointed at the CLI/HTTP upload. The design (line 130) commits to this.",
+    "[opus-for-opus] C/project/packages/mcp/src/tools/upload-image.ts:57 `url: z.string().url()` together with the required start-tool fields makes the teaching refusal (refuseLocalInput, line 18) unreachable for the reported inputs. A `path`-only call fails schema validation. `sandbox:`/`file:` strings are valid URLs and come back as url_blocked with no route named (line 37). The design's promise at line 132, \"the tool returns a teaching refusal that names the two supported routes\", would not ship.",
+    "[opus-for-opus] C/project/docs/upload-design.md:35 \"Check quota against `size_bytes` ... Quota is not charged yet.\" Line 49: finish \"Mark the image `ready`, charge quota for the real size\". Nothing reserves quota or rechecks it at finish, so concurrent start calls each pass the check and together exceed the 2 GB free-plan limit from fixture/docs/brief.md:15."
+  ],
+  "minor": []
+}

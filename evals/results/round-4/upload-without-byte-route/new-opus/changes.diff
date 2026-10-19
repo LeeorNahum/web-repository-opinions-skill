@@ -1,0 +1,274 @@
+diff --git a/packages/mcp/src/product.ts b/packages/mcp/src/product.ts
+index 5736b26..aaa5004 100644
+--- a/packages/mcp/src/product.ts
++++ b/packages/mcp/src/product.ts
+@@ -1,3 +1,26 @@
++export type Image = {
++  id: string;
++  boardId: string;
++  filename: string;
++  contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif";
++  size: number;
++};
++
++export type ImageRefusalReason =
++  | "forbidden"
++  | "board_not_found"
++  | "unsupported_type"
++  | "too_large"
++  | "empty"
++  | "quota_exceeded"
++  | "url_not_allowed"
++  | "fetch_failed"
++  | "fetch_timeout";
++
++export type AddImageOutcome =
++  | { status: "added"; image: Image }
++  | { status: "refused"; reason: ImageRefusalReason; size?: number; limit?: number; remaining?: number };
++
+ export const images = {
+   /** Returns a fresh opaque storage key for a new image on a board the user can edit. */
+   async allocateKey(userId: string, boardId: string): Promise<string> {
+@@ -7,4 +30,17 @@ export const images = {
+   async create(input: { boardId: string; key: string; size: number }): Promise<void> {
+     throw new Error("wired to the product API at runtime");
+   },
++  /**
++   * Fetches an HTTPS URL server-side and adds it to a board through the shared finalize.
++   * Authorizes, reserves quota, registers the object key, fetches with the hardening in
++   * docs/upload-design.md, sniffs the bytes, and returns only after the image row exists.
++   */
++  async importFromUrl(input: {
++    userId: string;
++    boardId: string;
++    url: string;
++    filename?: string;
++  }): Promise<AddImageOutcome> {
++    throw new Error("wired to the product API at runtime");
++  },
+ };
+diff --git a/packages/mcp/src/tools/upload-image.ts b/packages/mcp/src/tools/upload-image.ts
+index 9efe0a5..64bacd3 100644
+--- a/packages/mcp/src/tools/upload-image.ts
++++ b/packages/mcp/src/tools/upload-image.ts
+@@ -1,20 +1,106 @@
+-import { readFile } from "node:fs/promises";
+ import { z } from "zod";
+-import { storage } from "../storage";
+-import { images } from "../product";
++import { images, type ImageRefusalReason } from "../product";
++
++const MAX_MB = 20;
++
++const OTHER_ROUTES =
++  "Pass an https:// URL Kitepost can fetch (public or pre-signed). " +
++  "If you can run shell commands with network access, run `npx kitepost upload <board_id> <file>` instead. " +
++  "Otherwise ask the user to drag the file onto the board in the Kitepost app.";
++
++type Refusal = { ok: false; error: { code: string; message: string } };
++
++function refuse(code: string, message: string): Refusal {
++  return { ok: false, error: { code, message } };
++}
++
++/**
++ * Turns the caller's `url` into something Kitepost can fetch, or a refusal.
++ * Host-specific attachment adapters plug in here.
++ */
++function resolveSource(raw: string): { url: string } | Refusal {
++  const value = raw.trim();
++  if (/^data:/i.test(value)) {
++    return refuse(
++      "inline_bytes_not_supported",
++      `upload_image does not accept inline or base64 image data. ${OTHER_ROUTES}`,
++    );
++  }
++  let parsed: URL | undefined;
++  try {
++    parsed = new URL(value);
++  } catch {
++    parsed = undefined;
++  }
++  // A Windows drive path like C:\x parses as a URL with a one-letter scheme.
++  if (!parsed || /^([a-z]|sandbox|file):$/i.test(parsed.protocol)) {
++    return refuse(
++      "local_file_not_reachable",
++      `"${value.split(/[\/]/).pop()}" is a file path on your side. Kitepost's server cannot read your files. ${OTHER_ROUTES}`,
++    );
++  }
++  if (parsed.protocol !== "https:") {
++    return refuse(
++      "url_scheme_not_supported",
++      `Kitepost can only fetch https:// URLs, and this one is ${parsed.protocol}. ${OTHER_ROUTES}`,
++    );
++  }
++  return { url: parsed.toString() };
++}
++
++const refusalCopy: Record<ImageRefusalReason, (m: { size?: number; limit?: number; remaining?: number }) => string> = {
++  forbidden: () => "You don't have permission to add images to this board.",
++  board_not_found: () => "No board with that board_id was found. List boards to get a valid ID.",
++  unsupported_type: () => "That file isn't a PNG, JPEG, WebP, or GIF image.",
++  too_large: () => `That image is over the ${MAX_MB} MB limit. Use a smaller image.`,
++  empty: () => "The URL returned no image data. Check that it points directly at the image file.",
++  quota_exceeded: (m) =>
++    `This account is out of storage${m.remaining !== undefined ? ` (${(m.remaining / 1e6).toFixed(1)} MB left)` : ""}. Delete images or upgrade the plan.`,
++  url_not_allowed: () => "Kitepost can't fetch from that address. Use a publicly reachable https:// URL.",
++  fetch_failed: () => `Kitepost couldn't download the image from that URL. ${OTHER_ROUTES}`,
++  fetch_timeout: () => "Downloading the image from that URL took too long. Try again, or use a faster host.",
++};
+ 
+ export const uploadImage = {
+   name: "upload_image",
+-  description: "Upload an image file to a board.",
++  description:
++    "Upload an image to a board from an https:// URL. Kitepost downloads the URL itself. " +
++    `PNG, JPEG, WebP, or GIF, up to ${MAX_MB} MB. ` +
++    "Local paths, sandbox paths (/mnt/data/..., sandbox:...), file: URLs, and base64 are refused because the server can't see them. " +
++    "For a local file, run `npx kitepost upload <board_id> <file>` if you have a shell with network access. " +
++    "Every successful call adds a new image, so retrying after a success adds a duplicate.",
++  annotations: {
++    readOnlyHint: false,
++    destructiveHint: false,
++    idempotentHint: false,
++    openWorldHint: true,
++  },
+   inputSchema: z.object({
+-    board_id: z.string(),
+-    path: z.string().describe("Path to the image file"),
++    board_id: z.string().describe("Stable ID of the board to add the image to"),
++    url: z
++      .string()
++      .describe("https:// URL of the image, public or pre-signed. Not a local or sandbox path, not base64."),
++    filename: z.string().optional().describe("Display filename. Defaults to the last segment of the URL path."),
+   }),
+-  async run(input: { board_id: string; path: string }, ctx: { userId: string }) {
+-    const bytes = await readFile(input.path).catch(() => Buffer.alloc(0));
+-    const key = await images.allocateKey(ctx.userId, input.board_id);
+-    await storage.put(key, bytes);
+-    await images.create({ boardId: input.board_id, key, size: bytes.length });
+-    return { ok: true, message: `Uploaded ${input.path.split("/").pop()}` };
++  async run(input: { board_id: string; url: string; filename?: string }, ctx: { userId: string }) {
++    const source = resolveSource(input.url);
++    if ("ok" in source) return source;
++
++    const outcome = await images.importFromUrl({
++      userId: ctx.userId,
++      boardId: input.board_id,
++      url: source.url,
++      filename: input.filename,
++    });
++    if (outcome.status === "refused") {
++      return refuse(outcome.reason, refusalCopy[outcome.reason](outcome));
++    }
++
++    const { image } = outcome;
++    return {
++      ok: true,
++      image,
++      message: `Added ${image.filename} (${(image.size / 1e6).toFixed(1)} MB) to the board.`,
++    };
+   },
+ };
+
+--- new file: docs/upload-design.md
+# Getting images into Kitepost
+
+Status: proposed, 2026-10-19. Covers bug reports 412, 418, and 421 in `docs/issues.md`.
+
+## What went wrong
+
+The MCP tool `upload_image` took a `path` and called `readFile` on it. That has three problems:
+
+1. **The path names a file the server can't see.** `/mnt/data/photo.jpg` (412) is in the chat host's sandbox, and `sandbox:/workspace/out/chart.png` (418) is in the coding agent's sandbox. The remote MCP server at `mcp.kitepost.example` runs somewhere else. A path or sandbox URI identifies a file to the caller only. It doesn't move any bytes.
+2. **It claimed success when nothing was uploaded.** When the read failed, the tool stored a 0-byte buffer, created an image row, and returned `Uploaded photo.jpg`. Users saw a broken image on the board and a success message in the transcript.
+3. **It read the server's own disk.** If a path did exist on the MCP host, the tool would have put that server file on the user's board, so any caller could read arbitrary files. It also skipped type checks, the 20 MB limit, and quota, and it wrote bytes before any record of them existed.
+
+The rule from here on: **every caller uses a route that really moves bytes from where it runs.** If a caller has no such route, Kitepost refuses and names the routes that work. It never reports an upload that didn't land.
+
+## One product capability, three adapters
+
+Every surface goes through the same product API and the same authorization (brief, "Decided"). Uploading is one product capability with two ways in. Both end in the same finalize step.
+
+### Product capability (`images` in the product API)
+
+**Direct upload (caller holds the bytes):**
+
+1. `images.beginUpload({ userId, boardId, filename, contentType, size })`
+   - Checks the user can edit the board, the type is PNG/JPEG/WebP/GIF, and `size` ≤ 20 MB.
+   - Atomically reserves `size` against the account's storage allowance (2 GB on free), counting reservations that are already open. Reservations expire after 15 minutes.
+   - Writes a pending upload record and an object-write ledger entry for a fresh opaque key **before** any byte moves.
+   - Returns `{ uploadId, putUrl, headers, expiresAt }`. `putUrl` is a single signed PUT bound to the key, content type, and content length. It expires no later than the reservation does. Multipart isn't needed at a 20 MB cap.
+2. The caller PUTs the bytes straight to object storage.
+3. `images.completeUpload({ userId, uploadId })` runs **finalize** (below).
+
+**URL import (Kitepost fetches the bytes):**
+
+`images.importFromUrl({ userId, boardId, url, filename? })` does the same checks, reservation, and ledger registration, then fetches the URL from the server. The fetch is hardened like every server-side fetch of a URL a caller supplies:
+- Only `https:` URLs.
+- Every host is resolved, and loopback, private, link-local, and cloud metadata addresses are refused. Kitepost connects only to the address that passed the check.
+- At most 3 redirects, with every hop checked again.
+- 20-second timeout. The body is streamed with a hard cap at 20 MB, and the fetch aborts once the cap is passed.
+- The type is detected from the bytes received (magic bytes), not from `Content-Type` or the extension.
+
+It then runs finalize.
+
+**Finalize (shared by both routes, idempotent per upload):**
+- Measures the stored object. If it's empty, larger than declared/reserved, or larger than 20 MB, the upload is refused.
+- Sniffs the stored bytes and refuses anything that isn't PNG/JPEG/WebP/GIF.
+- Creates the image row. It charges the measured size against the allowance **once**, releases the rest of the reservation, and returns the shared `Image` resource. Repeating finalize returns the first result.
+- Bytes are stored exactly as uploaded and never recompressed (brief, "Decided").
+
+Results are typed outcomes, not exceptions: `added`, or a refusal with a reason from `forbidden | board_not_found | unsupported_type | too_large | empty | quota_exceeded | url_not_allowed | fetch_failed | fetch_timeout`. A refusal includes the measured number when there is one, such as the size or the bytes remaining. Each surface turns these into its own Kitepost-written wording. Raw provider and exception text goes to logs only.
+
+### Browser app
+
+No change. Drag and drop already does sign → direct PUT → finalize. It moves onto `beginUpload`/`completeUpload` so it shares the same finalize.
+
+### HTTP API (`api.kitepost.example/v1`, personal API keys)
+
+| Step | Endpoint |
+| --- | --- |
+| Begin a direct upload | `POST /v1/boards/{board_id}/uploads` with `{ filename, content_type, size }` → `201 { upload_id, put_url, headers, expires_at }` |
+| Send bytes | `PUT {put_url}` straight to object storage, with the returned headers |
+| Finish | `POST /v1/uploads/{upload_id}/complete` → `201 Image` (repeat calls return the same `Image`) |
+| Import from a URL | `POST /v1/boards/{board_id}/images` with `{ source_url, filename? }` → `201 Image` |
+
+- File bytes are never base64-encoded into JSON. Files never pass through an API server route either.
+- `201` means the image is on the board. URL import is synchronous because it's capped at 20 MB and a 20-second fetch. If that ever stops fitting the request budget, the endpoint switches to `202` with a job, and clients must poll the job before reporting success.
+- Documented in the OpenAPI contract, with the same `Image` schema the MCP tool returns.
+
+### CLI (`npx kitepost`)
+
+- `kitepost upload <board_id> <file...>` reads local files and runs begin → PUT → complete for each one. It prints one line per file, in input order, showing that file's outcome. One file failing doesn't stop the others. The exit code is non-zero if any file failed.
+- `kitepost upload <board_id> <https-url>` calls URL import, so nothing is downloaded locally.
+- Auth: `KITEPOST_API_KEY` or `kitepost login`. The same commands work on a laptop, in CI, and **inside an agent sandbox that has a shell and network access**. That's the route for 418.
+
+### MCP server (`mcp.kitepost.example/mcp`)
+
+`upload_image { board_id, url, filename? }`
+
+- `url` must be an `https://` URL that Kitepost can fetch. The tool calls `images.importFromUrl`, so it gets the same hardening and finalize.
+- The tool **refuses before doing anything** if `url` is a local path (`/mnt/data/...`, `C:\...`, `~/...`), a sandbox or file URI (`sandbox:`, `file:`), or a `data:`/base64 payload. The refusal says the server can't see the caller's files and names the routes that work:
+  1. pass a public or pre-signed HTTPS URL to the image;
+  2. if the agent can run shell commands with network access, run `npx kitepost upload <board_id> <file>` (or use the HTTP API's direct upload);
+  3. otherwise, the user can drag the file onto the board in the browser app.
+- It returns the created `Image` (id, board id, filename, content type, size) only after finalize succeeds. It never reports a fake success again.
+- Annotations: not read-only, not destructive (it only adds), **not idempotent** (calling again adds a second image, which the description says), open-world (it fetches an external URL).
+- There's no separate tool for upload staging. Signed PUT URLs belong to the HTTP API and CLI, which can really send bytes. A chat model can't.
+
+## Decisions on each report
+
+- **412 (chat attachment path):** The tool now refuses a sandbox path with a clear error instead of making a broken image. It doesn't yet fix the underlying need, which is an attachment in a chat app. That needs a host-specific attachment adapter at the MCP boundary: code that turns a host's attachment reference into a URL Kitepost can fetch, for a host whose documentation says such references can be fetched. No adapter exists yet. The tool funnels every input through one `resolveSource` step so adapters can plug in there later without changing the product capability.
+- **418 (coding agent sandbox):** Fixed by the routes above. If the sandbox has network access, the agent uses the CLI or HTTP API with an API key. If the chart is hosted somewhere, it passes the URL.
+- **421 (base64 in the MCP tool): declined.** A model writes base64 out token by token. A 6 MB photo is about 8 MB of base64, millions of tokens. That's slow and expensive, and it overflows the context window, which is exactly what the teammate hit. Images aren't small text, so they don't qualify for an inline payload under any reasonable cap. The tool refuses `data:` URLs and points the agent at the routes above.
+
+## Assumptions (to confirm)
+
+1. **No host attachment adapter for now.** I haven't confirmed which chat hosts expose attachments as references Kitepost can fetch. Until we confirm one from its own documentation, chat attachments (412) can't be uploaded through MCP. Users get a clear refusal and the browser fallback. **Needs the owner's call:** which hosts matter most, so we can build adapters for them.
+2. **Sandbox agents need an API key for the CLI route.** The MCP OAuth token isn't handed to the sandbox. The user (or the agent's environment) provides `KITEPOST_API_KEY`. Minting short-lived, board-scoped upload keys from the MCP session would be smoother, but it's a new credential type. Left for later.
+3. **URL import is synchronous**, with a 20-second fetch timeout and at most 3 redirects. Those are my numbers, not the brief's.
+4. **Upload reservations and signed PUT URLs expire after 15 minutes.** Also my number.
+5. **No `caption` argument yet.** Captions stay a separate edit. Adding an optional `caption` later is additive.
+6. **The tool's `{ ok: false, error }` result is shown as a tool error** (`isError: true`) by the MCP server wrapper that registers tools. That wrapper isn't in this repo.
+7. **Product API stubs.** `packages/mcp/src/product.ts` gains `importFromUrl` alongside the existing stubs. Those stubs are wired to the product API at runtime. The real fetch hardening, ledger, quota, and finalize live in the product API, which isn't in this repo yet. The old `allocateKey`/`create` pair and `storage.put` are no longer used by the tool. I kept them because I can't see whether anything else uses them.

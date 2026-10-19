@@ -7,6 +7,9 @@ Reads grades-<round>.json from grade.py, and from every judge/<round>-<eval> fol
 every critic-*.json, and critic-answers.json, which records how each blocking finding against a
 new session settled: {"<letter>": {"<finding text>": "withdrawn|held"}}.
 
+Pass --allow-same-model for a round whose owner chose to have every session graded by fresh sessions of
+the same model, which the round's SUMMARY.md must say.
+
 Prints a per-assertion table and the failures, and exits 0 only when:
 - the round holds every eval with both arms and both models, and every job has a finished session that read the skill,
 - every session has a verdict on exactly its eval's assertions,
@@ -19,6 +22,13 @@ import json, os, pathlib, sys
 HERE = pathlib.Path(__file__).resolve().parent
 EVALS = {e['name']: e for e in json.loads((HERE.parent / 'evals.json').read_text(encoding='utf-8'))['evals']}
 ROOT = pathlib.Path(os.environ.get('EVAL_ROOT', '')).resolve()
+# A critic file is named for the model that graded. Older names: claude and claude-fallback were Opus, codex was Sol.
+CRITIC_MODEL = {'claude': 'opus', 'claude-fallback': 'opus', 'codex': 'sol', 'opus': 'opus', 'sol': 'sol'}
+FAMILY = {'opus2': 'opus'}
+
+
+def family(name):
+    return 'opus' if name.startswith('opus') else CRITIC_MODEL.get(name, name)
 
 
 def critic_votes(rnd):
@@ -58,11 +68,13 @@ def verdicts_for(rnd, grades):
 
 def main():
     jobs_file, rnd = sys.argv[1], sys.argv[2]
+    allow_same = '--allow-same-model' in sys.argv
     labels = [l.split()[0] for l in pathlib.Path(jobs_file).read_text().splitlines() if l.strip() and not l.startswith('#')]
     labels = [l for l in labels if l.startswith(f'{rnd}-')]
     grades = {r['build']: r for r in json.loads((ROOT / f'grades-{rnd}.json').read_text(encoding='utf-8'))}
     problems = []
-    expected = {f'{rnd}-{name}-{arm}-{model}' for name in EVALS for arm in ('old', 'new') for model in ('opus', 'sol')}
+    models = sorted({l.rsplit('-', 1)[1] for l in labels}, key=lambda m: (m != 'opus', m))
+    expected = {f'{rnd}-{name}-{arm}-{model}' for name in EVALS for arm in ('old', 'new') for model in models}
     for missing in sorted(expected - set(labels)):
         problems.append(f'{missing}: not in the jobs file')
     for label in labels:
@@ -72,7 +84,7 @@ def main():
         elif not g['skill_read']:
             problems.append(f'{label}: the session never opened the skill (setup failure)')
     for name in EVALS:
-        for m in ('opus', 'sol'):
+        for m in models:
             pair = [grades.get(f'{rnd}-{name}-{arm}-{m}') for arm in ('old', 'new')]
             if all(pair) and pair[0].get('served_model') != pair[1].get('served_model'):
                 problems.append(f'{rnd}-{name} {m}: arms ran on different models ({pair[0].get("served_model")} and {pair[1].get("served_model")}), so the pair is not comparable')
@@ -87,8 +99,9 @@ def main():
     verdict, blocking = verdicts_for(rnd, grades)
     votes, _ = critic_votes(rnd)
     for label, by_id in votes.items():
-        if label.endswith('-opus') and any(c != 'codex' for vs in by_id.values() for c, _, _ in vs):
-            problems.append(f'{label}: graded by a Claude critic, so it needs a Codex verdict before any comparison')
+        subject = FAMILY.get(label.rsplit('-', 1)[1], label.rsplit('-', 1)[1])
+        if not allow_same and any(family(c) == subject for vs in by_id.values() for c, _, _ in vs):
+            problems.append(f'{label}: graded by its own model, so it needs a verdict from the other model before any comparison')
     for label, v in verdict.items():
         name = label[len(rnd) + 1:].rsplit('-', 2)[0]
         ids = {a['id'] for a in EVALS[name]['assertions']}
@@ -96,10 +109,10 @@ def main():
             problems.append(f'{label}: verdicts for {sorted(set(v) ^ ids)} missing or unexpected')
     for name, spec in EVALS.items():
         for a in spec['assertions']:
-            olds = [verdict.get(f'{rnd}-{name}-old-{m}', {}).get(a['id']) for m in ('opus', 'sol')]
-            news = [verdict.get(f'{rnd}-{name}-new-{m}', {}).get(a['id']) for m in ('opus', 'sol')]
+            olds = [verdict.get(f'{rnd}-{name}-old-{m}', {}).get(a['id']) for m in models]
+            news = [verdict.get(f'{rnd}-{name}-new-{m}', {}).get(a['id']) for m in models]
             print(f"{a['id']:48} old {''.join('P' if x else '.' for x in olds)}  new {''.join('P' if x else '.' for x in news)}")
-            for m, x, old in zip(('opus', 'sol'), news, olds):
+            for m, x, old in zip(models, news, olds):
                 # A restraint or control assertion the old arm already failed does not block, since no revision caused it.
                 if x is False and (spec.get('role', 'pressure') == 'pressure' or old):
                     problems.append(f"{rnd}-{name}-new-{m}: fails {a['id']}" + (' (passed by every old session)' if all(olds) else ''))

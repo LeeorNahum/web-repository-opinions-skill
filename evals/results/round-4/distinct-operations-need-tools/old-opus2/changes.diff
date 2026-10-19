@@ -1,0 +1,80 @@
+diff --git a/docs/mcp-tools.md b/docs/mcp-tools.md
+index 1425075..a370245 100644
+--- a/docs/mcp-tools.md
++++ b/docs/mcp-tools.md
+@@ -1,9 +1,69 @@
+ # Quillstack MCP tools
+ 
+-| Tool | Arguments | Behavior |
++| Tool | Arguments | Behavior | Annotations |
++| --- | --- | --- | --- |
++| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. | read-only |
++| `search_pages` | `{ query, folder?, cursor?, limit? }` | Searches page titles and content and returns matching paths, titles, and short snippets. Default 20 per page, maximum 50. | read-only |
++| `read_page` | `{ path }` | Returns the page's Markdown. | read-only |
++| `write_page` | `{ path, content }` | Creates or replaces one page. | destructive, idempotent |
++| `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. | destructive |
++| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. | destructive, idempotent |
++| `order_prints` | `{ request_id, paths[], copies, ship_to }` | Orders printed, bound copies of the listed pages, charges the workspace's card on file, and ships one package. Editors only. | destructive, idempotent, open-world |
++
++Every caller sees the same catalog. Permissions are enforced on each call, so a Viewer calling `order_prints` gets a refusal rather than a missing tool.
++
++## `search_pages`
++
++Search pages by content or title to find where a term is used.
++
++- `query`: required, nonempty. Case-insensitive. A page matches when it contains every word. Text in double quotes matches as an exact phrase.
++- `folder`: optional. Limits results to that folder and its subfolders. When omitted, searches the whole workspace.
++- `cursor`, `limit`: same paging as `list_pages`. Default 20, maximum 50.
++- Results are ranked by relevance, with title matches weighted above body matches. Each result has `path`, `title`, and up to 3 snippets of about 200 characters around matches. Pages in Trash are excluded.
++- Results do not include full page content. Call `read_page` on a result to get its Markdown.
++- A query with no matches returns an empty list, not an error.
++
++## `order_prints`
++
++Order printed, bound copies of a set of pages and ship them to one address.
++
++- `request_id`: required. A unique string the caller generates for this order, such as a UUID. Send the same `request_id` again to retry the same order. It never places a second order or charges twice.
++- `paths[]`: required, 1 to 200 pages. They are bound into one volume in the order given. Each page's content is captured when the order is placed.
++- `copies`: required integer, 1 to 100. This is how many copies of the bound volume to print.
++- `ship_to`: required. `{ name, line1, line2?, city, region?, postal_code, country }`, where `country` is an ISO 3166-1 alpha-2 code.
++
++The order is all-or-nothing: one charge and one package. If any listed path does not resolve, nothing is ordered.
++
++Results:
++
++| Outcome | Meaning | Fields |
+ | --- | --- | --- |
+-| `list_pages` | `{ folder?, cursor?, limit? }` | Lists page paths and titles in a folder. Default 20 per page. |
+-| `read_page` | `{ path }` | Returns the page's Markdown. |
+-| `write_page` | `{ path, content }` | Creates or replaces one page. |
+-| `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. |
+-| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |
++| `placed` | The order was charged and sent to the print partner. | `order_id`, `pages[]` (path and title), `copies`, `unit_price`, `total`, `currency`, `status` |
++| `already_placed` | This `request_id` already placed an order with the same arguments. The original order is returned and nothing new is charged. | Same as `placed` |
++
++Refusals, all with nothing charged:
++
++| Refusal | Next move |
++| --- | --- |
++| `not_permitted` | Only Editors may order prints. The caller is a Viewer. |
++| `pages_not_found` | Lists the paths that did not resolve. Fix them with `list_pages` or `search_pages`, then call again. |
++| `too_many_pages` / `invalid_copies` | Gives the limit and the number received. |
++| `invalid_address` | Names the `ship_to` field that failed. |
++| `no_card_on_file` / `payment_declined` | A workspace admin has to update the card in billing settings. |
++| `request_id_reused` | This `request_id` already belongs to an order with different arguments. Use a new `request_id` for a new order. |
++
++If the server cannot confirm whether a charge went through, the result is `outcome_unknown`. Call again with the same `request_id`. That call returns the order if it was placed, and otherwise places it once.
++
++`status` on a placed order is `submitted` once the print partner has accepted the order. Accepted does not mean printed or shipped. The tool does not track shipping.
++
++## Assumptions pending owner review
++
++The owner has not decided these yet:
++
++- Search covers full page content and titles, across all 50,000 pages. The index updates on every write, edit, and delete, so newly written pages can be searched right away.
++- There is no separate quote tool. The per-copy price and total are returned with the order. If agents need to show a price before ordering, add a read-only `quote_prints` tool. Do not add a dry-run flag to `order_prints`.
++- There is no order-status or order-list tool, and orders cannot be cancelled through MCP. Retrying with the same `request_id` is enough to settle an uncertain outcome.
++- Shipping and tax are included in the per-copy price, or charged together with it, as one total.
++- The limits are 200 pages per volume and 100 copies per order. Change them to match the print partner's real limits.
++- `request_id` is stored with the order indefinitely and is scoped to the workspace.
++- Pages are addressed by path, like the other tools. The result echoes each page's resolved path and title, so the agent can check what was printed.

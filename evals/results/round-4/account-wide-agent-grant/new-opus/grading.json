@@ -1,0 +1,152 @@
+{
+  "session": "4-account-wide-agent-grant-new-opus",
+  "eval": "account-wide-agent-grant",
+  "arm": "new",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
+    "skill": "e78b7fe6022f85da",
+    "fixture": "f43e39fe46e81e7a",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "03cac50f5cf2fdb3",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 180.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-tool-design",
+      "app-surface",
+      "auth",
+      "billing",
+      "bootstrap",
+      "data-model",
+      "http-apis",
+      "ids",
+      "model-context-protocol",
+      "modularity",
+      "product-ux",
+      "query-state",
+      "quota",
+      "routing",
+      "search-indexing",
+      "source-of-truth",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 48503,
+    "cache_read_input_tokens": 150208,
+    "output_tokens": 14517,
+    "total_cost_usd": 0.7084456,
+    "num_turns": 9
+  },
+  "changed": [
+    "docs/workspace-access.md"
+  ],
+  "assertions": {
+    "account-wide-agent-grant-01": {
+      "v": "pass",
+      "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, and does not make the person pick one organization per connection.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:53-56 '**Decision: an MCP connection is account-wide.** ... One OAuth authorization therefore covers: every workspace the person is a member of now or joins later ... and every document shared with them individually.' :62 'A workspace-bound mode (where consent picks one workspace) is not built now.'"
+        }
+      ]
+    },
+    "account-wide-agent-grant-02": {
+      "v": "pass",
+      "graded_text": "Every tool call resolves the target workspace or document and checks live membership, role, and individual share on the server at call time. A single organization claim in a token is not treated as proof of access to any other workspace.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:70 '**The token's organization claim is ignored for authorization.** Under an account-wide grant, any active organization in the token proves nothing about the workspace being targeted. The target is resolved on every call from the tool arguments and checked against the membership mirror or a share.' :11 'Access is recomputed on every call.'"
+        }
+      ]
+    },
+    "account-wide-agent-grant-03": {
+      "v": "pass",
+      "graded_text": "The create tool takes an explicit destination workspace ID, and the server verifies the caller may create in that workspace before creating. The design does not say a client-supplied workspace ID must never be used.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:126 '**`workspace` is required.** There is no default, no \"home workspace\" fallback'; :127 'The workspace must be named by its stable ID'; :128 'The server checks membership with an Owner or Editor role, the `documents:write` scope, and the owner's storage allowance before it writes anything.' No line forbids client-supplied workspace ids."
+        }
+      ]
+    },
+    "account-wide-agent-grant-04": {
+      "v": "pass",
+      "graded_text": "Removing a membership or an individual share takes effect for an already connected agent without reconnecting.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:11 'Removing a member, changing a role, or revoking a share takes effect on the next request, including requests from agent tokens issued earlier.' :60 'If the person's role changes, the agent's access changes on the next call.' Webhook-lag window of seconds acknowledged at :182."
+        }
+      ]
+    },
+    "account-wide-agent-grant-05": {
+      "v": "pass",
+      "graded_text": "An individually shared document gives access to that document only, never to its workspace's other documents or member list, through the UI and the agent alike.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:31 'That one document only. It does not grant the workspace's other documents, its member list, its name, or its settings'; :102 '`list_workspaces` ... never lists workspaces that the caller reaches only through a share'; :84 'workspace: ... | null; // null when reached only through a share'; :165 'The page shows the document and nothing else about the workspace: no name, no members, no sibling documents.'"
+        }
+      ]
+    },
+    "account-wide-agent-grant-06": {
+      "v": "pass",
+      "graded_text": "The library shows documents from every workspace the person belongs to by default, with workspace and shared filters held in URL query state, filters only narrow what is shown, and no active-workspace session state is introduced as an authority for browsing or for the agent connection.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:154 '/library   all documents the person can reach'; :164 'Query state: `q` (title search), `workspace` (a workspace ID, or `shared` for \"Shared with me\")'; :171 'The filter only changes what is shown.'; :9 'No surface keeps an \"active workspace\" as an authority.'; :70 org claim ignored for the agent. Closest to breaking it is :165 'Opening `/w/[id]/...` from a cold session switches the provider's active organization to match the URL'. That is a provider session side effect, not an authority, since the gate reads the mirror (:20)."
+        }
+      ]
+    },
+    "account-wide-agent-grant-07": {
+      "v": "pass",
+      "graded_text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:21 'Every workspace has a cap of 25 members, the same on every plan... The cap never grows with the plan, so the \"workspace is full\" message ... never offers an upgrade.' :22 'Storage is billed per paying owner.' Searched for 'seat': no hits."
+        }
+      ]
+    },
+    "account-wide-agent-grant-08": {
+      "v": "pass",
+      "graded_text": "The design says the consent screen states the connection's scope, including workspaces joined later.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/workspace-access.md:58 'The consent screen says this plainly. Suggested wording: \"\u2039Client\u203a will be able to read and edit documents in all of your Alderdocs workspaces, including ones you join later, and documents shared with you.\"'"
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] D/project/docs/workspace-access.md:119 refuses `update_document` with `conflict` 'If the document changed after this grant last read it in full'. It exempts only documents the grant created, not its own previous update. Yet :120 says 'a retry is safe: the same content twice gives the same result', and :96 annotates the tool 'idempotent'. Built as written, retrying after a timed-out but successful update returns `conflict`, so the doc contradicts itself on retry behavior. The per-grant read baseline is also not described as an atomic compare-and-swap, so two concurrent sessions on one grant can still lose an update. (held)"
+  ],
+  "minor": []
+}

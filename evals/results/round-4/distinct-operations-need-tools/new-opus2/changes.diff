@@ -1,0 +1,10 @@
+diff --git a/docs/mcp-tools.md b/docs/mcp-tools.md
+index 1425075..201c636 100644
+--- a/docs/mcp-tools.md
++++ b/docs/mcp-tools.md
+@@ -7,3 +7,5 @@
+ | `write_page` | `{ path, content }` | Creates or replaces one page. |
+ | `edit_page` | `{ path, old_string, new_string }` | Replaces one unique exact string in one page. |
+ | `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |
++| `search_pages` | `{ query, folder?, cursor?, limit? }` | Read-only. Finds pages whose title or Markdown contains `query` as a case-insensitive literal phrase, searching the whole workspace or one folder and its subfolders. Returns each matching page's path, title, and up to 3 matching line excerpts. Pages in Trash never match. Default 20 per page, maximum 50. |
++| `order_prints` | `{ paths[], copies, ship_to, idempotency_key }` | Orders `copies` printed, bound copies of the listed pages, bound in list order, charges the workspace's card on file, and ships to `ship_to` (`{ name, line1, line2?, city, region?, postal_code, country }`). Requires the Editor role. `paths` is a nonempty list of at most 200 pages, and `copies` is 1 to 100. Content is captured when the order is placed. Use a new `idempotency_key` for each new order: a repeated call with the same key never charges or ships again and returns the first call's order, so after a timeout, retry with the same key. Returns the order ID, the pages it captured, the amount charged, and its status. |

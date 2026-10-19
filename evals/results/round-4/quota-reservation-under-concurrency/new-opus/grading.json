@@ -1,0 +1,116 @@
+{
+  "session": "4-quota-reservation-under-concurrency-new-opus",
+  "eval": "quota-reservation-under-concurrency",
+  "arm": "new",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "9b723e3712137fdadfb0625eeab7023f9c8d3193",
+    "skill": "e78b7fe6022f85da",
+    "fixture": "e90d67d597185779",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "b63909859c680ed6",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 190.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "ai-model-routing",
+      "background-jobs",
+      "billing",
+      "bulk-actions",
+      "data-deletion",
+      "definition-of-done",
+      "failure-and-retries",
+      "object-storage",
+      "quota",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 20,
+    "cache_creation_input_tokens": 41419,
+    "cache_read_input_tokens": 359412,
+    "output_tokens": 17829,
+    "total_cost_usd": 0.7598944000000002,
+    "num_turns": 12
+  },
+  "changed": [
+    "docs/quota-accounting.md",
+    "packages/backend/src/ctx.ts",
+    "packages/backend/src/errors.ts",
+    "packages/backend/src/uploads.ts"
+  ],
+  "assertions": {
+    "quota-reservation-under-concurrency-01": {
+      "v": "pass",
+      "graded_text": "Starting an upload atomically reserves its declared size against remaining capacity, counting other open reservations, so parallel uploads cannot together pass the cap. A check of used plus size alone is identified as insufficient.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:9 names the old check as insufficient: \"`startUpload` only checked `used + size <= cap`, and `used` grows at finalize. The CLI's 8 parallel uploads ... each passed the check against the same `used` and together exceeded the cap.\" Line 26 sets the rule `used + reserved + requested <= cap`. Line 29 says \"The check and the insert of the new reservation happen in one transaction that conflicts with every other reservation or finalize on the same account.\" The code matches in packages/backend/src/uploads.ts:63-68: inside `ctx.db.transaction`, `const reserved = open.reduce(...)` and then `if (account.used + reserved + input.size > account.cap)` throws QuotaExceeded before `tx.uploads.insert`."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-02": {
+      "v": "pass",
+      "graded_text": "Finalize commits usage from the verified stored size and turns the reservation into usage, and a failed, abandoned, or expired upload releases its reservation through a stated cleanup path.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:69: \"add the **stored** size to `used`, set `status = ready`, `size = stored size`\". Line 40: \"The reservation ends at the same moment, in the same transaction.\" In uploads.ts:126-127 the commit is `used: account.used + stored.size` together with `status: \"ready\"`, and the reservation is derived from `pending` rows, so it becomes usage in that write. Cleanup is stated in doc line 21 (\"An expired reservation stops counting the moment it expires\") and lines 74-76 (`expireAbandonedUploads` marks the upload `failed + abandoned` and deletes the bytes). The code is at uploads.ts:138-157. A size mismatch is marked failed at uploads.ts:112."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-03": {
+      "v": "pass",
+      "graded_text": "A retried finalize counts the upload's size once, not twice, in both the design and the changed code.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "Design, docs/quota-accounting.md:65: \"If it is already `ready`, return it without charging anything. This is how a retried finalize is handled.\" Line 69: \"If another finalize won the race, return its result and charge nothing.\" Code, uploads.ts:96-100 returns early for `upload.status === \"ready\"`, and inside the transaction uploads.ts:120 `if (current.status !== \"pending\") return current;` comes before the `used` patch."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-04": {
+      "v": "pass",
+      "graded_text": "The user's storage quota is kept separate from the model provider's cost: the design says a failed summary can still cost the product money and records or bounds that cost, rather than promising failed work is free.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:84 says summaries are governed by a \"**separate ledger**\". Line 86 sets a per-account internal spend limit: \"**Assumption: US$3 per account per calendar month**\". Line 88: \"The job records the authoritative provider cost of every attempt, failed ones included, and settles the reservation to it. A failed summary charges the user's storage allowance nothing.\" Line 89 bounds input to a fixed token budget, and line 90 reads \"No automatic retry.\""
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-05": {
+      "v": "pass",
+      "graded_text": "Finalize compares the actual stored size with the reserved size and refuses or corrects a mismatch, so a client cannot reserve a small size and store a large object.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:68: \"If stored size > declared size, mark it `failed + size_mismatch`, delete the bytes, and refuse.\" Line 57 binds `Content-Length` in the signed URL. Code, uploads.ts:109-115: `if (stored.size > upload.size) { ... status: \"failed\", failure: \"size_mismatch\" ... throw new UploadSizeMismatch(); }`. A smaller stored size is corrected by charging `stored.size` (uploads.ts:126)."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] The grace window is too short for the 2 GiB per-file limit, which leaves orphaned, uncounted bytes and fails legitimate uploads. docs/quota-accounting.md:53 sets `expiresAt = now + URL TTL (1 h) + finalize grace (15 min)`, and uploads.ts:85 signs the URL to `upload.expiresAt - FINALIZE_GRACE_MS`. Presigned PUTs are checked when the request starts, so a 2 GiB PUT started at minute 59 on a ~10 Mbit/s link (about 29 min) lands at about minute 88. That is after the reservation stopped counting (doc line 21: \"stops counting the moment it expires\"), and possibly after `expireAbandonedUploads` has run and done its one `storage.delete` while the object was still missing (uploads.ts:153). Finalize then refuses with `UploadExpired` (uploads.ts:103). The row is `failed`, the sweep only scans `pending` rows, and the bytes stay in storage forever, counted against no one. The user also loses an upload they completed honestly. (held)"
+  ],
+  "minor": []
+}

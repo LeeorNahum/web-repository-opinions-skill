@@ -1,0 +1,143 @@
+{
+  "session": "4-account-wide-agent-grant-new-opus2",
+  "eval": "account-wide-agent-grant",
+  "arm": "new",
+  "model": "opus2",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "dbb41087bec5b75e324717f3daa89abf4052bbdc",
+    "skill": "e78b7fe6022f85da",
+    "fixture": "f43e39fe46e81e7a",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "03cac50f5cf2fdb3",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 140.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "app-surface",
+      "auth",
+      "ids",
+      "model-context-protocol",
+      "query-state",
+      "quota",
+      "routing",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 38926,
+    "cache_read_input_tokens": 173837,
+    "output_tokens": 11715,
+    "total_cost_usd": 0.5805234,
+    "num_turns": 8
+  },
+  "changed": [
+    "docs/workspace-access.md"
+  ],
+  "assertions": {
+    "account-wide-agent-grant-01": {
+      "v": "pass",
+      "graded_text": "The design gives the agent connection a scope covering every workspace the person belongs to now or later plus documents shared with them individually, and does not make the person pick one organization per connection.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:53-57 \"So **the MCP grant is account-wide.** It covers: every workspace the user is a member of now, every workspace they join later, with no reconnecting, every document shared with them individually.\" A workspace-bound grant is explicitly \"Not built now\" (line 63), so a connection never has to pick one organization."
+        }
+      ]
+    },
+    "account-wide-agent-grant-02": {
+      "v": "pass",
+      "graded_text": "Every tool call resolves the target workspace or document and checks live membership, role, and individual share on the server at call time. A single organization claim in a token is not treated as proof of access to any other workspace.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:78 \"**Any organization claim in the token is ignored for authorization.** The target is resolved and checked per call\"; lines 89-90 \"Document-addressed calls ... load the document, then find the caller's live membership in **its** workspace or a live share of **it**. Workspace-addressed calls (`create_document`): use the `workspaceId` argument, then find the caller's live membership in it.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-03": {
+      "v": "pass",
+      "graded_text": "The create tool takes an explicit destination workspace ID, and the server verifies the caller may create in that workspace before creating. The design does not say a client-supplied workspace ID must never be used.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:124-125 \"`workspaceId` is **required**, a stable ID (no name lookup). It doesn't default to the sign-up workspace, the last workspace used, or the token's organization\" / \"Requires `document.create` in that workspace (Owner or Editor)\". Nothing in the doc forbids using a client-supplied workspace ID. The closest line is line 10, \"a token's organization claim never picks the target\", and it concerns the token, not the argument."
+        }
+      ]
+    },
+    "account-wide-agent-grant-04": {
+      "v": "pass",
+      "graded_text": "Removing a membership or an individual share takes effect for an already connected agent without reconnecting.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:11 \"Revoking a membership or a share affects existing sessions and agent tokens on their next call, with no reconnecting or token expiry needed.\" Line 59 says \"Leaving a workspace or losing a share removes the agent's access on its next call.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-05": {
+      "v": "pass",
+      "graded_text": "An individually shared document gives access to that document only, never to its workspace's other documents or member list, through the UI and the agent alike.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:21 Individual share \"Never grants: The workspace's other documents, its member list, its name beyond what the share view shows, or creating anything in it\". Line 169 says that for a document opened through a share, \"the page shows nothing of the workspace beyond the document\". Line 109 excludes share-only workspaces from list_workspaces. (The workspaceId leak through the URL is recorded under blocking. It exposes the ID, not other documents or the member list.)"
+        }
+      ]
+    },
+    "account-wide-agent-grant-06": {
+      "v": "pass",
+      "graded_text": "The library shows documents from every workspace the person belongs to by default, with workspace and shared filters held in URL query state, filters only narrow what is shown, and no active-workspace session state is introduced as an authority for browsing or for the agent connection.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:159 \"/library  all documents the user can reach (cross-workspace)\". Line 167: \"The workspace is query state there, never session state.\" Line 179 table: `workspace` = \"a workspace ID the user belongs to, or `shared`\", and the default is \"all workspaces and shares\". Line 170: \"Web data queries authorize by user identity and membership or share, never by the session's active organization claim.\""
+        }
+      ]
+    },
+    "account-wide-agent-grant-07": {
+      "v": "pass",
+      "graded_text": "The design introduces no per-seat price and no paid seat gate, and leaves the member cap of 25 as the brief states it. A design that does not discuss billing or the cap passes.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "Searched B/project/docs/workspace-access.md and B/answer.txt for 'seat': no hits. The closest line is B/project/docs/workspace-access.md:30 \"**Member cap 25:** enforced at the product's membership gate and mirrored onto the provider's per-organization membership cap\", which keeps 25. Storage is billed against \"the workspace owner's plan storage allowance (plans are priced by storage per paying owner)\" (line 127)."
+        }
+      ]
+    },
+    "account-wide-agent-grant-08": {
+      "v": "pass",
+      "graded_text": "The design says the consent screen states the connection's scope, including workspaces joined later.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/workspace-access.md:61 \"The consent screen states this plainly, for example: *\\\"Let <client> read and edit Alderdocs documents in every workspace you belong to, including ones you join later, and documents shared with you.\\\"*\""
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus2] The document URL leaks the workspace ID to share recipients, which contradicts the design's own rule. B/project/docs/workspace-access.md:116 says \"For shared results, no workspace name or ID is included (consistent with \\\"sees that document only\\\")\". But line 111 says every list_documents result carries a `url`, and line 160 fixes the only document route as \"/w/[workspaceId]/documents/[documentId]\". Line 169 routes share recipients through that same `/w/[workspaceId]/...` path. As written, a shared result's `url`, and the browser address bar, would expose the workspace ID that line 116 promises to withhold. (held)"
+  ],
+  "minor": []
+}

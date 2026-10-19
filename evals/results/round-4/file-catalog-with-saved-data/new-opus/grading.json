@@ -1,0 +1,130 @@
+{
+  "session": "4-file-catalog-with-saved-data-new-opus",
+  "eval": "file-catalog-with-saved-data",
+  "arm": "new",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+    "skill": "e78b7fe6022f85da",
+    "fixture": "ec0103c05d29fd23",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2a29c6d1f69205b5",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 215.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-skills",
+      "agent-tool-design",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "domains",
+      "http-apis",
+      "ids",
+      "live-data",
+      "model-context-protocol",
+      "naming",
+      "object-storage",
+      "path-display",
+      "quota",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 51692,
+    "cache_read_input_tokens": 261698,
+    "output_tokens": 20449,
+    "total_cost_usd": 0.8749115999999999,
+    "num_turns": 12
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "file-catalog-with-saved-data-01": {
+      "v": "pass",
+      "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:9: \"Saved data appears as JSON files too: one file per collection under the reserved `.fernpage/` folder, plus one settings file. The agent reads, writes, edits, searches, and deletes all of them with the same small set of file tools. There are no separate record tools.\" The catalog (lines 132-144) has only list_workspaces, list_sites, get_site, create_site, list_files, read_file, search_files, write_files, edit_file, delete_files, delete_site. Line 351 rejects \"Separate record tools (`get_entry`, `set_entry`, ...)\"."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-02": {
+      "v": "pass",
+      "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:356: \"Required revision tokens or idempotency keys: the server keeps each caller's read baseline itself.\" and line 355: \"Confirmation flags on destructive tools: the host approves the call, and the server enforces authorization.\" No schema (lines 146-325) has a revision, idempotency, or confirm field. The server enforces staleness, line 80: \"the whole write is refused with `conflict`. The refusal lists those entry keys and asks for a fresh `read_file`.\" Line 97 does the same for site files. The closest thing to a token is the server-held per-grant baseline (line 74), which is not an argument."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-03": {
+      "v": "pass",
+      "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:79-80: \"Entries the caller left untouched keep whatever happened to them since, including new entries visitors added and entries visitors deleted. If the caller changed or removed an entry that someone else also changed or removed since the baseline, the whole write is refused with `conflict`.\" Line 81 also covers the case with no read: \"if it includes a key that already exists on the server with different content, that's a conflict.\" (A shared-grant hole is listed under blocking.)"
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-04": {
+      "v": "pass",
+      "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:310: \"`paths`: 1 to 50 exact file paths. A directory path, a glob, `index.html`, or `.fernpage/settings.json` is refused for that item. Nothing outside the named paths is removed.\" delete_site is its own tool (lines 315-325). write_files requires site_id, and line 262 says a missing path creates only a file. Site creation is only create_site (lines 179-198). The closest risk is line 311: a whole collection is removed only when the agent names its exact path `.fernpage/saved/<collection>.json`."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-05": {
+      "v": "pass",
+      "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:78: \"Entries the caller added, changed, or removed relative to the baseline are applied one at a time. Each one goes through the collection's rules (as owner), validation, and quota.\" Line 9: \"using the same rules, validation, and quota that apply when a visitor's browser writes one entry.\" Line 50 makes `$meta` read-only (`read_only_field`), so a whole-file write cannot forge authorship. The agent's rights are tied to the user (line 17): \"If a read-only role is added later, it gets a `forbidden` refusal on writes.\""
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-06": {
+      "v": "pass",
+      "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/mcp-tools.md:98: \"The site's title, description, and favicon are always derived from it (brief: decided).\" create_site takes only workspace_id and files (lines 183-191). get_site and Site only report these fields (lines 107-109, \"from index.html <title>\"). No tool schema has a title, description, or favicon argument."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] A/project/docs/mcp-tools.md:377: \"The write baseline is kept per OAuth grant. Two agent sessions sharing one grant share a baseline.\" Together with line 74 (\"The server remembers what it last served to each caller\"), this loses visitor writes. Session 1 reads rsvps.json. A visitor then edits entry E. Session 2 reads the file, which moves the shared baseline to the visitor's E'. Session 1 then writes back its stale copy of E. Compared with the new baseline, that copy looks like an agent change, so line 78 applies it and the visitor's edit is silently reverted with no `conflict`. This is the last-writer-wins outcome the merge design exists to prevent, and it happens in a normal setup (parallel subagents, or two chats on one connector grant). (held)"
+  ],
+  "minor": []
+}

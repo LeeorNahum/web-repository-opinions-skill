@@ -1,7 +1,7 @@
 """Run one clean-room session of a web-repository-opinions eval.
 
 Usage: python run.py <label> <eval name> <model> <skill-dir or -> [timeout-seconds]
-  model:  opus | sol
+  model:  opus | opus2 (a second, independent Opus arm, both through Claude Code) | sol (Codex)
 Environment: EVAL_ROOT, the run folder. It must sit outside the home folder and outside every
 Git repository, because Claude Code discovers skills in the .claude folders of the working
 directory's ancestors, and the home folder holds the owner's own.
@@ -27,7 +27,8 @@ HOME = pathlib.Path.home()
 ROOT = pathlib.Path(os.environ.get('EVAL_ROOT', '')).resolve()
 # Claude Code resolves the `opus` alias to the latest Opus. Codex has no family alias, so its
 # current Sol identifier is pinned here and changes when Codex does.
-MODELS = {'opus': 'opus', 'sol': 'gpt-6.1-sol'}
+MODELS = {'opus': 'opus', 'opus2': 'opus', 'sol': 'gpt-6.1-sol'}
+CLAUDE_MODELS = ('opus', 'opus2')
 EFFORT = 'medium'
 MAINTAINER_ONLY = shutil.ignore_patterns('.git', 'evals', 'README.md', 'AGENTS.md', 'node_modules')
 # Only what the CLIs need to start. Anything else the maintainer exported, such as API keys, never reaches a session.
@@ -106,12 +107,12 @@ def main():
     cfg.mkdir()
     prompt = spec['prompt']
     env = {k: v for k, v in os.environ.items() if k.upper() in ENV_ALLOW}
-    if model == 'opus':
+    if model in CLAUDE_MODELS:
         shutil.copyfile(HOME / '.claude/.credentials.json', cfg / '.credentials.json')
         if skill_dir:
             shutil.copytree(skill_dir, work / '.claude/skills' / skill_name(skill_dir), ignore=MAINTAINER_ONLY)
         env.update(CLAUDE_CONFIG_DIR=str(cfg), CLAUDE_CODE_DISABLE_AUTO_MEMORY='1', DISABLE_AUTOUPDATER='1', DISABLE_TELEMETRY='1')
-        args = [shutil.which('claude'), '-p', '--dangerously-skip-permissions', '--model', MODELS['opus'], '--effort', EFFORT,
+        args = [shutil.which('claude'), '-p', '--dangerously-skip-permissions', '--model', MODELS[model], '--effort', EFFORT,
                 '--strict-mcp-config', '--no-chrome', '--output-format', 'stream-json', '--verbose', prompt]
     elif model == 'sol':
         shutil.copyfile(HOME / '.codex/auth.json', cfg / 'auth.json')
@@ -121,14 +122,14 @@ def main():
         args = [shutil.which('codex'), 'exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--ignore-rules',
                 '-m', MODELS['sol'], '-c', f'model_reasoning_effort="{EFFORT}"', '--json', '-o', str(base / 'last-message.txt'), '-C', str(work), prompt]
     else:
-        sys.exit('model must be opus or sol')
+        sys.exit('model must be opus, opus2, or sol')
     # Installing the skill must not count as a change the session made. Grading compares the
     # project with this commit, so a session that commits its own work is still graded on it.
     subprocess.run([*GIT, 'add', '-A'], cwd=work, check=True)
     subprocess.run([*GIT, 'commit', '-qm', 'skill', '--allow-empty'], cwd=work, check=True)
     baseline = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=work, capture_output=True, text=True).stdout.strip()
     # Hash the inputs before the session starts, so a session that writes into its own skill copy cannot change the record.
-    installed = work / ('.claude' if model == 'opus' else '.agents') / 'skills'
+    installed = work / ('.claude' if model in CLAUDE_MODELS else '.agents') / 'skills'
     # The case's own spec, not the whole file, so editing one case leaves every other case's pairs intact.
     case = json.dumps({k: spec[k] for k in ('prompt', 'fixture', 'assertions')}, sort_keys=True).encode()
     digests = {'skill': digest(installed) if skill_dir else None, 'fixture': digest(FIXTURES / spec['fixture']),

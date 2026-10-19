@@ -1,0 +1,181 @@
+
+--- new file: docs/metadata.md
+# Page metadata: icons, tab titles, and link previews
+
+Status: proposed design. Written while the owner was away, so every call made without them is listed under [Assumptions](#assumptions-to-confirm). `docs/brief.md` still wins wherever it disagrees with this file.
+
+This covers what the browser tab shows and what a link preview card shows for a Tessel page, at each visibility level. It fixes bugs 233, 240, 247, and 251 in `docs/issues.md`.
+
+## Why the bugs happen
+
+All four bugs come from how a Tessel page is built: Tessel's wrapper page is the top-level document, and the author's HTML runs inside it in a frame.
+
+- **The browser only looks at the top-level document.** The tab title and icon come from the wrapper's `<head>`. Whatever the author put in their own `<head>` is ignored, so every tab says "Tessel" with Tessel's icon (240).
+- **Link preview tools read only the first HTML response and run no script.** They never see the framed page, and never see anything the page builds with JavaScript. If the wrapper doesn't put the tags in its own server-rendered HTML, the card is empty (247).
+- **The wrapper's server-rendered HTML is the only thing a preview tool sees.** If that HTML names the page's title or content for a request that isn't authorized, the card leaks it. That is what happened to the private page (233).
+- **Something loaded the page and its runtime accepted a write.** The bug report blames a preview renderer. Nothing that answers a preview request, or draws a preview image, should ever run the page with permission to save data (251).
+
+## The rule
+
+**Tessel's wrapper owns the tab title, the icon, and every preview tag. It fills them in on the server from metadata that was pulled out of the page's HTML when the page was published.** The page's HTML is never run to answer a request for metadata.
+
+| | Public | Unlisted | Private |
+| --- | --- | --- | --- |
+| Can be opened by | Anyone | Anyone with the link | Signed-in invited members |
+| Tab title | `{page title} · Tessel`, server-rendered | Same as public | `Tessel` from the server. The client sets `{page title} · Tessel` once the member is authorized |
+| Tab icon | The page's icon, server-rendered. Tessel's icon if the page has none | Same as public | Tessel's icon from the server. The client swaps in the page's icon once the member is authorized |
+| Preview card | Real title, description, and image | Real title, description, and image | The content-free fallback for every request |
+| Indexing | Indexed, in the sitemap | `noindex` on the HTML and on the image. Left out of the sitemap | `noindex`. Left out of the sitemap |
+| Wrapper HTML caching | Shared CDN cache, purged on publish and visibility change | Same as public | `Cache-Control: private, no-store` |
+
+Unlisted pages get a real card on purpose. Anyone who has the link can already open the page, and chat tools ignore `noindex`. The share UI should say that pasting an unlisted link shows a preview of the page.
+
+## Where the metadata comes from
+
+### Pulling it out at publish
+
+When a page version is published, the server parses the HTML with a real HTML parser. Regexes aren't good enough for this. Parsing is static: no script runs. Tessel stores these values on the page version:
+
+- **Declared values** from the author's `<head>`: `<title>`, `<meta name="description">`, `og:title`, `og:description`, `og:image`, `<link rel="icon">` (and `apple-touch-icon`), and `theme-color`.
+- **Fallback values** taken from the static body: the text of the first `<h1>`, and the first ~200 characters of visible text.
+
+The brief says nobody has to write a manifest or make a preview image, so every value has a default. Each value is picked from the first source in its list below that has it. This follows the usual order: what the author set by hand beats what Tessel generates, and generated beats the default.
+
+| Value | Picked from (first one that exists) |
+| --- | --- |
+| Title | Owner's override in Tessel page settings → `<title>` → `og:title` → first `<h1>` → `Untitled page` |
+| Description | Owner's override → `meta description` → `og:description` → start of the visible text → `An interactive page on Tessel.` |
+| Icon | `<link rel="icon">` → `apple-touch-icon` → Tessel's icon |
+| Preview image | `og:image` → a generated card (see below) |
+
+Limits: titles are cut to 120 characters and descriptions to 300. Control characters are stripped and whitespace is collapsed. The page's subject is always the part before ` · Tessel`, and `·` is the only separator Tessel uses.
+
+The owner override fields are optional. v1 can ship without them, and the rest of the order still works.
+
+### Pages that build themselves with JavaScript (247)
+
+Most generated pages still ship a static `<title>` even when the body is built by script, so the order above usually finds a real title. When the static HTML has no title, description, or heading at all, the publish step (UI, CLI, and API alike) warns the author: "This page has no `<title>` or description, so link previews will say 'Untitled page'. Add a `<title>` and `<meta name="description">` to the page's `<head>`." This is a warning, not a manifest, and publishing still goes ahead.
+
+Tessel doesn't run the page in a headless browser to read the title its scripts produce. That would mean running untrusted code for every publish, and it is the exact kind of renderer bug 251 warns about. If it is ever added, it has to follow the isolation rules under [Preview images](#preview-images).
+
+### Live tab title and icon
+
+Pages can change their own title or icon while they run, for example "(3) Poll results". The Tessel runtime inside the frame watches `document.title` and the page's icon links, and sends changes to the wrapper with `postMessage`. The wrapper:
+
+- accepts messages only from that page's own content origin,
+- applies the same cleanup and length limit as above, and rate-limits updates,
+- sets `document.title = "{title} · Tessel"`, and goes back to the stored title if the page clears its own,
+- accepts an icon only as a `data:image/png`, `data:image/svg+xml`, or `data:image/x-icon` URL, or a URL on the page's own content origin.
+
+The ` · Tessel` suffix and the Tessel toolbar always stay. A page can name itself, but it can't present itself as another site.
+
+## Icons
+
+At publish, the icon a page declares is fetched with the hardened fetcher described below, decoded, and rasterized to PNG at 32×32 and 180×180. The PNGs are stored in object storage. The original SVG is never served from Tessel's product domain, because SVG can contain script. The wrapper links the stored PNGs with `rel="icon"` and `rel="apple-touch-icon"`. If the page declares no icon, or the fetch fails, the wrapper uses Tessel's own icon files.
+
+## Preview images
+
+A page's preview image is made **once, when it is published**, as a background job with explicit state. It is never made per request. Answering a preview request only ever means reading stored metadata.
+
+1. **Declared image.** If the page sets `og:image`, the job fetches it (relative URLs resolve against the page's content origin) with Tessel's hardened fetcher. That fetcher caps size at 5 MB, sets a timeout, follows only a few redirects and rechecks each one, and refuses loopback, private, link-local, and metadata addresses. The job checks the actual bytes are PNG, JPEG, WebP, or GIF, re-encodes them to strip metadata, and fits them to 1200×630. This means Tessel serves its own copy, so viewers' requests never go to a third party and the card keeps working if the original disappears.
+2. **Generated card.** If no image is declared, or the declared one fails, Tessel draws a 1200×630 PNG from a fixed template: the Tessel mark, the name "Tessel", the page's resolved title, and the page's icon if it has one, in Tessel's colors and fonts. The template only takes text and image bytes as input. It never loads the page.
+
+Where images are rendered and stored:
+
+- The renderer holds no session or credentials, can't write Tessel's data, and can't reach private or internal networks.
+- Images go in a dedicated preview-image bucket, with a separate bucket per stage and opaque random keys. The database stores the key on the page version.
+- They are served at `{page address}/preview/{content-hash}.png` through the CDN. The hash changes when the image changes, so chat tools that cache by URL pick up a new card when the page is republished. Every request checks the page's current visibility, and when visibility changes the CDN cache for the page is purged.
+- Unlisted page images are sent with `X-Robots-Tag: noindex`.
+
+If the job fails, the page still publishes, and the card uses the generated template with whatever title was resolved. A failed image never blocks publishing.
+
+## Tags the wrapper renders
+
+For a public or unlisted page, every value comes from the same server-side lookup that loads the page:
+
+```html
+<title>{title} · Tessel</title>
+<meta name="description" content="{description}">
+<link rel="canonical" href="{page address}">            <!-- public only -->
+<meta name="robots" content="noindex">                  <!-- unlisted only -->
+<link rel="icon" type="image/png" sizes="32x32" href="{icon 32}">
+<link rel="apple-touch-icon" href="{icon 180}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tessel">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:url" content="{page address}">
+<meta property="og:image" content="{absolute preview image URL}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{title}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{description}">
+<meta name="twitter:image" content="{absolute preview image URL}">
+<meta name="theme-color" content="{theme-color}">       <!-- only if the page declared one -->
+```
+
+Every metadata URL is absolute, built from the product's canonical origin constant. Bots and people get the same HTML: there is no user-agent sniffing.
+
+## Private pages (233)
+
+The wrapper's server-rendered HTML for a private page **never includes the page's title, description, icon, or image, not even for a signed-in member.** The server always sends the content-free fallback. Once the client has checked the session and the member is authorized, it reads the title and icon through the authenticated API and sets them. Some preview fetchers and scanners send cookies, and the server shouldn't have to tell them apart from a member.
+
+The content-free fallback, used for private pages, deleted pages, and page addresses that don't exist:
+
+```html
+<title>Tessel</title>
+<meta name="robots" content="noindex">
+<meta property="og:site_name" content="Tessel">
+<meta property="og:title" content="Tessel">
+<meta name="twitter:card" content="summary">
+```
+
+It has no description and no image. It also doesn't say whether the page is private, deleted, or never existed, so pasting a link can't confirm that a private page is there. A signed-out visitor sees the sign-in screen, and a signed-in non-member sees a generic "You don't have access" screen. Neither includes anything about the page.
+
+Supporting rules:
+
+- The content domain serves a private page's bytes only with a short-lived, per-viewer token from the wrapper. A preview tool that follows the frame URL straight to the content domain gets nothing.
+- Private pages have no preview image. Their image route returns 404.
+- **When a page leaves public or unlisted** (made private, deleted, or unpublished), its wrapper HTML and image are purged from the CDN, and from then on both answer with the fallback or 404. Chat apps that already cached a card keep it until they refresh it themselves, and Tessel can't change that. The visibility control should tell the owner so.
+- Bug 233 suggests that whatever serves the wrapper today builds a description from the first paragraph regardless of visibility. No wrapper code is in this repo yet, so this couldn't be checked here. Wherever that code path lives, delete it rather than putting a visibility check in front of it.
+
+## Saving data when nobody is there (251)
+
+Loading a page must never write data on its own. Tessel uses three layers of protection:
+
+1. **Tessel never runs a page to answer a preview.** Wrapper HTML comes from stored metadata, and preview images come from the template or a re-encoded declared image (see above). If Tessel currently screenshots pages or runs them in a headless browser for previews, that is probably what caused 251, and it gets removed.
+2. **Runtime writes need a viewer token.** When the wrapper loads, it mints a short-lived token for that one page view and gives it to the runtime in the frame. Each runtime write must carry it. Writes are rate-limited per token and per page. Any renderer Tessel runs gets no token, so its writes are refused. A `GET` of the wrapper or the content never changes any data, view counts included.
+3. **By default, writes need a user gesture.** The runtime refuses writes until the frame has had user activation (`navigator.userActivation.hasBeenActive`). That covers outside link scanners that do run JavaScript, which is a real thing: some corporate mail and chat security scanners open links in a headless browser. A page that really needs to save on load, like a view counter, opts in explicitly through the runtime API. That opt-in is documented, so agents writing pages see it.
+
+Layer 3 is a check in the browser, and a determined bot can get past it. The server-side defenses are the token and the rate limits. Deduplicating votes (one per viewer) is still each page's own job. The runtime should give pages a stable, per-page pseudonymous viewer ID so they can do that.
+
+## How to check it works
+
+Follow these steps before closing each bug:
+
+- **247 / 240:** Publish a public page whose body is built by script and whose `<head>` sets a title, a description, and an SVG icon. Paste the link, while signed out, into Slack, Discord, iMessage, WhatsApp, X, LinkedIn, and Facebook's sharing debugger. Each one should show the right title, description, and image. Run `curl` on the address and confirm every tag is in the raw HTML. Open it in a browser: the tab should read `{title} · Tessel` with the page's icon, both after a reload and after the page changes its own title.
+- **Unlisted:** Same card as public. Confirm `noindex` on the HTML and the image, and that the page is not in the sitemap.
+- **233:** For a private page, `curl` the address with no cookies, with a non-member's cookies, and with a member's cookies. All three responses should be identical to the fallback, and none should contain the title. Paste the link into a chat tool and check the card says only "Tessel". Switch a public page to private and check its card's image URL now returns 404.
+- **251:** Paste a poll page's link into several chat tools and a link scanner. The stored vote count should not change. A write sent without a viewer token should be refused.
+
+## Assumptions to confirm
+
+Calls made without the owner. Each one can be reversed:
+
+1. **Separator and suffix.** Tabs read `{page title} · Tessel`, so the page's own title comes first but Tessel's name always stays. That is my reading of bug 240's complaint and also guards against phishing. If the owner wants no suffix at all, it can be dropped for public pages.
+2. **Private tab titles are set by the client only.** Members see "Tessel" until the session check finishes. I chose to give up a moment of correct tab title in return for never server-rendering private content.
+3. **Unlisted pages get full preview cards.** The other choice is the private fallback for unlisted pages, which would make unlisted links look broken whenever they are shared.
+4. **No headless rendering of pages in v1.** Pages built by script that have no static `<title>` get "Untitled page" plus a publish warning, not a rendered title.
+5. **Declared images and icons are copied onto Tessel**, not hotlinked.
+6. **Writes need a user gesture by default.** This changes runtime behavior. Pages that save on load have to opt in. This is the call I'm least sure of, and it needs the owner's approval before it ships.
+7. **Owner override fields** for title and description in Tessel page settings are optional, and outrank the HTML.
+8. **The cause of 251** is assumed to be a Tessel-side preview renderer running the page, or an outside scanner running it, with writes allowed on load. This hasn't been reproduced. Before closing, check the poll page's code and the logs of writes from the paste events.
+9. **URLs and domains** (`{page address}`, the content domain, the per-viewer tokens) are placeholders until the routing and domain layout is written down. The design assumes, as the brief implies, that author HTML runs in a frame on a separate content domain, not inline in Tessel's own page.
+
+## Open questions for the owner
+
+- Should Tessel tell members, on a private page's share screen, that preview cards will only say "Tessel"?
+- Is a branded fallback image wanted for private links, or is a plain text card better? This design uses no image, so the fallback can't be mistaken for a real card.
+- Should the generated card include the author's name for public pages?

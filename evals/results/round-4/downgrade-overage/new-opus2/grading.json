@@ -1,0 +1,119 @@
+{
+  "session": "4-downgrade-overage-new-opus2",
+  "eval": "downgrade-overage",
+  "arm": "new",
+  "model": "opus2",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "8db869a36facf8a25f04b96e5ec8bdf58d7549b3",
+    "skill": "e78b7fe6022f85da",
+    "fixture": "420f572c4567fe9a",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "bc6083fd96718a79",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 110.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "billing",
+      "data-deletion",
+      "http-apis",
+      "quota",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 28072,
+    "cache_read_input_tokens": 120003,
+    "output_tokens": 8970,
+    "total_cost_usd": 0.42801659999999997,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/downgrade-policy.md"
+  ],
+  "assertions": {
+    "downgrade-overage-01": {
+      "v": "pass",
+      "graded_text": "A stable, deterministic order (such as oldest first) decides which 25 books stay covered. Books beyond that keep all their data, are refused gated operations with a clear product message rather than deleted, and become covered again as soon as the plan or freed capacity allows.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:25 \"**Covered books** are the account's 25 oldest books that are not in Trash, ordered by creation time, with the book ID breaking ties.\"; line 26 \"Their pages, photos, and history are all kept.\"; line 31 \"Each of these fails with `book_not_covered`.\" and line 62 \"The note there says the book is read-only on Free because of the 25-book limit. It gives two remedies: move some books to Trash, or upgrade.\"; line 33 \"A trashed book drops out of the count, so the next-oldest uncovered book becomes covered.\"; line 11 \"Resubscribing reverses all of it instantly\"."
+        }
+      ]
+    },
+    "downgrade-overage-02": {
+      "v": "fail",
+      "graded_text": "The policy states an explicit rule for the account above the 1.5 GB total: no book or photo is deleted by the system, existing photos stay at least readable, the user can remove any photo either on its own or by deleting the book that holds it, and storage cannot keep growing past the Free allowance while the account is over it.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "fail",
+          "e": "C/project/docs/downgrade-policy.md:31 \"On an uncovered book the user **can't**: edit pages, layout, or text; add or remove photos; rename it; or duplicate it. Each of these fails with `book_not_covered`.\" and line 75 \"`assertBookWritable` ... Every mutation of book content calls it.\" As built, a photo in any of the 15 uncovered books cannot be removed on its own; only the whole book can be deleted (line 30). This contradicts the doc's own line 5 \"Everything stays readable, downloadable, printable, and removable\" and line 48 (large photos \"can be ... deleted\"). The no-deletion and no-growth parts hold (line 54 \"It never deletes, hides, re-compresses, or downsamples anything\"; line 42 \"Anything that adds bytes is refused with `storage_full`\"), but the user cannot remove any photo on its own."
+        }
+      ]
+    },
+    "downgrade-overage-03": {
+      "v": "pass",
+      "graded_text": "The policy states an explicit rule for existing photos above the new 40 MB single-photo limit: they are kept and stay readable, with no compression, resizing, or deletion, and new uploads must meet the 40 MB limit.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:48 \"A photo stored before the downgrade that's larger than 40 MB is kept and served as it is, at full original resolution.\"; line 49 \"Each new upload must be 40 MB or smaller, otherwise it fails with `photo_too_large`.\"; line 54 \"It never deletes, hides, re-compresses, or downsamples anything.\""
+        }
+      ]
+    },
+    "downgrade-overage-04": {
+      "v": "pass",
+      "graded_text": "Bytes held in Trash count toward the total storage allowance during the downgrade.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:38 \"Storage usage is the total bytes of stored photos, **including photos in books that are in Trash**, until Trash removes them permanently.\"; line 81 \"The storage usage counter ... goes down only when bytes are permanently removed, not when a book is moved to Trash.\""
+        }
+      ]
+    },
+    "downgrade-overage-05": {
+      "v": "pass",
+      "graded_text": "Coverage and limits are derived from the current plan when a request arrives and enforced on the server for the browser app, the API, and the MCP connection alike, rather than kept as a lock flag stamped on each book.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:10 \"Nothing runs at the moment of downgrade: no migration, no lock flag, no cleanup job. Coverage is worked out again on every gated request, from the current plan.\"; line 73 \"**Coverage is derived, never stored.**\"; line 74 \"The browser app, public HTTP API, MCP tools, print-order flow, and background jobs all call the same product capabilities.\""
+        }
+      ]
+    },
+    "downgrade-overage-06": {
+      "v": "pass",
+      "graded_text": "A cancelled account cannot create a book while it holds 25 or more books.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "C/project/docs/downgrade-policy.md:32 \"**Creating a book** needs fewer than 25 books outside Trash. Otherwise it fails with `book_limit_reached`.\"; line 76 \"`assertCanCreateBook(account)`: the count of books not in Trash is below the limit\"."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus2] Self-contradiction on photo removal that ships the wrong behaviour: C/project/docs/downgrade-policy.md:31 blocks \"add or remove photos\" on uncovered books with `book_not_covered`, and line 75 makes every content mutation call that gate, while line 5 promises \"Everything stays ... removable\", line 48 says oversized photos \"can be ... deleted\", and line 63 offers \"deleting photos\" as the storage remedy. In the brief's case the 15 newest (uncovered) books are a likely home of the 60-110 MB photos; to drop one oversized photo the user must permanently delete the entire book or trash older books first. The engineer building the gate will block single-photo removal. (withdrawn)"
+  ],
+  "minor": []
+}

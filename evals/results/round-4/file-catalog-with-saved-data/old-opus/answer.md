@@ -1,0 +1,16 @@
+I've written the tool catalog to `docs/mcp-tools.md`. It defines 18 tools in four groups: workspace, sites, files and saved data. Each tool has its argument schema, what it returns, its approval hints (such as read-only or destructive), and the shared data shapes. The doc also covers error codes, starting limits, typical agent flows, and a list of what I assumed. I haven't committed it.
+
+**The shape:**
+- **Sites:** `create_site` requires the `index.html` contents and publishes immediately. `delete_site` moves the site and its saved data to Trash for 30 days, and there is no restore tool. Title, description and favicon are always read from `index.html`, so no tool sets them.
+- **Files:** agents can write a whole file, edit part of one by replacing exact snippets, import from a URL, upload a local file, or delete one. `write_file` makes the agent say whether it is creating a new file or replacing a specific version, so it never silently overwrites. `index.html` can't be deleted on its own.
+- **Saved data:** data lives in named collections (for example `rsvps`, `checklist`, `settings`), and each entry has a key and a version. Updates must name the version the agent last read, so a visitor writing at the same moment isn't overwritten. On a clash, the agent gets the current entry back and retries. Creating entries never overwrites an existing one. Clearing a whole collection is its own tool, so it can't happen by accident through the delete tool. Agent writes go through the same backend as visitors' writes, so open pages update live, and an agent edit never changes who created an entry.
+
+**Calls I made that most need your review** (all are listed at the end of the doc):
+1. **Where the write rules live:** I put them in a file at the site root, `fernpage.json`. It is edited like any other file, checked before it saves, and never served to visitors. The brief says rules are declared "in its settings", which could instead mean a separate settings record with its own tools. This is the biggest open call.
+2. **Agent permissions:** agents act with the site owner's authority over saved data. That means they can fix any entry, including RSVPs that only the visitor and the owner may edit.
+3. **One workspace per connection:** the user picks the workspace when they authorize the agent, so tools don't take a workspace ID. Working in another workspace means authorizing again.
+4. **No publish step:** every write is live immediately. There is also no way to publish changes to several files at once, so the doc tells agents to write new assets before the `index.html` that uses them.
+5. **Collections must be declared** in the rules before they can hold entries, and deleted files and entries are permanent. Only whole sites go to Trash.
+6. **Placeholders:** the limits (for example 5 MB of saved data per site and 64 KB per entry) and the domain in the server address are stand-ins. The saved-data model also has to match the visitor-side SDK, which isn't designed yet.
+
+I left out moving files, multi-file publish, data export and setters for title and favicon, and noted each so it can be added later.

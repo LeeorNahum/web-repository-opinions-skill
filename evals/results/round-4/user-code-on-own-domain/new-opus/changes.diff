@@ -1,0 +1,153 @@
+
+--- new file: docs/hosting-plan.md
+# Hosting and origin plan
+
+Status: proposed by the agent on 2026-10-18 while the owner was away. Calls the owner has to confirm are in [Decisions for the owner](#decisions-for-the-owner).
+
+Inputs: `docs/brief.md` (decided), `docs/hosting.md` (how it works today, change freeze).
+
+## The problem with how apps are served today
+
+Each person's `index.html` is the top-level document on `<name>.plinth.example`. That host is a subdomain of the product's own registrable domain. For the browser, every `*.plinth.example` host is the **same site** as `app.plinth.example`, and the auth provider deliberately keeps its session on `plinth.example` and shares it across subdomains. So JavaScript anyone publishes runs next to every visitor's session:
+
+1. **Session theft.** The session cookie is scoped to `plinth.example`, so it reaches every app host. Managed-auth session cookies are usually readable by JavaScript (Clerk's `__session` is not `HttpOnly`; we assume our instance behaves the same, see A2). Any app can read the visitor's session from `document.cookie` and send it somewhere else. A signed-in Plinth user who opens a malicious app gives their account away.
+2. **Session fixation and cookie tossing.** Script on any app host can set a cookie for `Domain=plinth.example`, so it can sign a visitor into an attacker's account on `app.plinth.example` or shadow the product's cookies.
+3. **Same-site requests to the product.** Requests from an app to `app.plinth.example` count as same-site, so `SameSite=Lax` gives no CSRF protection against them.
+4. **Shared storage across apps.** Every app has its own origin, so `localStorage` is already per app. Cookies are not: any app can set a cookie that every other app receives.
+
+Private apps make it worse, because to check access the edge needs the shared session cookie on app hosts, which is exactly the cookie that should never be there.
+
+The usual fix is to serve user code from a **separate registrable domain** and have the product's address frame it. The freeze rules that out until the beta ends (no new domains, DNS zones, or certificates). So the plan has two phases.
+
+## Phase 1: beta, during the freeze (ship this)
+
+Nothing changes in domains, DNS, or certificates. Everything below is edge code and response headers on hosts and the wildcard certificate we already have.
+
+### Host layout
+
+| Host | Serves | Notes |
+| --- | --- | --- |
+| `plinth.example` | Public site | Unchanged. Not specified today; assumed to be the marketing site (A5). |
+| `app.plinth.example` | Signed-in product | Unchanged. |
+| `<name>.plinth.example` | A person's app, as an **opaque origin** | The new rule, below. |
+| `www.plinth.example` | Redirect to apex, keeping path and query | Only if the record already exists. No new record during the freeze. |
+
+### Every response on an app host is sandboxed
+
+The edge adds these headers to **every** response it sends from `<name>.plinth.example`: HTML, SVG, any other file, 404s and errors included. They must not depend on the file type the person uploaded:
+
+```http
+Content-Security-Policy: sandbox allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads
+X-Content-Type-Options: nosniff
+Referrer-Policy: no-referrer
+X-Robots-Tag: noindex
+```
+
+- The `sandbox` directive leaves out `allow-same-origin`, so the app's document runs in an **opaque origin**. It cannot read or set any cookie (`document.cookie` throws), cannot register a service worker, and is cross-site to `app.plinth.example`. That closes problems 1 through 4 above.
+- The policy is a response header the edge sets, so nothing the person writes can loosen it. A `<meta>` CSP inside their HTML can only add restrictions.
+- `nosniff` keeps a file served as `text/plain` from being run as HTML or script. Serve every file with an explicit `Content-Type` from an allowlist by extension, and use `application/octet-stream` for anything else.
+- `X-Robots-Tag: noindex` is a holding position until Phase 2 decides what gets indexed.
+
+**Cost: apps lose browser storage during the beta.** An opaque origin has no `localStorage`, `sessionStorage`, IndexedDB, cookies, or service workers. Access throws a `SecurityError`. The brief says apps often use `localStorage`, so many apps will not save state between visits until Phase 2. We chose this anyway because the alternative lets any published app take over any visitor's account. See D1 for the alternatives.
+
+Other side effects to document for publishers:
+
+- `fetch()` and ES module (`<script type="module">`) loads of the app's own files are cross-origin, because the page's origin is `null`. The edge answers public app files with `Access-Control-Allow-Origin: *`. Classic `<script src>`, CSS, and images work without it.
+- Clicking a link to another app or site works. Popups open unsandboxed, because of `allow-popups-to-escape-sandbox`.
+
+### Private apps
+
+The edge keeps checking the auth provider's session on the **top-level navigation** to a private app. The browser still sends that cookie to the host. What changed is that the document can no longer read it. After the check passes:
+
+- The edge sets a host-only access cookie: `__Host-plinth_app_access`, holding a short-lived signed token bound to the app ID and viewer, with `HttpOnly; Secure; SameSite=None; Path=/`. It does not set `Domain`, so other apps never receive it. Every subresource request for the private app must carry a valid token.
+- `SameSite=None` is needed because the document's origin is opaque, so its own subresource requests count as cross-site. The cookie is still unreadable by the app's script, and `HttpOnly` blocks it anyway.
+- Without credentials, `fetch()` and module loads from an opaque origin send no cookies, so in private apps they fail. Beta limitation: private apps must load code with classic `<script src>`, or call `fetch(url, { credentials: "include" })`. In that case the edge answers with the exact `Access-Control-Allow-Origin: null` plus `Access-Control-Allow-Credentials: true` only when a valid access cookie is present. Before relying on this, verify it (V2).
+- An unauthorized request gets a content-free response: no app title, favicon, or preview tags in it.
+
+### The product's own hosts
+
+- `app.plinth.example` and every API it calls reject state-changing requests whose `Origin` is not a product origin. Reject `Origin: null` and `*.plinth.example` app hosts explicitly. CORS never reflects a `*.plinth.example` wildcard.
+- Every cookie the product sets itself, beyond what the auth provider manages, is host-only with the `__Host-` prefix.
+- The edge never serves a person's files on the apex, `app.`, or any reserved name (next section).
+
+### Reserved app names
+
+App names are single DNS labels: lowercase, punycode-normalized, so they fall under the one-level wildcard certificate. The name registry refuses names that are, or could become, a product or provider host:
+
+`app`, `www`, `preview`, `api`, `admin`, `dashboard`, `portal`, `docs`, `status`, `mail`, `auth`, `accounts`, `clerk`, `clkmail`, `static`, `assets`, `cdn`, every name that has an explicit DNS record today, and every name containing `_`.
+
+`clerk` and `accounts` are the Clerk production instance's Frontend API and Account Portal hosts. Explicit DNS records beat the wildcard, but the name must also never be handed out, in case a record is ever removed. Check the existing beta and pre-beta app names against this list before launch (V4).
+
+### Turning off what already ran on app hosts
+
+Apps have already been served same-origin, so some may have registered a service worker. A worker answers navigations itself, so the new sandbox header would never reach its visitors. At the same release:
+
+- The edge answers every request that carries a `Service-Worker: script` header with a replacement worker that clears its caches and unregisters itself.
+- The edge sends `Clear-Site-Data: "storage"` once on each app host, using a host-only marker cookie to send it only once. Under the sandbox the old storage can't be reached anyway, and clearing it removes anything a hostile app planted. **This deletes any `localStorage` that pre-beta testers saved in apps** (D3).
+- Tell pre-beta users to sign out and back in after the release. Any session an app could have read before the change should be revoked. If the provider supports it, revoke all sessions once at cutover (D4).
+
+## Phase 2: after the freeze (plan now, ship when it lifts)
+
+Register one separate registrable domain for user content. The working name in this doc is `<content-domain>`. Choosing it is D2.
+
+| Host | Serves |
+| --- | --- |
+| `<name>.plinth.example` | **Product-owned** frame page. The short address stays what people see and share. |
+| `<name>.<content-domain>` | The person's files, same-origin again, sandbox header removed. `localStorage` works. |
+
+- **Frame page.** `<name>.plinth.example/<path>?<query>` returns a small product page. Its iframe `src` is `https://<name>.<content-domain>/<path>?<query>` and keeps the deep link. The iframe uses `src`, never `srcdoc` or inline markup, which would run the person's code as the product's page. Path changes inside the app are mirrored to the outer URL over `postMessage`, so every app state stays linkable.
+- **Title, favicon, and link preview card.** The outer page owns them. They are derived on the server from the app's own `<head>` when it is published. Generated preview images render in an isolated renderer that holds no credentials and has no network access to internal systems. Private apps answer with the content-free fallback.
+- **Canonical host.** The short address. The content domain sends `X-Robots-Tag: noindex`. A top-level navigation straight to the content domain (`Sec-Fetch-Dest: document`) is redirected to the short address with path and query kept. This keeps a single address for every app, and it means storage is always partitioned under `plinth.example` as the top-level site, so an app's data stays where people expect it.
+- **Private apps.** The content domain never sees the auth provider's session. The frame page checks the session at the edge, then puts a short-lived single-use token in the iframe URL. The content edge exchanges the token for a `__Host-` cookie with `HttpOnly; Secure; SameSite=None; Partitioned`, bound to the app and viewer.
+- **Viewer identity for app code**, if we ever expose it: a per-app pseudonym the server derives, for example an HMAC of app ID and user ID, so no identifier follows a viewer from one app to another.
+- **Public Suffix List.** Once the content domain meets the criteria, ask to have it added to the private section. Count on it only after browsers ship the entry. Until then the product sets only host-only `__Host-` cookies there.
+- **Leaving the sandbox.** When an app moves to the content domain, its storage starts empty. Nothing was stored in Phase 1, so there is nothing to move.
+- **Staging.** This is the time to add the `preview.` hosts the freeze blocks: `preview.plinth.example` and `preview.app.plinth.example`, plus a staging content domain or a `preview` sub-zone of the content domain. User apps on staging need a wildcard certificate one level deeper.
+
+Reaching Phase 2 needs DNS for the new domain, a wildcard certificate, edge routing for both hosts, and the frame page. Those are production domain and DNS changes, so the owner signs off before any of them (D2).
+
+## Origins in code
+
+One shared origins module (`packages/origins` when it exists) holds a constant and a resolver for each real surface. Nothing hardcodes hosts:
+
+```text
+CANONICAL_SITE_ORIGIN      https://plinth.example
+CANONICAL_APP_ORIGIN       https://app.plinth.example
+APP_HOST_SUFFIX            plinth.example          -> resolveUserAppOrigin(name)
+CONTENT_HOST_SUFFIX        <content-domain>        -> resolveUserContentOrigin(name)   (Phase 2)
+```
+
+Resolution order: explicit env override, then the request origin, then the local default, then the stage signal, then the canonical constant. Env keys have the same names on every stage. Local ports: site `3000`, app `3001`, and the app-serving edge `3002` for local `<name>.localhost:3002`.
+
+## Assumptions
+
+- **A1.** The freeze covers only domains, DNS zones, and certificates. Edge code and response headers can still change before and during the beta.
+- **A2.** The auth provider's shared session cookie can be read by JavaScript on any `*.plinth.example` host. That is true of Clerk's `__session`. Even if ours were `HttpOnly`, fixation (problem 2) and same-site requests (problem 3) would still justify the sandbox.
+- **A3.** A wildcard `*.plinth.example` DNS record and certificate already exist, which is how `<name>.plinth.example` works today. We only need one label of wildcard.
+- **A4.** Pre-beta apps exist and may have registered service workers. The cleanup step is harmless if none did.
+- **A5.** The apex serves the public site. `hosting.md` doesn't say.
+- **A6.** Breaking `localStorage` for the beta is acceptable compared with the alternative. That is a product call (D1).
+
+## Decisions for the owner
+
+- **D1. Storage during the beta.** Recommended: ship Phase 1 as written. Apps run sandboxed and get no `localStorage` for about two months. Alternatives:
+  - (a) Ask for a freeze exception to register the content domain now, and ship Phase 2 for the beta. This is the best product outcome if infrastructure will allow it.
+  - (b) Delay the beta until the freeze ends.
+  - (c) Add a product-provided storage shim that `postMessage`s to a per-app, per-viewer store we host. This is new product scope and needs its own design.
+
+  Not on the list: shipping as it is today. That leaves every signed-in visitor's account open to whatever any app runs.
+- **D2. The content domain's name**, and approval to register it and set up its DNS and certificate when the freeze lifts.
+- **D3.** Whether wiping pre-beta testers' app storage at cutover is acceptable, or whether testers should get notice first.
+- **D4.** Whether to revoke all existing sessions once at cutover.
+
+## Verify before beta opens
+
+- **V1.** In Chrome, Safari, and Firefox: an app on its host cannot read `document.cookie`, cannot set a `Domain=plinth.example` cookie, and cannot register a service worker. Sign-in at `app.plinth.example` is unaffected after visiting an app.
+- **V2.** Private apps in all three browsers, with third-party cookie blocking and tracking protection set to their defaults:
+  - Classic script, CSS, and image loads carry `__Host-plinth_app_access`.
+  - A credentialed `fetch` works only with the access cookie.
+  - An unauthorized request gets the content-free fallback.
+  - If Safari blocks the access cookie, private apps fall back to inline-only assets for the beta, and we tell publishers.
+- **V3.** The sandbox header is present on every response type from app hosts, 404s, errors, and SVG included.
+- **V4.** No existing app name collides with the reserved list.
+- **V5.** A test service worker registered before cutover is unregistered on the next visit after cutover.

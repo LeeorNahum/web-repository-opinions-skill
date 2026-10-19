@@ -1,0 +1,77 @@
+{
+  "session": "4-established-precondition-contract-old-opus",
+  "eval": "established-precondition-contract",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
+    "skill": "4171c1874df5e04b",
+    "fixture": "438e6792903dbc11",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "4c0e6af368ca4428",
+    "harness": "fe6647c9a97c2902"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 90.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "bulk-actions",
+      "data-model",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "modularity",
+      "source-of-truth",
+      "versioning"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 25056,
+    "cache_read_input_tokens": 116749,
+    "output_tokens": 6525,
+    "total_cost_usd": 0.35433780000000004,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/row-updates.md"
+  ],
+  "assertions": {
+    "established-precondition-contract-01": {
+      "v": "pass",
+      "graded_text": "The new row update requires a precondition from the caller (If-Match with the document's ETag, or a row-level equivalent) and answers a stale one with 412, matching the existing PUT contract.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/row-updates.md:39: \"`If-Match` is required, and it accepts either of two ETags\", either the row ETag or the document ETag. Line 55: \"`412` | The precondition failed: the row changed (row ETag), or the document changed (document ETag).\" Line 12: \"Writes keep requiring a precondition... Nothing writes without one.\""
+        }
+      ]
+    },
+    "established-precondition-contract-02": {
+      "v": "pass",
+      "graded_text": "The existing PUT and its required If-Match stay unchanged.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/row-updates.md:11: \"The v1 contract partners have built against for two years stays exactly as it is. `GET` and `PUT` on `/v1/price-lists/{id}` keep their shapes, headers, and status codes.\" Line 63 adds: \"Any whole-document `PUT` that holds the earlier document ETag gets `412`, which is the existing behavior\". Checked D/diff.txt: the only change is the new file docs/row-updates.md. The closest call is A1 at line 92, which leaves open \"what a whole-document `PUT` does with rows that come in without an `id`\", but it does not change PUT's If-Match requirement."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] Lost update through the returned document ETag. D/project/docs/row-updates.md:52 says: \"`Ledgerline-Document-ETag` is the document ETag right after this write.\" Line 76 adds that the capability \"returns the stored row plus both new ETags\". On the normal row-ETag path (line 43, \"Concurrent edits to other rows don't block it\"), the caller has not seen other writers' changes to other rows since its last document GET. Line 52 hands it a fresh document ETag anyway. If its sync then does a whole-document PUT from its stale local copy with that ETag, the PUT passes If-Match and silently overwrites the other writers' rows. That defeats the protection line 13 claims (\"doesn't silently overwrite a row someone else just changed\"). The doc gives no warning against reusing this header for a document PUT.",
+    "[opus-for-opus] The prerequisite for the design is deferred, not decided. D/project/docs/row-updates.md:92 says: \"If rows don't have IDs today, we need to mint them... We would also need to decide what a whole-document `PUT` does with rows that come in without an `id`. **This is the biggest open question.**\" The brief gives no row identifier, so an engineer building this tomorrow has no defined row addressing. They also have no defined PUT/id interaction, and that interaction decides whether row ids survive partners' unattended full syncs."
+  ],
+  "minor": []
+}

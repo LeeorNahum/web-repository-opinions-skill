@@ -24,7 +24,7 @@ SPEC = json.loads((HERE.parent / 'evals.json').read_text(encoding='utf-8'))
 EVALS = {e['name']: e for e in SPEC['evals']}
 ROOT = pathlib.Path(os.environ.get('EVAL_ROOT', '')).resolve()
 SKIP = ('.claude/', '.agents/', '.git/')
-LABEL = re.compile(r'(\d+)-(.+)-(old|new|none)-(opus|sol)$')
+LABEL = re.compile(r'(\d+)-(.+)-(old|new|none)-(opus|opus2|sol)$')
 
 # Check assertions by id. Each takes the session's work folder and its changed paths.
 CHECKS = {}

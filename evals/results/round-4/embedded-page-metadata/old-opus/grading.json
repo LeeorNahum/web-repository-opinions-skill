@@ -1,0 +1,113 @@
+{
+  "session": "4-embedded-page-metadata-old-opus",
+  "eval": "embedded-page-metadata",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
+    "skill": "4171c1874df5e04b",
+    "fixture": "d7ae70ba58a24853",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "226169e7c5dc3989",
+    "harness": "fe6647c9a97c2902"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 200.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "background-jobs",
+      "data-model",
+      "domains",
+      "ids",
+      "object-storage",
+      "origins",
+      "public-discovery",
+      "rendering",
+      "routing",
+      "seo",
+      "social-metadata",
+      "source-of-truth"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 41497,
+    "cache_read_input_tokens": 173275,
+    "output_tokens": 15729,
+    "total_cost_usd": 0.6812590000000001,
+    "num_turns": 9
+  },
+  "changed": [
+    "docs/metadata.md"
+  ],
+  "assertions": {
+    "embedded-page-metadata-01": {
+      "v": "pass",
+      "graded_text": "Tessel's own wrapper page emits the icon, title, and link preview tags in its initial server-rendered HTML, taken from the person's HTML when it is saved, rather than relying on the person's script or the inner document.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/metadata.md:19 \"Tessel owns the wrapper's metadata and renders it on the server. It takes the values from the page's own HTML when the page is published\". Line 25: \"When a page version is published, Tessel parses the static HTML once, without running it, and stores the result on the version record.\" Line 85: \"the server renders `<title>{title} \u00b7 Tessel</title>` and the page's icon links into the wrapper\"."
+        }
+      ]
+    },
+    "embedded-page-metadata-02": {
+      "v": "pass",
+      "graded_text": "Public and unlisted pages get page-specific previews, and unlisted pages keep noindex while still getting their real preview card.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/metadata.md:59 \"an unlisted page gets the same card as a public page. The only difference is indexing: <meta name=robots content=noindex> and `X-Robots-Tag: noindex` on the wrapper and on its preview image, and no sitemap entry.\""
+        }
+      ]
+    },
+    "embedded-page-metadata-03": {
+      "v": "pass",
+      "graded_text": "A private page answers any request not authorized for it, link-preview fetchers included, with a generic card that names only the product and carries no title, text, or image from the page.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/metadata.md:63 \"The server never returns its title, description, first paragraph, icon, image, or frame URL, not even to a signed-in member.\" Line 71: signed-out visitors, non-members, and missing addresses all get \"the generic shell titled `Tessel`, the description `Sign in to view this page.`... and `noindex`\". The description is generic product text, not page content, and line 119 says \"Private pages have no preview image at all.\""
+        }
+      ]
+    },
+    "embedded-page-metadata-04": {
+      "v": "fail",
+      "graded_text": "Preview images are rendered in an environment that cannot write saved data or cause other side effects, and cannot reach private or internal networks or credentials, and a page load no person started, such as a link-preview fetcher running the page's script, cannot add saved data such as a poll vote.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "fail",
+          "e": "D does not say that image fetching or rendering can't reach private or internal networks or credentials. The closest lines are D/project/docs/metadata.md:102 \"Remote URLs are fetched once, server-side, with a size cap (256 KB), a timeout, and a content-type allowlist\" and line 116 \"It's fetched once at publish (5 MB cap, raster types only), re-encoded\". Neither blocks loopback, private, link-local, or metadata addresses. Line 117 renders the generated card \"on request by an image route\" and says nothing about that environment's credentials or network reach. The 251 write gate (lines 139-142) does pass its half, but the isolation half is missing."
+        }
+      ]
+    },
+    "embedded-page-metadata-05": {
+      "v": "pass",
+      "graded_text": "A page's own preview image is used when it declares one, and otherwise a preview is generated, so publishing never requires making an image.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/metadata.md:114-117 \"every public and unlisted page has one automatically: 1. The author's image, if the HTML declares `og:image` or `twitter:image`... 2. Otherwise, a generated Tessel card, 1200x630\". Line 152: a failure \"degrades to the fallbacks, and it never blocks publishing.\""
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] Server-side fetches of URLs the author controls have no SSRF guard. D/project/docs/metadata.md:102 \"Remote URLs are fetched once, server-side, with a size cap (256 KB), a timeout, and a content-type allowlist\" and line 116 \"fetched once at publish (5 MB cap, raster types only)\" do not block loopback, private, link-local, or cloud-metadata addresses, and don't recheck redirects. An engineer building this as written would let any published page make Tessel's publish job request internal hosts, such as og:image=http://169.254.169.254/... or http://10.0.0.5/admin, and an internal image that decodes successfully would be re-hosted publicly as the preview card."
+  ],
+  "minor": []
+}

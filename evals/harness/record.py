@@ -125,8 +125,9 @@ def main():
     total = sum(p.stat().st_size for p in dest.rglob('*') if p.is_file())
     if total > ROUND_LIMIT:
         sys.exit(f'The round holds {total} bytes, above the {ROUND_LIMIT} byte limit. It stays in {dest} and nothing was written to {final}.')
-    same_family = sorted({s['session'] for s in sessions if s['model'] == 'opus' and any(
-        v.get('critic') != 'codex' for a in s['assertions'].values() for v in a.get('votes', []))})
+    fam = lambda m: 'opus' if m.startswith('opus') or m in ('claude', 'claude-fallback') else ('sol' if m in ('codex', 'sol') else m)
+    same_family = sorted({s['session'] for s in sessions if any(
+        fam(v.get('critic', '')) == fam(s['model']) for a in s['assertions'].values() for v in a.get('votes', []))})
     (dest / 'jobs.txt').write_text(scrub(pathlib.Path(jobs_file).read_text(encoding='utf-8'), secrets, hits), encoding='utf-8')
     summary = {'round': rnd, 'recorded': datetime.now().astimezone().isoformat(timespec='seconds'), 'skill_commit': commit,
                'same_family_graded': same_family, 'unfinished': unfinished, 'sessions': sessions}
@@ -134,7 +135,10 @@ def main():
     cols = [(s['arm'], s['model']) for s in sessions]
     cols = sorted(set(cols), key=cols.index)
     note = (["Sessions in the round's jobs file that are not recorded:", ''] + [f"- `{u['session']}`: {u['reason']}" for u in unfinished] + ['']) if unfinished else []
-    note += [f'Claude critics graded {len(same_family)} Claude-built sessions because Codex had reached its usage limit. They need a Codex verdict before any comparison.', ''] if same_family else []
+    if '--allow-same-model' in sys.argv:
+        note += ['Both subject arms are Claude Opus: `opus` and `opus2` are two independent sets of fresh Opus sessions, not two models. Every grader and every answer round also ran on fresh Claude Opus sessions, by the owner\'s choice, so this round measures the skill change on one model and gives no cross-model check.', '']
+    elif same_family:
+        note += [f'{len(same_family)} sessions were graded by a critic of their own model. They need a verdict from the other model before any comparison.', '']
     # Each case has its own hash, so versions are compared within one eval, never across evals.
     versions = {}
     for s in sessions:

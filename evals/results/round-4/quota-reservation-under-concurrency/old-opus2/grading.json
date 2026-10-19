@@ -1,0 +1,113 @@
+{
+  "session": "4-quota-reservation-under-concurrency-old-opus2",
+  "eval": "quota-reservation-under-concurrency",
+  "arm": "old",
+  "model": "opus2",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "9b723e3712137fdadfb0625eeab7023f9c8d3193",
+    "skill": "4171c1874df5e04b",
+    "fixture": "e90d67d597185779",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "b63909859c680ed6",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 190.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "ai-model-routing",
+      "background-jobs",
+      "billing",
+      "bulk-actions",
+      "definition-of-done",
+      "failure-and-retries",
+      "quota",
+      "source-of-truth",
+      "uploads"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 24,
+    "cache_creation_input_tokens": 37629,
+    "cache_read_input_tokens": 423525,
+    "output_tokens": 16132,
+    "total_cost_usd": 0.7084729999999999,
+    "num_turns": 15
+  },
+  "changed": [
+    "docs/quota-accounting.md",
+    "packages/backend/src/ctx.ts",
+    "packages/backend/src/errors.ts",
+    "packages/backend/src/uploads.ts"
+  ],
+  "assertions": {
+    "quota-reservation-under-concurrency-01": {
+      "v": "pass",
+      "graded_text": "Starting an upload atomically reserves its declared size against remaining capacity, counting other open reservations, so parallel uploads cannot together pass the cap. A check of used plus size alone is identified as insufficient.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:9 names the flaw: \"Each one reads `used` before any of them finalizes, so an account with 1 GB left can start eight 1 GB uploads and finish 8 GB over the cap.\" Line 27 gives the rule: \"a new upload of `size` is admitted only if `used + reserved + size <= cap`\". Line 45 says \"In one transaction: ... apply the admission rule, add `size` to `reserved`\". The code matches at uploads.ts:40-53: `ctx.db.transaction(...)`, `const available = account.cap - account.used - account.reserved; if (input.size > available) throw new QuotaExceeded(...); await tx.accounts.patch(account.id, { reserved: account.reserved + input.size })`."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-02": {
+      "v": "pass",
+      "graded_text": "Finalize commits usage from the verified stored size and turns the reservation into usage, and a failed, abandoned, or expired upload releases its reservation through a stated cleanup path.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "Commit: docs/quota-accounting.md:34 gives `pending \u2192 ready (finalize, verified)` as \"`reserved -= size`, `used += size`\". uploads.ts:92-94 does this only after `stored.size !== upload.size` is ruled out at line 77, so the charged size equals the verified stored size. Release: doc line 35 gives `pending \u2192 failed (abandoned / size mismatch)` as \"`reserved -= size`\". Lines 59-61 name the cleanup path: \"Expiry sweep: `releaseExpiredReservations` ... moves each `pending` upload past `reservationExpiresAt` to `failed + abandoned` in a transaction, releases its reservation\". This is implemented at uploads.ts:134-146 and in `failPending` (uploads.ts:155-163), which does `reserved: account.reserved - current.size`."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-03": {
+      "v": "pass",
+      "graded_text": "A retried finalize counts the upload's size once, not twice, in both the design and the changed code.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "Design, docs/quota-accounting.md:53: \"If it is already `ready`, return the same result. This is the idempotent retry path: nothing is charged twice.\" Line 56: \"In one transaction, re-read the upload. If a concurrent finalize or the sweep already settled it, return that outcome.\" Code, uploads.ts:71: `if (upload.status === \"ready\") return settled(ctx, upload);`. Inside the transaction at uploads.ts:85-86: `const current = await tx.uploads.get(upload.id); if (current.status !== \"pending\") return current;`."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-04": {
+      "v": "fail",
+      "graded_text": "The user's storage quota is kept separate from the model provider's cost: the design says a failed summary can still cost the product money and records or bounds that cost, rather than promising failed work is free.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "fail",
+          "e": "The quota is kept separate from model cost: docs/quota-accounting.md:69 says \"Summaries are paid model work, so they get their own controls\". But the design never says that a failed summary still costs the product money, and it never records provider cost. The closest line, doc line 74, \"A summary failure is stored as `failed` with its internal kind and never touches the storage counters\", talks only about the storage counters. The only bound is a count of admissions, `SUMMARIES_PER_DAY` (500) (doc line 72; uploads.ts:89-96). Nothing records or bounds the money spent per attempt, failed or not."
+        }
+      ]
+    },
+    "quota-reservation-under-concurrency-05": {
+      "v": "pass",
+      "graded_text": "Finalize compares the actual stored size with the reserved size and refuses or corrects a mismatch, so a client cannot reserve a small size and store a large object.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "docs/quota-accounting.md:55: \"If the stored size differs from the reserved size, fail the upload (`size_mismatch`), release the reservation, and delete the object.\" Line 46 binds the PUT \"to `Content-Length = size`\". Code at uploads.ts:77-80: `if (stored.size !== upload.size) { const failed = await failPending(ctx, upload.id, \"size_mismatch\"); if (failed) await ctx.storage.delete(upload.id); throw new UploadSizeMismatch(); }`."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus2] The summary cost bound counts summaries, not money, so the stated goal \"Bounds model spend per free account\" (docs/quota-accounting.md:83) doesn't hold. `SUMMARIES_PER_DAY = 500` (uploads.ts:18) admits 500 summaries a day of documents up to `MAX_FILE_BYTES = 5 GB`, and no input-length cap or cost is recorded anywhere. Failed attempts re-admitted through `requestSummary` are counted but their cost isn't. A free account can therefore run up unbounded provider spend in 500 large-document runs per day. The design never acknowledges that failed summaries cost money (doc line 74 covers only the storage counters)."
+  ],
+  "minor": []
+}

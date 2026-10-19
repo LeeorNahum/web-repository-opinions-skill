@@ -1,0 +1,131 @@
+{
+  "session": "4-file-catalog-with-saved-data-old-opus",
+  "eval": "file-catalog-with-saved-data",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+    "skill": "4171c1874df5e04b",
+    "fixture": "ec0103c05d29fd23",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2a29c6d1f69205b5",
+    "harness": "b0031f598a9e1cb3"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 190.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-skills",
+      "agent-tool-design",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "http-apis",
+      "ids",
+      "live-data",
+      "model-context-protocol",
+      "naming",
+      "object-storage",
+      "path-display",
+      "quota",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 43915,
+    "cache_read_input_tokens": 134503,
+    "output_tokens": 17474,
+    "total_cost_usd": 0.7277406,
+    "num_turns": 9
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "file-catalog-with-saved-data-01": {
+      "v": "fail",
+      "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "fail",
+          "e": "D/project/docs/mcp-tools.md:118-123 lists separate saved-data tools: \"`list_data_entries` | data\", \"`get_data_entry`\", \"`create_data_entries`\", \"`update_data_entry`\", \"`delete_data_entries`\", \"`clear_data_collection`\". Line 315: \"All data tools take `site_id` and `collection`.\" Saved data is not reachable through read_file/write_file/edit_file/delete_file."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-02": {
+      "v": "fail",
+      "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "fail",
+          "e": "D/project/docs/mcp-tools.md:233 (write_file): \"expected_revision: string | null; // null = the file must not exist yet\". Line 238: \"`expected_revision` is required\". Line 381 (update_data_entry): \"expected_revision: string;            // from list_data_entries or get_data_entry\". import_file (line 269) and start_file_upload (line 285) also require `expected_revision`. These are required revision tokens."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-03": {
+      "v": "pass",
+      "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md:386: \"If a visitor changed the entry after the agent read it, the call returns `revision_conflict` with the current `entry`, so the agent can apply its patch again without another read.\" Line 81: \"Every overwrite of an entry checks `expected_revision`... Creates never overwrite\". The agent's stale write fails with a conflict instead of replacing the visitor's write."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-04": {
+      "v": "pass",
+      "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md:306 delete_file requires `{ site_id: string; path: string }`, one exact path with no prefix or glob form. delete_data_entries takes `entries: { // 1..100` keys (line 398) and line 416 says \"Only the listed keys are deleted. Leaving out `expected_revision` affects only how that one key is checked, never how many entries are removed.\" Line 426: \"Clearing a whole collection gets its own tool so that this scope is never the result of an omitted argument\". delete_site is separate (lines 197-205). Line 195: \"No file tool ever creates a site as a side effect.\" The closest miss is that file deletion takes one required path rather than a list. That is a list of exactly one, and nothing widens it."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-05": {
+      "v": "fail",
+      "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "fail",
+          "e": "D has no whole-file write of saved data (data goes only through the entry tools at lines 345-426). Its authority model also exempts the agent from the declared write rules. Line 78: \"The rules apply to visitors. An agent acts with the **site owner's** authority\". Line 480: \"They can edit any entry, and the rules govern visitors only. Any workspace member who can edit a site gets that authority through the agent.\" Agent writes are not checked against the site's declared rules, and the agent can do more than the member it acts for."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-06": {
+      "v": "pass",
+      "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md:72: \"`title`, `description`, and `favicon_url` are always read from the current `index.html` and never stored separately, so no tool sets them. To change any of them, edit `index.html`.\" create_site takes only `index_html: string` (line 189). Line 490 rules out \"site title or favicon setters\"."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] D/project/docs/mcp-tools.md:118-123: saved data has its own six-tool record API (`list_data_entries`, `get_data_entry`, `create_data_entries`, `update_data_entry`, `delete_data_entries`, `clear_data_collection`) instead of the shared file tools. The catalog is split into two editing models, and an agent cannot use read/edit/search on saved data.",
+    "[opus-for-opus] D/project/docs/mcp-tools.md:233-238: `write_file` requires `expected_revision: string | null` (\"`expected_revision` is required\"), and line 381 requires `expected_revision: string` on `update_data_entry`. Every overwrite depends on a client-held revision token instead of server-enforced staleness. An agent that loses the token, or a host that drops the field, cannot write at all.",
+    "[opus-for-opus] D/project/docs/mcp-tools.md:480: \"Agents act with the site owner's authority over saved data. They can edit any entry, and the rules govern visitors only. Any workspace member who can edit a site gets that authority through the agent.\" This escalates privilege. Through an agent, a `member` (line 38, role \"owner\" | \"admin\" | \"member\") gets owner rights over `creator_or_owner` RSVP entries (line 93) and skips the declared write rules entirely. Only 'shape checks' apply (line 386)."
+  ],
+  "minor": []
+}

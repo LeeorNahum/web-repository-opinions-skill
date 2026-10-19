@@ -1,0 +1,109 @@
+{
+  "session": "4-distinct-operations-need-tools-old-opus",
+  "eval": "distinct-operations-need-tools",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "9827cc1fc1367c6955195b6df2e957cf54442cd3",
+    "skill": "4171c1874df5e04b",
+    "fixture": "707eb5cd840fd63d",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2c20ba5c4be18228",
+    "harness": "fe6647c9a97c2902"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 90.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-tool-design",
+      "background-jobs",
+      "billing",
+      "bulk-actions",
+      "failure-and-retries",
+      "ids",
+      "model-context-protocol",
+      "physical-commerce",
+      "quota",
+      "search-indexing"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 26848,
+    "cache_read_input_tokens": 227788,
+    "output_tokens": 6283,
+    "total_cost_usd": 0.38606560000000006,
+    "num_turns": 10
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "distinct-operations-need-tools-01": {
+      "v": "pass",
+      "graded_text": "Agents can search page content across the workspace in one call, through a dedicated search tool or a content query on a listing tool, with explicit scope and pagination, instead of reading pages one by one. The query uses familiar text-search semantics (plain text, phrase, or regular expression) rather than a bespoke query language.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md table: \"`search_pages` | `{ query, folder?, cursor?, limit? }` | Finds pages whose title or Markdown contains the query.\"; section: \"Case-insensitive and whitespace-normalized. All words must appear in the page. A query wrapped in double quotes matches that exact phrase.\" Scope: \"`folder`: optional... Omitted means the whole workspace.\" Paging: \"`cursor`, `limit`: same paging contract as `list_pages`. Default 20, maximum 50.\" Word AND matching with quoted phrases is familiar search-box behavior, not a bespoke language."
+        }
+      ]
+    },
+    "distinct-operations-need-tools-02": {
+      "v": "pass",
+      "graded_text": "Placing a print order is its own tool, not a file write, a special path, or a flag on an existing tool, because it charges money and ships goods.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md: dedicated row \"`order_prints` | `{ paths[], copies, ship_to, idempotency_key }` | Orders printed, bound copies of the listed pages and charges the workspace's card on file.\" Assumption 4 adds: \"Do not add a confirmation flag to `order_prints`.\""
+        }
+      ]
+    },
+    "distinct-operations-need-tools-03": {
+      "v": "pass",
+      "graded_text": "A retried print-order call after a timeout cannot charge twice: the design states an idempotency key, a single-use quote or order ID, or an equivalent server-side guard.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/project/docs/mcp-tools.md: \"Same key, same arguments, order already placed: returns the existing order with `replayed: true`. Nothing is charged or shipped again.\" / \"Same key, same arguments, first call still in flight: waits for it and returns its outcome. Never starts a second order.\" / \"Keys are scoped to the workspace and kept for at least 30 days.\""
+        }
+      ]
+    },
+    "distinct-operations-need-tools-04": {
+      "v": "pass",
+      "graded_text": "The catalog adds no generic execute, run, or action tool.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "Checked D/project/docs/mcp-tools.md (whole file), D/diff.txt and D/answer.txt: the catalog has seven tools, list_pages, search_pages, read_page, write_page, edit_page, delete_pages and order_prints. The closest line is \"Add a `get_print_order` read when agents need to follow shipping\". That is a deferred, specific read tool, not a generic execute or action tool."
+        }
+      ]
+    },
+    "distinct-operations-need-tools-05": {
+      "v": "pass",
+      "graded_text": "The existing five file tools keep their names, and each behaves as before for calls that use only its current arguments.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "D/diff.txt shows only '+' lines inserted around the five existing rows. D/project/docs/mcp-tools.md lines 5,7-10 are byte-identical to the fixture, e.g. \"| `delete_pages` | `{ paths[] }` | Moves the listed pages to Trash. The list must be nonempty. |\". No new arguments were added to the existing tools."
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}

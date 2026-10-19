@@ -1,0 +1,74 @@
+{
+  "session": "4-established-precondition-contract-new-opus2",
+  "eval": "established-precondition-contract",
+  "arm": "new",
+  "model": "opus2",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "6366f0b8d418804aeea1016fe282574f38e47a32",
+    "skill": "e78b7fe6022f85da",
+    "fixture": "438e6792903dbc11",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "4c0e6af368ca4428",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 85.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "agent-tool-design",
+      "http-apis",
+      "ids",
+      "modularity",
+      "routing",
+      "user-facing-errors",
+      "versioning"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 26329,
+    "cache_read_input_tokens": 120744,
+    "output_tokens": 6837,
+    "total_cost_usd": 0.3715608,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/row-updates.md"
+  ],
+  "assertions": {
+    "established-precondition-contract-01": {
+      "v": "pass",
+      "graded_text": "The new row update requires a precondition from the caller (If-Match with the document's ETag, or a row-level equivalent) and answers a stale one with 412, matching the existing PUT contract.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "A/project/docs/row-updates.md:46 \"**`If-Match` is required** and takes the row ETag from either `GET .../rows/{rowId}` or an earlier `PATCH` response.\"; table line 55 \"| `412` | `row_changed` | Someone changed this row since your read.\"; line 18 \"read, send back the ETag you read in `If-Match`, and get `412` if it is stale.\" Missing If-Match gets 428 (line 56), and last-write-wins is explicitly rejected (A2, line 89)."
+        }
+      ]
+    },
+    "established-precondition-contract-02": {
+      "v": "pass",
+      "graded_text": "The existing PUT and its required If-Match stay unchanged.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "A/project/docs/row-updates.md:76 \"`GET /v1/price-lists/{id}` and `PUT /v1/price-lists/{id}` keep their published behavior: whole-document `If-Match`, and `412` on any stale ETag. The only change is the additive row `id` field.\" Line 94 leaves any change to PUT's 412 behavior to the owner: \"this design doesn't touch it.\" Line 67 also confirms a stale PUT after a PATCH still gets 412. The closest it comes to breaking this is line 25 (PUT assigns ids to rows sent without one), which changes row identity, not the If-Match/412 contract."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus2] The design commits to row ids that are destroyed by ordinary legacy PUT syncs, which defeats the row-addressing it depends on. A/project/docs/row-updates.md:25 says \"A row with no `id` is a new row and gets one assigned. Partners that ignore `id` and send rows without it keep working as before\", and line 88 adds \"every row in it gets a fresh `id`. Any `rowId` a caller held for that list becomes `404`. That's acceptable because `PUT` is a full replace.\" The brief says many partners sync unattended every few minutes against a two-year-old contract with no ids, so any one of them stripping the unknown `id` field will reissue every id in the list every few minutes, and every row-PATCH client of that list will keep getting 404. This also contradicts line 22: \"It never changes when the row is edited or reordered, or when other rows are added or removed.\" (withdrawn)"
+  ],
+  "minor": []
+}

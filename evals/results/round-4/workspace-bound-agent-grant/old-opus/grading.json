@@ -1,0 +1,88 @@
+{
+  "session": "4-workspace-bound-agent-grant-old-opus",
+  "eval": "workspace-bound-agent-grant",
+  "arm": "old",
+  "model": "opus",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.302 (Claude Code)",
+  "inputs": {
+    "starting_tree": "76a4db0126b8c447fd91f654f6af2a4b7222cf73",
+    "skill": "4171c1874df5e04b",
+    "fixture": "5663e426cf9ad166",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "7eb434b8639989fb",
+    "harness": "fe6647c9a97c2902"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 95.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "admin",
+      "agent-tool-design",
+      "auth",
+      "http-apis",
+      "ids",
+      "model-context-protocol",
+      "source-of-truth",
+      "workspace-tenancy"
+    ],
+    "partial": [
+      "billing"
+    ]
+  },
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 31520,
+    "cache_read_input_tokens": 162762,
+    "output_tokens": 7479,
+    "total_cost_usd": 0.4343404,
+    "num_turns": 8
+  },
+  "changed": [
+    "docs/agent-access.md"
+  ],
+  "assertions": {
+    "workspace-bound-agent-grant-01": {
+      "v": "pass",
+      "graded_text": "Each agent connection is bound to one firm workspace chosen at consent and approved by that firm's Admin, and a consultant who works for several firms makes a separate connection for each.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/agent-access.md:14 \"Each OAuth authorization is tied to exactly one firm workspace, which the consultant picks on the auth provider's consent screen. A consultant who works for three firms makes three connections: three separate authorizations of the same resource, each with its own token. ... a firm Admin must have approved that record.\" Admin approval by that firm: :58-59 \"Every Admin of that workspace is notified ... The Admin either approves with a capability set ... or denies.\""
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-02": {
+      "v": "pass",
+      "graded_text": "The server checks on every call that the target belongs to the connection's bound workspace and that the consultant's membership and role are still live, so removal from a firm cuts off an existing connection.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "A/project/docs/agent-access.md:69-75 \"For every call, in one transaction: ... 2. The user is a current member of `organizationId` and has a role there. 3. An agent connection exists ... and its status is `approved`. ... 5. Every read and write is filtered by `organizationId`... If `read_workpaper` or `annotate_workpaper` gets an ID that belongs to another workspace, it returns the same \\\"not found\\\"\"; removal: :61 \"The per-call membership check is the actual guarantee; the webhook keeps the record tidy.\""
+        }
+      ]
+    },
+    "workspace-bound-agent-grant-03": {
+      "v": "pass",
+      "graded_text": "The design offers no connection whose scope spans more than one firm.",
+      "votes": [
+        {
+          "critic": "opus-for-opus",
+          "v": "pass",
+          "e": "Checked A/project/docs/agent-access.md, A/answer.txt, A/diff.txt. Only binding offered is per-firm: agent-access.md:14 \"Each OAuth authorization is tied to exactly one firm workspace\" and :20 \"A decoded but unverified token body never selects a workspace, and neither do tool input, headers or the URL.\" Closest line: :19 \"Picking a different firm means a new authorization of the same resource.\" \u2014 one shared resource, but each authorization still binds one firm; no account-wide or multi-firm grant is offered, and :104 explicitly refuses a product-side workspace picker fallback."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus] No reconnect path after deny/revoke/removal on hosts that reuse a client registration: the connection is keyed only on (subject, org, clientId) (A/project/docs/agent-access.md:39-43), :59 says \"Both decisions are final for that connection. Connecting again from a new client registration creates a new pending connection,\" and :63 says re-consenting \"with the same client to the same workspace keeps the same connection.\" The doc itself says (:104) \"hosts often reuse one client registration across connections,\" so a consultant who is denied once, revoked once, or removed and later re-added to a firm (:61 webhook revokes) can never request approval again from that host; built as written, the record stays `revoked`/`denied` forever with no new pending request."
+  ],
+  "minor": []
+}

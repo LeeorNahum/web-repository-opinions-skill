@@ -1,0 +1,135 @@
+{
+  "session": "4-file-catalog-with-saved-data-old-opus2",
+  "eval": "file-catalog-with-saved-data",
+  "arm": "old",
+  "model": "opus2",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "b1b5b0d66edcc3d54b8293c6d33203ed812b196d",
+    "skill": "4171c1874df5e04b",
+    "fixture": "ec0103c05d29fd23",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "2a29c6d1f69205b5",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 195.0,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "agent-skills",
+      "agent-tool-design",
+      "bulk-actions",
+      "data-deletion",
+      "data-model",
+      "domains",
+      "failure-and-retries",
+      "http-apis",
+      "ids",
+      "live-data",
+      "model-context-protocol",
+      "modularity",
+      "naming",
+      "object-storage",
+      "path-display",
+      "quota",
+      "routing",
+      "source-of-truth",
+      "uploads",
+      "user-facing-errors",
+      "workspace-tenancy"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 49543,
+    "cache_read_input_tokens": 171198,
+    "output_tokens": 17642,
+    "total_cost_usd": 0.7834716,
+    "num_turns": 9
+  },
+  "changed": [
+    "docs/mcp-tools.md"
+  ],
+  "assertions": {
+    "file-catalog-with-saved-data-01": {
+      "v": "fail",
+      "graded_text": "Saved data is reached through the same read, write, exact-edit, and delete-file tools used for source files and assets, as file paths such as JSON files. The catalog has no separate tools for records, entries, collections, or the database.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "fail",
+          "e": "B/project/docs/mcp-tools.md has separate record tools rather than routing saved data through file tools. Line 91: \"Each site's saved data is organized into **collections**, and a collection holds **entries**.\" The tool table at lines 119-127 lists `list_data_entries`, `create_data_entries`, `update_data_entries`, and `delete_data_entries`. B/answer.txt says the same: \"**Saved data:** `list_data_entries`, `create_data_entries`, `update_data_entries`, `delete_data_entries`.\""
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-02": {
+      "v": "fail",
+      "graded_text": "No tool has a required idempotency key, revision or version token, or confirmation argument. Protection against stale writes is enforced by the server, for example by rejecting a write that would overwrite changes made since the agent's read and asking for a fresh read.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "fail",
+          "e": "Two tools require a version token. B/project/docs/mcp-tools.md line 312 (update_data_entries): \"expected_version: Version;   // required: from list_data_entries\". Line 336 (delete_data_entries): \"deletes: { collection: string; key: string; expected_version: Version }[]\". Line 325: \"`expected_version` is required because visitors may be writing at the same moment.\" On files the guard is opt-in rather than enforced by the server. Line 214: \"Leaving it out only skips the check.\""
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-03": {
+      "v": "pass",
+      "graded_text": "The design explains how a visitor's write made after the agent read a saved-data file survives the agent's later write of that file: it is merged safely or the agent's write fails with a conflict. A plain last-writer-wins replacement does not pass.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md line 325: \"If a visitor changed the entry after the agent read it, the item fails with `version_conflict` and the current entry. The agent reapplies its fix on top of that entry and retries only that item.\" Line 326 adds a field-level merge patch: \"`{\\\"name\\\": \\\"Ana Lima\\\"}` fixes the name and leaves the guest's meal choice alone.\" Because the version is required on every update and delete, there is no last-writer-wins path for entries."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-04": {
+      "v": "pass",
+      "graded_text": "Deleting files takes an explicit nonempty list of exact paths, deleting a whole site is its own tool, and no omitted argument widens a deletion or makes an update create a new site.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md line 240: \"input:  { site_id: SiteId; paths: string[] }   // 1\u201350\". Line 248: \"No folder or wildcard deletion exists. Every path is listed explicitly.\" `delete_site` is its own tool (lines 250-261: \"input:  { site_id: SiteId }\"). write_files requires site_id (line 204), so it can never create a site. The line that came closest to breaking the assertion is line 214: \"Leaving it out only skips the check. It never makes the write affect anything beyond the paths listed.\""
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-05": {
+      "v": "fail",
+      "graded_text": "Writing a saved-data file as a whole is checked entry by entry against the site's declared write rules and validation, with the agent holding only the rights of the person it acts for, so replacing the whole file cannot make a change that person could not make one entry at a time.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "fail",
+          "e": "B has no whole-file write for saved data, and the agent is not bounded by the site's rules. B/project/docs/mcp-tools.md line 110: \"**Agents act as the owner**, so access rules never block them.\" Line 391: \"Agents act as the owner. They bypass access rules.\" Nothing checks each entry of a whole saved-data file against the rules and validation, because that mechanism does not exist."
+        }
+      ]
+    },
+    "file-catalog-with-saved-data-06": {
+      "v": "pass",
+      "graded_text": "There is no separate tool or argument for setting a site's title, description, or favicon. They come from index.html.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "B/project/docs/mcp-tools.md line 87: \"`title`, `description` and `favicon_url` are always read from the current `index.html` (as the brief decides) and never stored separately.\" The create_site input (lines 181-184) is only `files` and `address`, and no other tool takes a title, description, or favicon argument."
+        }
+      ]
+    }
+  },
+  "blocking": [
+    "[opus-for-opus2] Saved data has its own record-level tool family (B/project/docs/mcp-tools.md lines 263-348: list_data_entries, create_data_entries, update_data_entries, delete_data_entries). That doubles the surface, and agents must learn a second write model next to the file tools.",
+    "[opus-for-opus2] Protection against stale writes relies on the caller rather than the server. For entries, update and delete must carry a version (line 312: \"expected_version: Version;   // required\"), so an agent that does not have one cannot make a fix. For files the guard is optional (line 214: \"Leaving it out only skips the check\"), so an agent that skips it silently overwrites concurrent edits from the browser app, including edits to the access rules in `fernpage.json` (line 93: \"The agent writes it with the normal file tools\").",
+    "[opus-for-opus2] The agent bypasses every declared rule and has no per-entry validation (line 110: \"Agents act as the owner, so access rules never block them\"). An agent write can therefore put values into the saved data that the site's own rules or validation would refuse from any person."
+  ],
+  "minor": []
+}

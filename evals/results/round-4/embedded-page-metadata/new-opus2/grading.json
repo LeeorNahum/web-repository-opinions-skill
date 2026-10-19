@@ -1,0 +1,109 @@
+{
+  "session": "4-embedded-page-metadata-new-opus2",
+  "eval": "embedded-page-metadata",
+  "arm": "new",
+  "model": "opus2",
+  "model_id": "opus",
+  "effort": "medium",
+  "served_model": "claude-opus-5-5",
+  "requested_model": "opus",
+  "cli": "2.1.303 (Claude Code)",
+  "inputs": {
+    "starting_tree": "f7acbd4311021503df71a9abb070f4ab59788ee9",
+    "skill": "c8baec754cd1e8ca",
+    "fixture": "d7ae70ba58a24853",
+    "base_fixture": "9a72a07420d785e3",
+    "case": "226169e7c5dc3989",
+    "harness": "be505769b4722b7d"
+  },
+  "completed": true,
+  "timed_out": false,
+  "seconds": 185.8,
+  "skill_read": true,
+  "references_read": {
+    "full": [
+      "abuse-resistance",
+      "background-jobs",
+      "data-model",
+      "domains",
+      "ids",
+      "object-storage",
+      "public-discovery",
+      "rendering",
+      "routing",
+      "seo",
+      "social-metadata"
+    ],
+    "partial": []
+  },
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 38090,
+    "cache_read_input_tokens": 127565,
+    "output_tokens": 13197,
+    "total_cost_usd": 0.594213,
+    "num_turns": 7
+  },
+  "changed": [
+    "docs/metadata.md"
+  ],
+  "assertions": {
+    "embedded-page-metadata-01": {
+      "v": "pass",
+      "graded_text": "Tessel's own wrapper page emits the icon, title, and link preview tags in its initial server-rendered HTML, taken from the person's HTML when it is saved, rather than relying on the person's script or the inner document.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:21 \"Metadata is extracted when the page is saved, not when it is requested. It comes from the static HTML only.\"; :96 \"Public and unlisted pages render `<title>{title} \u00b7 Tessel</title>` and the re-hosted icon links from the current metadata version.\"; :124 \"The tags are rendered on the server from the same lookup that resolves the page and its visibility\"; :11 explains the inner document's tags never reach the tab."
+        }
+      ]
+    },
+    "embedded-page-metadata-02": {
+      "v": "pass",
+      "graded_text": "Public and unlisted pages get page-specific previews, and unlisted pages keep noindex while still getting their real preview card.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:32-34 matrix gives Public and Unlisted \"full\" OG/card tags and \"declared image or generated card\", with Unlisted indexing \"`noindex` (meta and `X-Robots-Tag`), not in sitemap\"; :37 \"Unlisted pages get a full card. Anyone holding the link can already open the page, and preview tools ignore `noindex`.\""
+        }
+      ]
+    },
+    "embedded-page-metadata-03": {
+      "v": "pass",
+      "graded_text": "A private page answers any request not authorized for it, link-preview fetchers included, with a generic card that names only the product and carries no title, text, or image from the page.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:41 fallback \"goes out for every response that isn't authorized to see a page: private pages, missing pages, deleted pages\"; :44-49 `<title>Tessel</title>`, og:site_name/og:title = Tessel; :52 \"It has no description, no image, no owner name, and no page address in the text.\"; :22 \"Private pages never put page-specific metadata into server HTML at all, not even for members.\"; :139 image route gives private pages a 404; :152 content domain needs a signed token, else \"the content domain returns a content-free response.\""
+        }
+      ]
+    },
+    "embedded-page-metadata-04": {
+      "v": "pass",
+      "graded_text": "Preview images are rendered in an environment that cannot write saved data or cause other side effects, and cannot reach private or internal networks or credentials, and a page load no person started, such as a link-preview fetcher running the page's script, cannot add saved data such as a poll vote.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:132 generated image is \"a template rendered by a background job ... drawn from data and never screenshots the page, so no page code runs\" (no page code means no writes or side effects); :80 declared-image fetches use \"the shared safe fetcher ... refuses private, loopback, link-local, and metadata addresses\"; :159 the wrapper forwards a write \"only after the visitor has interacted with the page, using `navigator.userActivation.hasBeenActive`\", with the gate \"in Tessel's wrapper, where page code can't fake it\" (:156); :166 \"This blocks the reported case: a preview tool that loads the page and leaves.\""
+        }
+      ]
+    },
+    "embedded-page-metadata-05": {
+      "v": "pass",
+      "graded_text": "A page's own preview image is used when it declares one, and otherwise a preview is generated, so publishing never requires making an image.",
+      "votes": [
+        {
+          "critic": "opus-for-opus2",
+          "v": "pass",
+          "e": "A/project/docs/metadata.md:64 \"Preview image | 1. Settings override 2. `og:image` or `twitter:image` 3. a generated card\"; :129 \"When a page declares no image, Tessel makes one.\"; :90 \"None of these are required.\""
+        }
+      ]
+    }
+  },
+  "blocking": [],
+  "minor": []
+}
