@@ -10,7 +10,7 @@ Control branch deployment explicitly. Only `main` and `preview` auto-deploy by d
 
 Each deployable app carries its own hosting config that gates deploys by branch. Apply the same branch policy to every app instead of configuring only the primary site. The exact starter file lives in `assets/vercel.json`. Copy it rather than maintaining another inline version.
 
-- `"**": false` blocks every other branch by default, including `dev` and branch names with a slash, such as `feature/x`. The host matches branch names as globs, where `*` stops at a slash and `**` does not. A branch that matches several rules deploys when any of them is `true`, so the listed branches still deploy.
+- `"**": false` blocks every other branch by default, including `dev` and branch names with a slash such as `feature/x`, which `*` does not match. A branch that matches several rules deploys when any of them is `true`.
 - List explicit branches first and the wildcard last. Order is cosmetic.
 - Keep `$schema` for editor autocomplete. It is harmless at runtime.
 
@@ -18,7 +18,7 @@ Each deployable app carries its own hosting config that gates deploys by branch.
 
 Custom domains, branch domains, and env vars are dashboard concerns, not part of the deploy-gating config. Document them in the setup checklist.
 
-Which branch is production is a dashboard setting, not part of the hosting config. Confirm `main` as the production branch once per project so the provider cannot silently select another branch, and make a new project's first deployment come from `main`, because a host can promote that first Git deployment to production whatever branch it came from. Attach production domains only once a production deployment from `main` exists, so they never serve another branch's build.
+Which branch is production is a dashboard setting, not part of the hosting config. Confirm `main` as the production branch once per project so the provider cannot silently select another branch. A host can promote a new project's first deployment to production whatever its branch, so make that first deployment come from `main` before production domains are attached.
 
 Machine-facing apps skip the browser access gate that preview deployments carry, and only because that gate cannot work for them. An API, MCP, or webhook project answers programmatic requests directly, so confirm any interactive access protection (a hosting platform preview-protection or SSO gate that only a browser session can satisfy) is off for those projects. A blanket gate turns every machine call into an opaque auth failure the client cannot resolve, including on preview deployments. Replace it with a protection those clients can satisfy, such as a token, rather than leaving the surface open.
 
@@ -39,7 +39,7 @@ Do this by overriding the app's build command to run the service's own deploy to
 - Let the stage's credentials decide which instance a stage reaches, never the script. A build script that names a deployment can send the wrong stage to the wrong backend. One that reads a stage-scoped key cannot.
 - Deploy the dependency from every deploying stage, including staging. A stage that builds this commit's frontend against a backend from some other commit is testing a combination that exists nowhere.
 - Give each dependent service one deployment owner so parallel app builds cannot race to publish it.
-- Give each parallel worktree or agent its own backend deployment. Only one integration checkout of `dev` and the stages that deploy to dev/test resources write the shared development deployment, because a backend that deploys its whole function set on push replaces whatever others pushed.
+- Give each parallel worktree or agent its own backend deployment, because a backend that deploys its whole function set on push replaces whatever others pushed.
 - Keep local development commands for interactive work. Hosted promotion should use the automated path.
 - Where a stage shares an instance with local development, it still deploys, and a build replaces what a developer pushed from their machine until their next local push. Prefer giving the stage its own instance, and treat sharing as the thing to fix rather than a reason to skip deploying.
 - Confirm the deployed service contract before treating the branch promotion as complete.

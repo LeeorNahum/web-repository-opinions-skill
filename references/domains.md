@@ -14,7 +14,7 @@ Use no `www`. Serve and link the apex directly. If a www host exists at the regi
 
 ## Every other domain you own is an alias, not a second home
 
-`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias. A domain with a distinct security role, such as the domain for code users supply below, is a serving origin of its own and gets no redirect.
+`www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias. The domain for code users supply, below, is a serving origin of its own, not an alias.
 
 Point each one at the canonical origin with a permanent redirect that preserves path and query, so a deep link into an alias lands on the same page rather than the home page. Do it at DNS, hosting, CDN, or edge, never in app code, exactly as with `www`.
 
@@ -41,14 +41,13 @@ The canonical production origin is a code constant, not a fallback string hidden
 
 ## Code Your Users Supply Runs On Its Own Domain
 
-When the product serves HTML or JavaScript its users supply, serve it from a separate registrable domain, never from a subdomain of the product's own. A browser treats every HTTPS subdomain of one registrable domain as the same site, so same-site requests carry same-site cookies, and script on any subdomain can also set a cookie for the parent domain. A managed auth provider that shares its session across subdomains is then exposed to whatever runs on a sibling, which can plant a session cookie that signs a visitor into another account or reach the session itself. The product's domain serves only the product's own pages, and the page at the product's address frames the content, so visitors still see that address.
+When the product serves HTML or JavaScript its users supply, serve it from a separate registrable domain, never from a subdomain of the product's own. Every HTTPS subdomain of one registrable domain is the same site to a browser, and script on any of them can set a cookie for the parent domain, so user code on a sibling can plant or reach the session a managed auth provider shares across subdomains. The product's domain serves only its own pages, and the page at the product's address frames the content, so visitors still see that address.
 
 - Give each item its own subdomain on the content domain, so each item has its own origin and its own storage.
-- Frame each item in an iframe whose `src` is the item's URL on the content domain. Markup the product writes into its own page, inline or through `srcdoc`, takes that page's Content Security Policy and, unless sandboxed, its origin, so it runs as the product.
-- Request the content domain's inclusion in the private section of the Public Suffix List once it meets the list's criteria, and rely on it only after browsers ship the entry. Until then every subdomain on it is one site and one item can set a cookie the others receive, so keep the product's own cookies there host-only with the `__Host-` prefix.
+- Frame each item by its URL on the content domain. Markup written into the product's own page, inline or through `srcdoc`, runs as the product.
+- Request the content domain's entry in the private section of the Public Suffix List, and until browsers ship it, keep the product's own cookies there host-only with the `__Host-` prefix, because every item is otherwise one site.
 - When an item's code needs to know its viewer, give it a pseudonym the server derives per item, so no identifier follows a viewer across items.
 - Keep the content domain out of search, with the product's address as the canonical one.
-- Where no separate domain is available yet, serve the content with an opaque origin: the serving edge sets an enforced `Content-Security-Policy` response header whose `sandbox` directive omits `allow-same-origin`, granting only the permissions the content needs, and the content loses browser storage.
-- Where users' code already ran on a host that now moves to the content domain or to an opaque origin, answer every request on that host that carries the `Service-Worker: script` header with a replacement worker that clears its caches and unregisters itself, then send `Clear-Site-Data: "storage"` once requests reach the server again. A worker registered earlier answers navigations itself, so a new redirect or header never reaches its visitors, but the browser still fetches the worker script from the server.
+- Where no separate domain is available yet, serve the content with an opaque origin through an enforced `Content-Security-Policy: sandbox` response header without `allow-same-origin`, at the cost of browser storage.
 
 Ask before changing production domains or OAuth callback hosts.

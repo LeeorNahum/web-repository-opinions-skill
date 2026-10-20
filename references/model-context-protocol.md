@@ -28,7 +28,7 @@ Advertise one static catalog to every caller and authorize per call. Many client
 
 Published capability metadata is a promise. Advertise only scopes, grant types, response types, refresh behavior, extensions, and change notifications the server actually enforces or serves.
 
-Have the authorization server put the MCP resource in each access token's audience, and have the MCP server reject any token whose audience omits it, because the protocol requires a server to validate that a token was issued for it. Confirm the audience through the provider's validation contract, the claim in a self-contained token or the introspection response for an opaque one, since a provider can omit it by default.
+MCP requires a server to validate that a token was issued for it, so have the authorization server put the MCP resource in each access token's audience, and confirm it through the provider's validation contract, since a provider can leave that claim off by default.
 
 Serve the protected-resource metadata and other well-known documents with `no-store`, because hosts persist dynamic client registrations against them. Point clients at the authorization server's own metadata URL rather than proxying that document from the resource host: its issuer will not match the URL it came from, and a conforming client must discard it.
 
