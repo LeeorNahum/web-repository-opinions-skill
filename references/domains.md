@@ -41,13 +41,13 @@ The canonical production origin is a code constant, not a fallback string hidden
 
 ## User-Supplied Code Runs On Its Own Domain
 
-When the product serves HTML or JavaScript its users supply, serve it from a separate registrable domain, never from a subdomain of the product's own. Every HTTPS subdomain of one registrable domain is the same site to a browser, and script on any of them can set a cookie for the parent domain, so user code on a sibling can plant or reach the session a managed auth provider shares across subdomains. The product's domain serves only its own pages, and the page at the product's address frames the content, so visitors still see that address.
+When the product serves HTML or JavaScript its users supply, serve it from a separate registrable domain, never from a subdomain of the product's own. Every HTTPS subdomain of one registrable domain is the same site to a browser, and script on any of them can set a cookie for the parent domain, so user code on a sibling can plant or reach the session a managed auth provider shares across subdomains. The product's domain serves only its own pages. Where visitors should see the product's address, a page there frames the content.
 
 - Give each item its own subdomain on the content domain, so each item has its own origin and its own storage.
-- Frame each item by its URL on the content domain. Markup written into the product's own page, inline or through `srcdoc`, runs as the product.
+- When the product frames an item, frame it by its URL on the content domain. Markup written into the product's own page, inline or through `srcdoc`, runs as the product.
 - Request the content domain's entry in the private section of the Public Suffix List, and until browsers ship it, set every cookie the product issues on the content domain host-only with the `__Host-` prefix, because until then every item on it is one site.
 - When an item's code needs to know its viewer, give it a pseudonym the server derives per item, so no identifier follows a viewer across items.
-- Keep the content domain out of search, with the product's address as the canonical one.
+- When the product frames its items, keep the content domain out of search, with the framing page's address as the canonical one.
 - Where no separate domain is available yet, serve the content with an opaque origin through an enforced `Content-Security-Policy: sandbox` response header without `allow-same-origin`, at the cost of browser storage.
 
 Ask before changing production domains or OAuth callback hosts.

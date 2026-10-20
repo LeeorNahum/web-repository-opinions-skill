@@ -8,7 +8,6 @@ When a product's collaboration model is workspaces, back every workspace with th
 
 - Auto-create each user's first workspace at sign-up as a real provider organization, with a personalized name and a plain fallback name, and give it no special product status afterward: one workspace kind, one set of rules, so no flag exists for the first one to drift stale.
 - Turn the provider's personal-account (no-organization) mode off and require organization membership, so no session ever acts without a verified organization context.
-- Keep the provider's organization roles to its built-in administrator and member, with the workspace owner as administrator, and hold every finer product role in the app's own authorization gate, which owns capabilities whichever provider holds membership.
 - Key per-user facts to ownership, not to a designated workspace: the subscription is managed from any workspace the user owns. How many members a plan admits is a plan fact whose enforcement lives at the product's seat gate. The provider's per-organization membership cap is kept as a mirror of that fact, never as a second source of truth.
 - Make account deletion member-based: an owned workspace with no other active member is removed outright with its provider organization, while one that other members use is retained behind an anonymized owner, so nothing anyone depends on dies with an account and nothing orphaned lingers.
 
