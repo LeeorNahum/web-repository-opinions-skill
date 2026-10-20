@@ -60,7 +60,7 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 
 ## Evaluating A Change
 
-Run the suite in `evals/` for any change to an opinion, as `evals/harness/README.md` describes, with the old and new skill compared in the same round. When no case exercises the change, add one: a request a real product owner would make, in a fixture project that never names the rule. Pair every case where the rule should change a decision with one where applying it too broadly would be wrong.
+Run the suite in `evals/` for any change to an opinion, as `evals/harness/README.md` describes, with the old and new skill compared in the same round. When no case exercises the change, add one: a request a real product owner would make, in a fixture project that never names the rule. Pair every case where the rule should change a decision with one where applying it too broadly would be wrong. Raw run output, such as answers, changes, transcripts, and per-session grading, stays local: commit only the cases, fixtures, harness, and the per-round scores in `evals/results/SUMMARY.md`.
 
 ## Compatibility Posture
 
