@@ -11,7 +11,7 @@ Default routes, served at the site origin:
 
 - Provide a privacy policy at `/privacy` when the product, or a service acting for it, collects anything that can be tied to a person, or when a provider it uses requires one. Analytics, forms, cookies, third-party embeds, and the host's request logs all count, so leave the page out only after confirming that nothing is collected.
 - Provide terms of service at `/terms` when the product has accounts, payments, user content, or a public API, or when a provider it uses requires them. At sign-up and checkout, have the person agree to the linked terms, through the provider's own consent step where a provider renders that surface, because a footer link alone does not show agreement.
-- Link each page the product has from the homepage, usually in the footer, so it is reachable without login.
+- Link each page the product has from the homepage, usually in the footer, so it is reachable without login. In the footer, order the legal links and the contact link Terms, Privacy, then any other legal page, then Contact, keeping only the pages the product has.
 - Keep them publicly accessible with no auth wall, since verifiers and crawlers must reach them.
 - Host them on the same domain as the homepage they describe.
 
@@ -19,4 +19,4 @@ Some providers, such as a Google OAuth consent screen, will not verify an app un
 
 For that verification, the privacy policy must describe what user data is accessed, how it is used, stored, and shared, and must state that use is limited to what is described.
 
-Each page carries the same product-domain contact alias in a Contact section.
+Each legal page names who runs the product, a person or a legal entity, and carries a "Last updated" date that moves whenever its text changes in a way that matters to a reader. Privacy laws commonly require a notice to name who controls the data, some require the date it last changed, and terms need an identifiable party to bind.

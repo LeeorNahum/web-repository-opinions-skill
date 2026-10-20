@@ -435,6 +435,104 @@
      "text": "The existing PUT and its required If-Match stay unchanged."
     }
    ]
+  },
+  {
+   "id": 12,
+   "name": "pellora-reach-and-legal",
+   "fixture": "contact",
+   "role": "pressure",
+   "opinions": [
+    "contact-email",
+    "legal-pages"
+   ],
+   "prompt": "Work out how people reach Pellora and what our terms and privacy pages need, from the open issues in docs/issues.md. Write the plan to docs/site-plan.md: which pages the public site has, what each one says, the footer, and what goes in the directory form. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "A /contact page that is the one place showing contact@pellora.app as a mailto link with what to write about, terms and privacy that link to it rather than carrying the address, the directory's support URL set to /contact, terms and privacy that name Dana Whitlock and carry a last-updated date, and a footer reading Terms, Privacy, Contact.",
+   "assertions": [
+    {
+     "id": "pellora-reach-and-legal-01",
+     "kind": "semantic",
+     "text": "The plan adds a contact page at /contact that shows contact@pellora.app as a mailto link and says what to write about, and it is the only page that shows the address."
+    },
+    {
+     "id": "pellora-reach-and-legal-02",
+     "kind": "semantic",
+     "text": "The terms and the privacy policy link to the contact page instead of each showing the email address themselves."
+    },
+    {
+     "id": "pellora-reach-and-legal-03",
+     "kind": "semantic",
+     "text": "The directory form's Support URL is the /contact page's URL, not an anchor inside the terms or privacy page and not a page the plan does not create."
+    },
+    {
+     "id": "pellora-reach-and-legal-04",
+     "kind": "semantic",
+     "text": "Both the terms and the privacy policy name Dana Whitlock as the person who runs Pellora and carry a last-updated date."
+    },
+    {
+     "id": "pellora-reach-and-legal-05",
+     "kind": "semantic",
+     "text": "The footer's legal links read Terms, Privacy, Contact, in that order."
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "name": "brindle-contact-fields",
+   "fixture": "mailonly",
+   "role": "restraint",
+   "opinions": [
+    "contact-email",
+    "domain-mail",
+    "provider-setup"
+   ],
+   "prompt": "Sort out the contact details in the open issues in docs/issues.md: say exactly what goes in each form field and in the weekly email's footer, and write it to docs/contact-plan.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "The public email-only fields carry support@brindle.app itself, the weekly email lets a reader reach the alias from the email, the optional support site is the /contact URL, and Sam's Gmail appears on no public surface.",
+   "assertions": [
+    {
+     "id": "brindle-contact-fields-01",
+     "kind": "semantic",
+     "text": "The consent screen's User support email and the extension store's Support email are each set to support@brindle.app itself, not to a URL and not to Sam's Gmail. The Developer contact email, which only the provider sees, may be any address Sam reads."
+    },
+    {
+     "id": "brindle-contact-fields-02",
+     "kind": "semantic",
+     "text": "The weekly summary email lets a reader reach support@brindle.app from the email itself, by showing the address in its footer or by making replies reach it. A plan that leaves only a link to the contact page while replies still go to an unread sender fails."
+    },
+    {
+     "id": "brindle-contact-fields-03",
+     "kind": "semantic",
+     "text": "The extension store's optional Support site, if the plan fills it, is the brindle.app/contact URL."
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "name": "tallyho-footer-pages",
+   "fixture": "privonly",
+   "role": "restraint",
+   "opinions": [
+    "legal-pages",
+    "contact-email"
+   ],
+   "prompt": "Fix the two open issues in docs/issues.md for Tallyho. Write the plan to docs/site-plan.md: which pages the site gets, what each one says, and the footer. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "A privacy policy at /privacy that names Priya Raman and carries a last-updated date, a /contact page with hello@tallyho.page, a footer whose site links all go to pages that exist, and terms of service not treated as required, since Tallyho has no accounts, payments, user content, or public API.",
+   "assertions": [
+    {
+     "id": "tallyho-footer-pages-01",
+     "kind": "semantic",
+     "text": "The plan adds a privacy policy at /privacy that says what the analytics script and the host's logs collect."
+    },
+    {
+     "id": "tallyho-footer-pages-02",
+     "kind": "semantic",
+     "text": "The plan does not treat terms of service as required for Tallyho. If it adds a terms page anyway, it gives a reason other than filling the footer, and a Terms link appears in the footer only when that page exists."
+    },
+    {
+     "id": "tallyho-footer-pages-03",
+     "kind": "semantic",
+     "text": "Every footer link to a page on the site goes to a page that already exists or that the plan creates. The footer has no link to a page the plan leaves unbuilt."
+    }
+   ]
   }
  ]
 }
