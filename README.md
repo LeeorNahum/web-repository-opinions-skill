@@ -14,7 +14,7 @@ The opinions are paradigm-named and provider-stated: sections are named for what
 
 ## Coverage
 
-Architecture and identity, isolation of code users supply, rendering and surfaces, link previews and badges, URL state, physical commerce, HTTP APIs, MCP and agent packaging, runtime and deployment, provider onboarding, custom-domain email, auth and data ownership, external integrations, storage and jobs, search, product interaction, responsive UI and motion, billing and administration, and release readiness.
+Architecture and identity, rendering and surfaces, link previews and badges, URL state, physical commerce, HTTP APIs, MCP and agent packaging, runtime and deployment, provider onboarding, custom-domain email, auth and data ownership, isolation of user-supplied code, external integrations, storage and jobs, search, product interaction, responsive UI and motion, billing and administration, and release readiness.
 
 ## Use
 

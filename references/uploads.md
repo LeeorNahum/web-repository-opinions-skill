@@ -23,11 +23,11 @@ Create the database row before the long-running client upload begins, so an inte
 
 ## Programmatic Callers
 
-A script, CLI, integration, or agent takes the route that actually moves bytes from where it runs, and from any of them small text may travel inline in an ordinary request under a stated cap. The browser flow above stays the interactive path.
+A script, CLI, integration, or agent sends bytes by a route that works from where it runs. Small text may travel inline in an ordinary request under a cap the interface states. The browser flow above stays the interactive path.
 
 - A CLI reads local files and uploads them through the same signed direct upload.
-- An HTTP client sends a file's bytes in a signed direct or multipart upload rather than encoding them into JSON, apart from the small text allowed above.
-- A remote agent passes a fetchable HTTPS URL, or an attachment reference its host documents as fetchable. Any file beyond small text travels by URL or attachment reference, because a language model generates an inline base64 blob token by token, which is slow, expensive, and bounded by its context window.
-- A local path or sandbox URI names a file only the caller can see and moves no bytes. When a caller has no route that moves bytes, refuse with an error that names the routes that work, and never report an upload that did not land.
+- An HTTP client sends a file's bytes in a signed direct or multipart upload rather than encoding them into JSON.
+- A remote agent passes a fetchable HTTPS URL, or an attachment reference its host documents as fetchable, because a language model generates an inline base64 blob token by token, which is slow, expensive, and bounded by its context window.
+- Refuse a local path or sandbox URI, which names a file only the caller can see, with an error that names the routes that work, and never report an upload that did not land.
 
 Say which route each caller takes in the interface description and schema hints, so callers reach for the right shape by default. Keep host-specific attachment adapters at the protocol boundary, and upload staging and completion in the HTTP API and CLI. A server-fetched URL gets the same hardening as every server-side fetch of a caller-supplied URL. Every route, the browser's included, passes the same authorization, quota, validation, and durable finalize before content counts as added.

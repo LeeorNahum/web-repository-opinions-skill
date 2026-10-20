@@ -92,7 +92,7 @@ Runtime and environment:
 Auth and data:
 
 - Read [references/auth.md](references/auth.md) when wiring authentication and social sign-in posture.
-- Read [references/workspace-tenancy.md](references/workspace-tenancy.md) when deciding whether a product needs workspaces, backing them with the auth provider's organizations, shaping the home workspace, choosing an agent grant's workspace scope, or migrating existing workspaces onto organizations.
+- Read [references/workspace-tenancy.md](references/workspace-tenancy.md) when deciding whether a product needs workspaces, backing them with the auth provider's organizations, shaping the home workspace, sharing one resource with someone outside its workspace, choosing an agent grant's workspace scope, or migrating existing workspaces onto organizations.
 - Read [references/bootstrap.md](references/bootstrap.md) when ensuring user, workspace, and membership exist on authenticated entry.
 - Read [references/data-model.md](references/data-model.md) when modeling entities, names, and value precedence.
 - Read [references/source-of-truth.md](references/source-of-truth.md) when deciding which system owns which fact.
@@ -109,7 +109,7 @@ Media and jobs:
 - Read [references/bulk-actions.md](references/bulk-actions.md) when one user action processes multiple independent items or supports partial success.
 - Read [references/data-deletion.md](references/data-deletion.md) when one deletion operation must remove a dependent data graph across bounded steps.
 - Read [references/quota.md](references/quota.md) when charging usage against limits.
-- Read [references/abuse-resistance.md](references/abuse-resistance.md) when sizing internal quota ceilings, hardening upload or archive ingestion, or setting rate limiting posture.
+- Read [references/abuse-resistance.md](references/abuse-resistance.md) when sizing internal quota ceilings, hardening upload or archive ingestion or any server-side fetch of a caller-supplied URL, or setting rate limiting posture.
 - Read [references/failure-and-retries.md](references/failure-and-retries.md) when handling failed work and retry behavior.
 
 Money and admin:

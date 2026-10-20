@@ -1,6 +1,8 @@
 # Workspace Tenancy
 
-Give a product workspaces when shared ownership, membership, or policy needs them now or is on the product's roadmap, because retrofitting an ownership boundary costs far more than carrying one early. A product whose data will only ever belong to one person keeps it on the user account, with no organization layer. When a product's collaboration model is workspaces, back every workspace with the auth provider's organization object, the user's first workspace included. One organization per workspace gives every workspace the same membership, invitation, role, and token contract from day one, and the provider's verified organization context becomes the one workspace authority every surface shares. Clerk Organizations are the default pick, and the paradigm holds for any provider tenant object.
+Give a product workspaces when it needs shared ownership, membership, or policy now or its owner says it will, because retrofitting an ownership boundary costs far more than carrying one early. A product whose data will only ever belong to one person keeps that data on the user account, with no organization layer.
+
+When a product's collaboration model is workspaces, back every workspace with the auth provider's organization object, the user's first workspace included. One organization per workspace gives every workspace the same membership, invitation, role, and token contract from day one, and the provider's verified organization context becomes the one workspace authority every surface shares. Clerk Organizations are the default pick, and the paradigm holds for any provider tenant object.
 
 ## Every Workspace Is The Same Kind Of Thing
 
@@ -14,7 +16,7 @@ Give a product workspaces when shared ownership, membership, or policy needs the
 
 - Resolve identity and memberships from the provider's verified contracts: verified session or access-token claims, or the provider's userinfo endpoint for opaque tokens. A readable, unverified token body never selects a workspace.
 - Choose an agent grant's workspace scope from the product's need, independently of the workspace the UI is showing. A workspace-bound grant has consent select one workspace, and another workspace is a new authorization of the same canonical OAuth resource, never a second resource or a per-workspace path. An account-wide grant covers every current and future membership plus individually shared resources, and consent says so.
-- Under either scope, verify every call's target on the server against a live membership or a share of that resource, with its role, intersected with the token's scope. A single organization claim proves nothing about another workspace. A client may name its target workspace, which the server verifies, while a browsing filter never chooses it. Revocation reaches existing credentials, because every call rechecks.
+- Under either scope, verify every call's target on the server against a live membership or a share of that resource, with its role, intersected with the token's scope. A single organization claim proves nothing about another workspace. A client may name its target workspace for the server to verify. A filter that only narrows what a view lists never selects the workspace a call acts on. Revocation reaches existing credentials, because every call rechecks.
 - An individual share grants that resource alone, never its workspace's other resources or its member list.
 - Fail closed when verified identity is absent, or when neither a live membership nor a share covers the target, with one clear product error.
 

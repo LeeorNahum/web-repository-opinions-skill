@@ -8,6 +8,8 @@ Hold two different numbers, not one. A hidden internal quota, sized to the max l
 
 Ship the internal quota on day one, including in a free product. A price of zero is the strongest abuse magnet a product can offer, and abuse does not wait for a paid tier to exist.
 
+Count every paid provider attempt against that internal ceiling, failed ones included, because a provider bills the product for work that charged the user's allowance nothing. Reserve against it before each attempt, record what each attempt cost, and when it stops paid work, say so in product-owned copy without showing the internal number.
+
 Rate limiting is a different gate from quota, and often layers on the same request. It blunts volume and cost from a caller regardless of identity, and belongs at the edge or gateway, not a product database table. Quota governs how much of the product a given account is entitled to use. Losing either leaves the other doing a job it was not sized for.
 
 ## Upload Hardening
