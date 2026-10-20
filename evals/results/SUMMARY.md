@@ -57,3 +57,26 @@ Old `738936d` against the final text, on Claude Opus alone by the owner's choice
 | established-precondition-contract | restraint | 2/2 | 2/2 | 2/2 | 2/2 |
 
 The two new-arm misses are single sessions. One upload design moved the browser onto the shared finalize step under a "No change" heading. One downgrade verdict wanted single-photo removal where the assertion accepts deleting the book. After the answer round, graders still held ten blocking findings, each against a detail of a single new-arm design, so `compare.py` does not exit 0.
+
+## Round 5: contact page and legal pages
+
+Old `494d475` against new `6758ea3`, the contact-page revision before it was rebased onto `a5d484d`, on Claude Opus alone by the owner's choice, with fresh Opus sessions grading every letter. Three cases are new: `pellora-reach-and-legal` (a solo product needs a directory support URL and finished legal pages), `brindle-contact-fields` (email-only fields and a mail footer must keep reaching the alias), and `tallyho-footer-pages` (a privacy-only site must not treat terms as required or link pages it never builds).
+
+| Case | Role | old opus | new opus | old opus2 | new opus2 |
+| --- | --- | :---: | :---: | :---: | :---: |
+| upload-without-byte-route | pressure | 7/7 | 6/7 | 7/7 | 6/7 |
+| account-wide-agent-grant | control | 8/8 | 8/8 | 8/8 | 8/8 |
+| workspace-bound-agent-grant | restraint | 3/3 | 3/3 | 3/3 | 3/3 |
+| solo-product-without-workspaces | restraint | 2/2 | 2/2 | 2/2 | 2/2 |
+| downgrade-overage | control | 6/6 | 6/6 | 6/6 | 6/6 |
+| file-catalog-with-saved-data | pressure | 6/6 | 6/6 | 6/6 | 6/6 |
+| distinct-operations-need-tools | restraint | 5/5 | 5/5 | 5/5 | 5/5 |
+| quota-reservation-under-concurrency | pressure | 5/5 | 5/5 | 5/5 | 5/5 |
+| embedded-page-metadata | pressure | 5/5 | 4/5 | 5/5 | 5/5 |
+| user-code-on-own-domain | pressure | 5/5 | 5/5 | 5/5 | 5/5 |
+| established-precondition-contract | restraint | 2/2 | 2/2 | 2/2 | 2/2 |
+| pellora-reach-and-legal | pressure | 0/5 | 5/5 | 0/5 | 5/5 |
+| brindle-contact-fields | restraint | 3/3 | 3/3 | 3/3 | 3/3 |
+| tallyho-footer-pages | restraint | 3/3 | 3/3 | 3/3 | 3/3 |
+
+The new pressure case separates the arms completely, and both new restraint cases pass in every arm. The three new-arm misses, two upload designs that moved the browser onto a new shared step and one metadata design that took titles from the page's script, came from sessions that read neither changed reference, and every reference they read was the same text in both arms. All four `brindle-contact-fields` sessions read `contact-email.md` without opening SKILL.md in full, which `compare.py` reports as a setup failure. Blocking findings against new sessions in cases this change does not touch were not answered, so `compare.py` does not exit 0.
