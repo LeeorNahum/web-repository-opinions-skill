@@ -145,7 +145,7 @@ Operating philosophy:
 - Read [references/runtime-truth.md](references/runtime-truth.md) when deciding whether a change is actually complete.
 - Read [references/promotion.md](references/promotion.md) when promoting work between deployment stages.
 - Read [references/definition-of-done.md](references/definition-of-done.md) before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.
-- Run the [layout check script](scripts/check-layout.mjs) against the served production build of every web surface before calling it done, as definition-of-done.md describes. Pass every route a crawl from the start page would miss, and add `--app` for a signed-in app shell. `--help` lists what it fails on. Run it from GitHub, which brings its own Playwright, or from the installed skill, which uses the project's; either way Chromium must be installed once with `npx playwright install chromium`.
+- Run the [layout check script](scripts/check-layout.mjs) against the served production build of every web surface before calling it done, as definition-of-done.md describes. Add `--app` for a signed-in app shell, and `--help` lists what it fails on. Run it from GitHub, which brings its own Playwright, or from the installed skill, which uses the project's. Either way, install Chromium once with `npx playwright install chromium`.
 
   ```bash
   npx --yes github:LeeorNahum/web-repository-opinions-skill <served-url> --paths=<route>,<route>

@@ -75,13 +75,10 @@ Assertions passed per case, out of the case's total, with one session per cell. 
 | --- | --- | :---: | :---: | :---: | :---: | :---: |
 | containers-ship-with-deletion, launch scope | pressure | 1 | 3/3 | 3/3 | 3/3 | 3/3 |
 | containers-ship-with-deletion | pressure | 2 | 2/2 | 2/2 | 0/2 | 2/2 |
-| containers-ship-with-deletion | pressure | 3 | - | - | - | - |
 | containers-ship-with-deletion | pressure | 4 | 0/2 | 2/2 | 2/2 | 2/2 |
 | containers-ship-with-deletion | pressure | 5 | 2/2 | 2/2 | 2/2 | 2/2 |
 | containers-ship-with-deletion | pressure | 6 | 2/2 | 2/2 | 2/2 | 2/2 |
 | retained-records-are-voided | restraint | 1 | 2/2 | 2/2 | 2/2 | 2/2 |
-| retained-records-are-voided | restraint | 2 | - | - | - | - |
-| retained-records-are-voided | restraint | 3 | - | - | - | - |
 | retained-records-are-voided | restraint | 4 | 2/2 | 2/2 | 2/2 | 1/2 |
 | retained-records-are-voided | restraint | 5 | 2/2 | 2/2 | 2/2 | 2/2 |
 | retained-records-are-voided | restraint | 6 | 2/2 | 2/2 | 2/2 | 2/2 |

@@ -8,7 +8,7 @@ Match billing mode to the stage: the provider's sandbox for local and staging, l
 
 ## Ambient Usage Display
 
-Show usage against a hard ceiling only once usage reaches 80 percent of it, at the action that would cross it, and always on the billing or settings page. Below 80 percent, keep it out of routine, always-visible chrome such as a list header or a persistent counter. A limit nobody is near is not information, it is a standing reminder of a ceiling that does not matter yet, and it reads as surveillance rather than help. A free tier should feel complete, not like a metered preview of a bigger product.
+Show usage against a hard ceiling in three places only: anywhere once usage reaches 80 percent of it, at any action that would cross it, and always on the billing or settings page. Below 80 percent, keep it out of routine, always-visible chrome such as a list header or a persistent counter. A limit nobody is near is not information, it is a standing reminder of a ceiling that does not matter yet, and it reads as surveillance rather than help. A free tier should feel complete, not like a metered preview of a bigger product.
 
 Sell an upgrade at the ceiling only when a bigger plan truly raises that ceiling. When every plan shares the ceiling, the honest remedy is freeing capacity, and an upgrade button would be a lie.
 

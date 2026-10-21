@@ -19,7 +19,7 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2);
-const opt = Object.fromEntries(args.filter((a) => a.startsWith('--')).map((a) => { const [k, v] = a.slice(2).split('='); return [k, v ?? true]; }));
+const opt = Object.fromEntries(args.filter((a) => a.startsWith('--')).map((a) => { const i = a.indexOf('='); return i < 0 ? [a.slice(2), true] : [a.slice(2, i), a.slice(i + 1)]; }));
 const start = args.find((a) => !a.startsWith('--'));
 if (!start || opt.help) {
   console.log(`Usage: check-layout <url> [--paths=<route>,<route>] [--errors=<route>] [--storage-state=<file>] [--out=<dir>] [--app]
@@ -348,7 +348,7 @@ for (const [pi, p] of pages.entries()) {
     const r = await fetch(href).catch(() => null);
     if (!r || !r.ok) fail(p.url, '1440', `${kind === 'apple' ? 'apple-touch-icon' : 'favicon'} does not load: ${href}`);
   }
-  if (opt.app && byWidth['1440'].docScrolls) fail(p.url, '1440', 'the app shell scrolls the whole page instead of one content region');
+  if (opt.app) for (const [w, m] of Object.entries(byWidth)) if (m.docScrolls) fail(p.url, w, 'the app shell scrolls the whole page instead of one content region');
 }
 const titles = new Map();
 for (const p of pages.filter((x) => x.title !== undefined)) { const t = p.title.trim(); if (!titles.has(t)) titles.set(t, new Map()); titles.get(t).set(new URL(p.url).pathname, p.url); }

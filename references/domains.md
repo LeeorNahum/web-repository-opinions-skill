@@ -20,7 +20,7 @@ Never serve the same content on two domains. Two live copies split search rankin
 
 Attach aliases to the same hosting project as the canonical origin rather than parking them at the registrar. One project means one certificate story and one redirect rule, and the alias inherits the canonical host's configuration instead of drifting from it.
 
-Give the canonical origin a successful production deployment before judging an alias, because a redirect host has nothing to redirect to until its target serves.
+Give the canonical origin a successful production deployment before testing an alias, because a redirect host has nothing to redirect to until its target serves. Before then the alias can fail its TLS handshake, which looks like a certificate or DNS fault and is neither.
 
 Verify an alias by requesting a path with a query string, not just the bare host. A redirect that drops the path looks correct on the home page and loses every real link.
 

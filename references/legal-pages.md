@@ -23,4 +23,4 @@ Each legal page names who runs the product, a person or a legal entity, and carr
 
 Write each page as a consumer product's own website page: short sections under plain headings, addressed to the visitor, with no tables and the "Last updated" date at the top. Say what happens to the visitor's data rather than how the code handles it, and name third parties by role, except an AI model provider, which is named outright.
 
-Before writing, read two or three comparable products' published pages, shape the draft on them, and hold the draft against them as the check. Publish only statements the shipped code backs. The site's source is the pages' only copy.
+Before writing, read two or three comparable products' published pages, shape the draft on them, and hold the draft against them as the check. Publish only statements the shipped code backs. Keep the legal text only in the site's source, with no separate draft or document copy.
