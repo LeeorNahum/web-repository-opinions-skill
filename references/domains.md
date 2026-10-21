@@ -37,13 +37,14 @@ Use custom domains everywhere, including for staging origins, OAuth origins, and
 
 ## User-Supplied Code Runs On Its Own Domain
 
-When the product serves HTML or JavaScript its users supply, serve it from a separate registrable domain, never from a subdomain of the product's own. Every HTTPS subdomain of one registrable domain is the same site to a browser, and script on any of them can set a cookie for the parent domain, so user code on a sibling can plant or reach the session a managed auth provider shares across subdomains. The product's domain serves only its own pages. Where visitors should see the product's address, a page there frames the content.
+When the product serves HTML or JavaScript its users supply, serve it from a separate registrable domain, never from a subdomain of the product's own, with the one exception at the end of this section. Every HTTPS subdomain of one registrable domain is the same site to a browser, and script on any of them can set a cookie for the parent domain, so user code on a sibling can plant or reach the session a managed auth provider shares across subdomains. The product's domain serves only its own pages. Where visitors should see the product's address, a page there frames the content.
 
 - Give each item its own subdomain on the content domain, so each item has its own origin and its own storage.
 - When the product frames an item, frame it by its URL on the content domain. Markup written into the product's own page, inline or through `srcdoc`, runs as the product.
-- Request the content domain's entry in the private section of the Public Suffix List, and until browsers ship it, set every cookie the product issues on the content domain host-only with the `__Host-` prefix, because until then every item on it is one site.
+- Request the content domain's entry in the private section of the Public Suffix List, and set every cookie the product issues on the content domain host-only with the `__Host-` prefix, because a browser whose copy of the list lacks that entry treats every item on the domain as one site.
 - When an item's code needs to know its viewer, give it a pseudonym the server derives per item, so no identifier follows a viewer across items.
 - When the product frames its items, keep the content domain out of search, with the framing page's address as the canonical one.
-- Where no separate domain is available yet, serve the content with an opaque origin through an enforced `Content-Security-Policy: sandbox` response header without `allow-same-origin`, at the cost of browser storage.
+
+The exception is a product with no separate domain. It serves the content with an opaque origin through an enforced `Content-Security-Policy: sandbox` response header without `allow-same-origin`, at the cost of browser storage.
 
 Ask before changing production domains or OAuth callback hosts.
