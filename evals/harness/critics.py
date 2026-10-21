@@ -3,7 +3,7 @@
 Usage: python critics.py <round> [max-concurrent] [--second opus2|sol]
 Environment: EVAL_ROOT, the run folder grade.py packaged.
 
-A round runs on Claude Opus and a second subject arm: GPT Sol through Codex (`sol`, the default), or a
+A round runs on Opus and a second subject arm: Sol (`sol`, the default), or a
 second, independent Opus arm (`opus2`). With `sol`, Sol grades the Opus-built letters and Opus grades
 Sol's, so no model grades its own work. With `opus2`, every letter is graded by a fresh Opus critic
 session, one per subject arm per eval, and the round's summary says that both arms and all graders
@@ -16,13 +16,13 @@ A folder that already holds a critic's file is skipped for that critic.
 """
 import concurrent.futures, json, os, pathlib, re, shutil, subprocess, sys
 
-from run import ENV_ALLOW
+from run import ENV_ALLOW, MODELS
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = pathlib.Path(os.environ.get('EVAL_ROOT', '')).resolve()
 HOME = pathlib.Path.home()
 OPUS = ['--model', 'opus', '--effort', 'high']
-SOL = ['--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"']
+SOL = ['--model', MODELS['sol'], '-c', 'model_reasoning_effort="high"']
 
 
 def task(folder, critic, letters):

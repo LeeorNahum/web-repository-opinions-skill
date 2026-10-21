@@ -1,7 +1,7 @@
 """Run one clean-room session of a web-repository-opinions eval.
 
 Usage: python run.py <label> <eval name> <model> <skill-dir or -> [timeout-seconds]
-  model:  opus | opus2 (a second, independent Opus arm, both through Claude Code) | sol (Codex)
+  model:  opus | opus2 (a second, independent Opus arm) | sol
 Environment: EVAL_ROOT, the run folder. It must sit outside the home folder and outside every
 Git repository, because Claude Code discovers skills in the .claude folders of the working
 directory's ancestors, and the home folder holds the owner's own.
@@ -25,8 +25,7 @@ EVALS = HERE.parent / 'evals.json'
 FIXTURES = HERE.parent / 'fixtures'
 HOME = pathlib.Path.home()
 ROOT = pathlib.Path(os.environ.get('EVAL_ROOT', '')).resolve()
-# Claude Code resolves the `opus` alias to the latest Opus. Codex has no family alias, so its
-# current Sol identifier is pinned here and changes when Codex does.
+# Sol is pinned because the codex CLI takes no family alias. Move the pin when a newer Sol ships.
 MODELS = {'opus': 'opus', 'opus2': 'opus', 'sol': 'gpt-6.1-sol'}
 CLAUDE_MODELS = ('opus', 'opus2')
 EFFORT = 'medium'

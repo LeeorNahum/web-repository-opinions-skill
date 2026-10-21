@@ -1,10 +1,8 @@
 # Results
 
-Assertions passed per case, out of the case's total, with one session per cell. Raw run output (answers, changes, transcripts, and per-assertion grading) stays local and is not committed.
+Assertions passed per case, out of the case's total, with one session per cell. A dash is a session that was not run or not scored.
 
-## Round 1: baseline
-
-The skill at `738936d`, graded by Claude critics. Five Sol sessions did not run because Codex reached its usage limit.
+## Round 1
 
 | Case | Role | old opus | old sol |
 | --- | --- | :---: | :---: |
@@ -20,9 +18,7 @@ The skill at `738936d`, graded by Claude critics. Five Sol sessions did not run 
 | user-code-on-own-domain | pressure | 2/5 | 3/5 |
 | established-precondition-contract | restraint | 2/2 | - |
 
-## Round 2: first revision
-
-Old `738936d` against new `900b578`, on Opus and Sol, with Claude critics grading every letter. Three Sol restraint sessions did not run because Codex reached its usage limit.
+## Round 2
 
 | Case | Role | old opus | new opus | old sol | new sol |
 | --- | --- | :---: | :---: | :---: | :---: |
@@ -38,9 +34,7 @@ Old `738936d` against new `900b578`, on Opus and Sol, with Claude critics gradin
 | user-code-on-own-domain | pressure | 3/5 | 5/5 | 4/5 | 4/5 |
 | established-precondition-contract | restraint | 2/2 | 2/2 | 2/2 | - |
 
-## Round 4: final revision
-
-Old `738936d` against the final text, on Claude Opus alone by the owner's choice. `opus` and `opus2` are two independent sets of fresh Opus sessions, and fresh Opus sessions graded every letter and ran the answer round, so this round has no cross-model check. Between rounds 2 and 4, a catalog session that built a separate record interface led to the rule that a whole-file write merges record by record, and a quota session that deferred its spend bound led to the per-account spend limit.
+## Round 4
 
 | Case | Role | old opus | new opus | old opus2 | new opus2 |
 | --- | --- | :---: | :---: | :---: | :---: |
@@ -56,11 +50,7 @@ Old `738936d` against the final text, on Claude Opus alone by the owner's choice
 | user-code-on-own-domain | pressure | 2/5 | 5/5 | 2/5 | 5/5 |
 | established-precondition-contract | restraint | 2/2 | 2/2 | 2/2 | 2/2 |
 
-The two new-arm misses are single sessions. One upload design moved the browser onto the shared finalize step under a "No change" heading. One downgrade verdict wanted single-photo removal where the assertion accepts deleting the book. After the answer round, graders still held ten blocking findings, each against a detail of a single new-arm design, so `compare.py` does not exit 0.
-
-## Round 5: contact page and legal pages
-
-Old `494d475` against new `6758ea3`, the contact-page revision before it was rebased onto `a5d484d`, on Claude Opus alone by the owner's choice, with fresh Opus sessions grading every letter. Three cases are new: `pellora-reach-and-legal` (a solo product needs a directory support URL and finished legal pages), `brindle-contact-fields` (email-only fields and a mail footer must keep reaching the alias), and `tallyho-footer-pages` (a privacy-only site must not treat terms as required or link pages it never builds).
+## Round 5
 
 | Case | Role | old opus | new opus | old opus2 | new opus2 |
 | --- | --- | :---: | :---: | :---: | :---: |
@@ -79,22 +69,19 @@ Old `494d475` against new `6758ea3`, the contact-page revision before it was reb
 | brindle-contact-fields | restraint | 3/3 | 3/3 | 3/3 | 3/3 |
 | tallyho-footer-pages | restraint | 3/3 | 3/3 | 3/3 | 3/3 |
 
-The new pressure case separates the arms completely, and both new restraint cases pass in every arm. The three new-arm misses, two upload designs that moved the browser onto a new shared step and one metadata design that took titles from the page's script, came from sessions that read neither changed reference, and every reference they read was the same text in both arms. All four `brindle-contact-fields` sessions read `contact-email.md` without opening SKILL.md in full, which `compare.py` reports as a setup failure. Blocking findings against new sessions in cases this change does not touch were not answered, so `compare.py` does not exit 0.
-
-## Removal cases, in a run of their own
-
-Old `a5d484d` against the revision that adds the removal rule to the data model, on Claude Opus alone, with fresh Opus sessions grading every letter, so these rounds have no cross-model check. Only the two new cases ran, each round against the rule's wording at that time, and the last against the final wording. In the first round the pressure case asked for a whole launch scope, and every arm planned removal there, so later rounds narrowed it to the workspace settings page. Its third round lost two old sessions to a failed start and is not scored. The other cases were not rerun after the loading map line for the data model was widened.
+## Removal cases
 
 | Case | Role | Round | old opus | new opus | old opus2 | new opus2 |
 | --- | --- | :---: | :---: | :---: | :---: | :---: |
 | containers-ship-with-deletion, launch scope | pressure | 1 | 3/3 | 3/3 | 3/3 | 3/3 |
 | containers-ship-with-deletion | pressure | 2 | 2/2 | 2/2 | 0/2 | 2/2 |
+| containers-ship-with-deletion | pressure | 3 | - | - | - | - |
 | containers-ship-with-deletion | pressure | 4 | 0/2 | 2/2 | 2/2 | 2/2 |
 | containers-ship-with-deletion | pressure | 5 | 2/2 | 2/2 | 2/2 | 2/2 |
 | containers-ship-with-deletion | pressure | 6 | 2/2 | 2/2 | 2/2 | 2/2 |
 | retained-records-are-voided | restraint | 1 | 2/2 | 2/2 | 2/2 | 2/2 |
+| retained-records-are-voided | restraint | 2 | - | - | - | - |
+| retained-records-are-voided | restraint | 3 | - | - | - | - |
 | retained-records-are-voided | restraint | 4 | 2/2 | 2/2 | 2/2 | 1/2 |
 | retained-records-are-voided | restraint | 5 | 2/2 | 2/2 | 2/2 | 2/2 |
 | retained-records-are-voided | restraint | 6 | 2/2 | 2/2 | 2/2 | 2/2 |
-
-The gain is thin: two of the ten old sessions on the pressure case left workspace deletion out of scope, and no new session did. The one new miss, in the fourth round, deleted a client along with its issued invoices at account closure, which led to keeping what a kept record needs to stay complete. Blocking findings against new-arm designs stand in every round, none of them about removal, so `compare.py` does not exit 0.

@@ -136,7 +136,7 @@ def main():
     cols = sorted(set(cols), key=cols.index)
     note = (["Sessions in the round's jobs file that are not recorded:", ''] + [f"- `{u['session']}`: {u['reason']}" for u in unfinished] + ['']) if unfinished else []
     if '--allow-same-model' in sys.argv:
-        note += ['Both subject arms are Claude Opus: `opus` and `opus2` are two independent sets of fresh Opus sessions, not two models. Every grader and every answer round also ran on fresh Claude Opus sessions, by the owner\'s choice, so this round measures the skill change on one model and gives no cross-model check.', '']
+        note += ['Both subject arms are Opus: `opus` and `opus2` are two independent sets of fresh Opus sessions, not two models. Every grader and every answer round also ran on fresh Opus sessions, so this round measures the skill change on one model and gives no cross-model check.', '']
     elif same_family:
         note += [f'{len(same_family)} sessions were graded by a critic of their own model. They need a verdict from the other model before any comparison.', '']
     # Each case has its own hash, so versions are compared within one eval, never across evals.
