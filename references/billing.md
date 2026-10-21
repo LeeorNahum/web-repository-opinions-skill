@@ -21,7 +21,7 @@ A plan can shrink: a subscriber cancels, or downgrades below what they already o
 
 - Derive coverage from the current plan at the gate, not a flag stamped on each resource. A resource the plan no longer covers keeps all its data and history and fails every gated operation with a clear, product-owned error, then works again the instant the plan covers it. When the plan covers only some of what the owner holds, a stable order decides which, such as the oldest within the allowance.
 - Hold the plan limit in one entitlement check that every client's backend path calls, beside the authorization gate and separate from it, so the UI, the API, an agent surface, and a background job all read the same answer. An interface never grants what the plan does not cover just because its control was reachable.
-- A size allowance follows its own rule instead of the coverage rule above: an owner over it, in total or in one item, keeps everything stored, can still read and delete, and is refused only further growth.
+- A size allowance, such as total storage or the largest file, follows its own rule instead of the coverage rule above: an owner over it, in total or in one item, keeps everything stored, can still read and delete, and is refused only further growth.
 - Expose the limit where it is hit, not as a standing notice: the action or call that reaches an over-the-limit resource fails with a clear, product-owned error that names the limit and leaves the remedy to the surface that can act on it.
 
 Ask before changing live billing mode, plan entitlements, or anything that affects what customers are charged.

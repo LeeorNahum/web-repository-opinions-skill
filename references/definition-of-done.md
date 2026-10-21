@@ -15,7 +15,7 @@ A feature is done only when its product contract, implementation, runtime, and v
 ## Code And Data
 
 - Env contracts match the values every runtime reads.
-- A new repository has its CI workflow, each deployable app's hosting config, and each env-reading runtime's `.env.example` and setup document from its first change.
+- A new repository has its CI workflow, each deployable app's hosting config and setup document, and each env-reading runtime's `.env.example` from its first change.
 - Generated clients, schemas, and types are current.
 - Migrations have been dry-run, executed only in approved environments, and independently verified.
 - Stale names, route shapes, package paths, env keys, and compatibility branches have been removed.
