@@ -44,7 +44,7 @@ packages/backend/
 
 One backend serves the whole product. Public site, signed-in app, future mobile, and admin share it when they are one product. Do not split the backend per app unless the products are genuinely separate.
 
-Future mobile or desktop clients become new apps under `apps/` that reuse the same packages and backend, never a fork of product logic.
+Future mobile or desktop clients become new apps under `apps/` that reuse the same packages and backend, never a fork of product logic. A native mobile client is one cross-platform project for Android and iOS.
 
 ## Package Hygiene
 

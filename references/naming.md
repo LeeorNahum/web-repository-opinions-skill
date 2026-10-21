@@ -13,7 +13,7 @@ Name by paradigm, not by provider. A thing is named for what it does so the name
 
 `site` is the default name for the primary web surface. Most web-technology repos either are a `site` or at least include one, so `site` is the safe default that stays accurate once a signed-in surface joins it.
 
-Use `app` for the signed-in product. A more specific role word replaces it only when that word names everything the surface will hold as the product grows, judged by reading the paths that will live under it. Name additional surfaces by their role: `admin`, `dashboard`, `console`, `portal`, `studio`. The role word is the name, with no need for generic suffixes.
+Use `app` for the signed-in product, or `web` when its subdomain is `web.`. A more specific role word replaces it only when that word names everything the surface will hold as the product grows, judged by reading the paths that will live under it. A native mobile app is `mobile`. Name additional surfaces by their role: `admin`, `dashboard`, `console`, `portal`, `studio`. The role word is the name, with no need for generic suffixes.
 
 Carry that role name through the whole surface. The app directory, package or deployable slug, hosting project suffix, and DNS subdomain should all identify the same role. A reader should be able to line up code, hosting, and DNS without memorizing aliases.
 

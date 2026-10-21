@@ -6,7 +6,7 @@ Lay out hosts around one canonical origin per surface, with the primary surface 
 - Signed-in app on its own subdomain: `app.example.com`.
 - Additional product surfaces on their own role subdomain: `dashboard.example.com`, `admin.example.com`, `portal.example.com`.
 
-When the apex uses the `.app` TLD, prefer `web.` for the browser app unless a different subdomain better matches its role.
+When the apex uses the `.app` TLD or a native mobile app is planned, prefer `web.` for the browser app unless a different subdomain better matches its role, so `app` never names two things at once. A native mobile app takes no subdomain.
 
 The subdomain is the role word, matching the surface name. There is no need for generic alternatives like `application` or `dash`.
 
