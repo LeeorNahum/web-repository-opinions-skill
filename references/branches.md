@@ -8,19 +8,17 @@ Branches are deployment roles, not just code lines. Use `main`, never `master`, 
 | `preview` | hosted staging | dev/test | yes, staging |
 | `main` | production | production | yes, production |
 
-Two provider stages exist, not three: dev/test and production.
+Providers have two credential tiers, dev/test and production.
 
-- Local and staging share dev/test resources (test billing mode, dev backend deployment, development auth instance, `*-dev` provider keys).
+- Local and staging share the dev/test tier of each provider: test billing mode, the development auth instance, and dev keys. Staging gets its own backend deployment inside that tier.
 - `main` alone uses production resources (live billing, prod backend deployment, production auth instance, `*-prod` keys).
-- Same env key names everywhere. Values change by store.
-- Staging differs from local mainly by origin URLs, not by a different set of API keys.
+- Staging differs from local mainly by origin URLs and its backend deployment, not by a different set of provider keys.
 
 Agent Git rules:
 
 - Default commit target is `dev` unless the user asks for `preview` or `main`.
 - Merge `dev` into `preview` for a hosted staging deploy.
 - Merge `preview` into `main` only for production releases with explicit approval.
-- Never commit `.env.local`, filled temp env files, or secrets.
 - Push only with explicit user approval.
 
 The point of the system: every change lands on `dev` first, `preview` proves it on real hosted infrastructure while still using safe dev/test resources, and `main` is the only place production credentials and live data are touched.
@@ -39,8 +37,8 @@ Preview exists to look at what has not shipped. Anyone who can load it can read 
 
 Regardless of the gate, treat preview as if the gate could be lifted:
 
-- Serve `Disallow: /` from `robots.txt` and a `noindex` on every page. A gate can be turned off for a debugging session and forgotten, and a preview host that gets indexed is a duplicate of the whole site competing with the canonical one.
-- Name no sitemap from a host that must not be crawled.
+- Send `X-Robots-Tag: noindex` on every response from the preview host, and keep its `robots.txt` crawlable so crawlers can read that header. A gate can be turned off for a debugging session and forgotten, and a preview host that gets indexed is a duplicate of the whole site competing with the canonical one.
+- Name no sitemap from the preview host.
 - Keep the canonical tag pointing at the production origin from both hosts.
 
 Ask before pointing staging at production provider resources instead of the shared dev/test resources.

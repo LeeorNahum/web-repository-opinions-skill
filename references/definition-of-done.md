@@ -15,6 +15,7 @@ A feature is done only when its product contract, implementation, runtime, and v
 ## Code And Data
 
 - Env contracts match the values every runtime reads.
+- A new repository ships, from its first change, a CI workflow that runs its gates, each deployable app's hosting config, and beside each runtime that reads env its `.env.example` and setup document.
 - Generated clients, schemas, and types are current.
 - Migrations have been dry-run, executed only in approved environments, and independently verified.
 - Stale names, route shapes, package paths, env keys, and compatibility branches have been removed.
@@ -27,7 +28,7 @@ A feature is done only when its product contract, implementation, runtime, and v
 
 ## Verification
 
-- Lint, typecheck, focused tests, and production builds pass for every affected app and package.
+- Lint, typecheck, focused tests, and production builds pass for every affected app and package, and each deployable app defines real `lint`, `typecheck`, and `build` scripts that the workspace root runs.
 - Behavioral tests cover changed contracts, failure paths, retries, partial success, and idempotency where applicable.
 - Public pages remain useful without JavaScript and expose headings, links, canonical metadata, and structured data in rendered HTML.
 - Every publicly reachable page expands into its own link preview card when pasted, and private routes expand into the content-free fallback.
@@ -35,15 +36,16 @@ A feature is done only when its product contract, implementation, runtime, and v
 - Generated OpenAPI matches runtime responses and shared schemas.
 - MCP tools pass protocol-client or Inspector checks against the same shared resource contract.
 - Source metadata parsers enforce limits, clear stale values, and update indexed fields.
+- Every gate actually executed, and its output was read rather than its exit code.
 
 Only run checks that apply to the feature, but never omit a category because the implementation happened in a different app or provider.
 
-## Verify Against The Task Runner You Actually Have
+## Check It The Way A Person Meets It
 
-A gate you run wrong is a gate you did not run, and the failure is silent: the command exits zero and you believe the check passed.
+A build that compiles has not been seen. Before calling any web surface done, verify the served production build yourself, the way a person meets it:
 
-- **Know what your runner's cache flags mean before repeating them.** Check whether the invocation reads cached results, writes new entries, or does both. Use the runner's documented controls when a check must execute again, and confirm from its output that it did.
-- **A flag on the workspace script is not always a flag on the runner.** Package managers forward extra arguments to the underlying script, so the same flag can land on the task runner in one invocation and on the tool inside a package in another, where it is an unknown option. Check where it landed rather than assuming.
-- **A fresh worktree is not a working checkout.** Reviewing a snapshot in a detached worktree requires installing dependencies there first. Otherwise every gate fails for a reason that has nothing to do with the change, and the review reports on the runner instead of the code.
-
-Prefer the smallest command that proves the thing, and read its output rather than its exit code.
+1. Serve the production build: the framework's start or preview command, or a static server over the output folder. The dev server is not the product.
+2. Run the layout check script against it, passing every route the work added or changed, detail, settings, legal, and error routes included. It captures each page one screen at a time at 1440, 2560, 390, and 320 CSS pixels and fails on the layout rules it can measure, which its `--help` lists, such as sideways scroll, targets under 24 by 24, and pages over the length budget. Fix every failure and run it again until it passes.
+3. Open the captures and look at them, the widest and the narrowest of each page side by side. Fix what reads wrong to a person even when no number caught it: crowding, clipped or cramped content, a pair that stacked, an empty or unfinished region, a control that looks broken.
+4. Use every action the task asked for in the served build: submit, filter, sort, select, copy, bulk actions, and status changes. Reload after a filter, sort, or selection and confirm the view comes back from its URL.
+5. Report the pages checked, what failed and was fixed, and anything left for the user, with the numbers.

@@ -8,4 +8,4 @@ The public contact address is an alias on the product domain, never a personal m
 - A contact address is not optional for a public product: a privacy policy with no way to reach its owner is defective, provider verifications check for one, and a product without a public issue tracker has no other support surface.
 - Its home is the two required trust pages: a Contact section on the privacy and terms pages, linking the alias as `mailto:`. That placement is sufficient. No dedicated contact page and no address scattered across other surfaces unless the product genuinely outgrows it.
 
-Ship a page that carries the alias only after the alias receives mail from outside. A dead contact address on a trust page is worse than none.
+Route the alias and confirm it receives mail from outside before the legal pages ship on the production host. A dead contact address on a trust page is worse than none.

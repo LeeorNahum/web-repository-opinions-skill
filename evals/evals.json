@@ -1,0 +1,1276 @@
+{
+  "skill_name": "web-repository-opinions",
+  "evals": [
+    {
+      "id": 1,
+      "name": "marketing",
+      "prompt": "I'm launching Fernhop, a small desktop app that batch-renames and sorts photo files by the date and place they were taken. I need its public website: a homepage that explains what it does and lets people download it for macOS, Windows, and Linux, plus privacy and terms pages because the app stores will ask for them. There is also a command-line version people install with `npm install -g fernhop`, so show that command somewhere people can copy it.\n\nWrite real copy, pick a visual direction that fits a calm, practical utility, and draw any product visuals yourself (no stock images). There are no real download files or accounts yet, so point the download buttons at in-site destinations for now. Make it ready to deploy as a real site, and tell me how to run it locally when you're done.\n\nWork only inside the current directory and finish everything in this session.",
+      "expected_output": "A deployable Fernhop website with a homepage, download destinations for three platforms, a copyable install command, and privacy and terms pages, that reads as a real product site and holds together from a phone to a very wide screen.",
+      "assertions": [
+        {
+          "id": "marketing-01",
+          "reference": "stack.md",
+          "kind": "build",
+          "text": "Program source in every app and package is TypeScript under a tsconfig, and the typecheck exits 0.",
+          "check": "List the program source files (.js, .jsx, .mjs, .cjs, .ts, .tsx) in every app and package, excluding generated output and tool configuration files. Pass when each is .ts or .tsx and each app or package with program source has a tsconfig.json or extends a shared one. Stylesheets, markup, and data files are not program source."
+        },
+        {
+          "id": "marketing-02",
+          "reference": "stack.md",
+          "kind": "config",
+          "text": "Each dependency is on its latest stable release and follows its current major's conventions.",
+          "check": "Record, for every direct dependency and dev dependency, the declared range and the version `npm view <package> version` reports at grading time. A tool whose current major ships under a renamed or split package (a router under a new package name, an SDK whose current server package is published beside its older single package) is judged against the current package's version. Pass when every declared range admits the latest stable release (for a caret range, the same major) and no configuration follows an older major's convention in place of the current one, such as a Tailwind CSS v4 install configured through a legacy tailwind.config.js instead of CSS."
+        },
+        {
+          "id": "marketing-03",
+          "reference": "SKILL.md",
+          "kind": "config",
+          "text": "A React surface styles with Tailwind CSS and shadcn/ui set up through its CLI, with lucide-react for icons, unless a design system already exists.",
+          "check": "package.json depends on tailwindcss and lucide-react, components.json exists at the app root, and shadcn component files exist (for example components/ui/button.tsx) and are imported by pages. Fail when any of these is missing or a second icon library (react-icons, heroicons, font-awesome) is a dependency. A build with no React surface records na."
+        },
+        {
+          "id": "marketing-04",
+          "reference": "design-tokens.md",
+          "kind": "build",
+          "text": "Icons come from one set at consistent size and weight across every surface.",
+          "check": "Record every icon library in package.json and, on the captured pages, each interface icon's source, rendered size, and stroke width (the brand mark and product illustrations excepted). Pass when all interface icons come from one set and icons in the same role (inline with text, inside buttons, in feature tiles) share one size, with one stroke weight throughout. A reviewer decides from the recorded values whether any size difference follows a role or is inconsistent."
+        },
+        {
+          "id": "marketing-05",
+          "reference": "versioning.md",
+          "kind": "config",
+          "text": "Everything that ships carries a semantic version, and every mention of that version agrees.",
+          "check": "Every package.json has a version matching ^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$. Record every version string shown on the site or in the README and which artifact it names (the site, the desktop app download). Pass when every manifest holds a semantic version and every mention of the same artifact's version agrees."
+        },
+        {
+          "id": "marketing-06",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "Real local values stay in each runtime's .env.local, and the gitignore holds the `.env`, `.env.*`, `!.env.example`, `!.env.*.example` contract.",
+          "check": "The root .gitignore contains the four lines `.env`, `.env.*`, `!.env.example`, `!.env.*.example` (or patterns that ignore and unignore the same paths). Record every env file present: pass when each one other than *.example is ignored by that contract, which a local .env.local is expected to be, and none is unignored. Record na only when the site reads no env and ships no env file."
+        },
+        {
+          "id": "marketing-07",
+          "reference": "deployment.md",
+          "kind": "config",
+          "text": "Each deployable app carries its own hosting config, copied from the skill's asset, that auto-deploys only `main` and `preview` and blocks every other branch.",
+          "check": "The site's vercel.json (or the chosen host's equivalent) has `\"$schema\": \"https://openapi.vercel.sh/vercel.json\"` and `git.deploymentEnabled` with `main: true`, `preview: true`, and `\"**\": false`. Evaluate the branch names main, preview, dev, feature-x, and feature/x against the keys: pass only when main and preview deploy and the other three do not."
+        },
+        {
+          "id": "marketing-08",
+          "reference": "definition-of-done.md",
+          "kind": "build",
+          "text": "Lint, typecheck, and production builds pass for every app and package, and each deployable app defines real lint, typecheck, and build scripts that the workspace root runs.",
+          "check": "From a clean install, run the root lint, typecheck, and build, and each deployable app's own scripts. Pass when each deployable app has all three scripts, each runs a real tool (a lint script that only reruns the type checker is not a linter), and every run exits 0. Packages with no build output need no build script."
+        },
+        {
+          "id": "marketing-09",
+          "reference": "product-ux.md",
+          "kind": "visual",
+          "text": "Each view has one primary action, styled as the only primary button in its main region.",
+          "check": "On the homepage, each legal page, and any download page, count the controls in the main region that share the primary button style (filled brand color) and record which control is each view's primary action. Pass when no view shows more than one primary-styled control and every view whose primary action a reviewer can name from the 1440x900 capture (the homepage's download, at least) styles that action and no other as primary. Record a view with no primary-styled control and whether it has an action that should carry that style."
+        },
+        {
+          "id": "marketing-10",
+          "reference": "product-ux.md",
+          "kind": "visual",
+          "text": "No screen is a dead end: every view, including not-found and error states, offers at least one link or action onward.",
+          "check": "Render every route plus an unknown path such as /no-such-page. Pass when each renders product-owned content (not a framework or server default page) with at least one in-product link."
+        },
+        {
+          "id": "marketing-11",
+          "reference": "interaction-feedback.md",
+          "kind": "visual",
+          "text": "Transient action feedback stays inside the control's existing footprint and never reflows the surrounding interface, and a text label that carries the action's meaning is preserved.",
+          "check": "Click the copy button for the install command at 1440x900 and 390x844. Record the bounding rects of the button and of every sibling and following element before the click, while the confirmation shows, and after it clears, and record the button's label in each state. Pass when no rect moves or resizes by more than 0 CSS pixels and the button's text label, if it has one, stays readable throughout: unchanged, or replaced inside the same footprint by a word or short phrase stating the result, such as Copied. A text label replaced by an icon or spinner alone fails."
+        },
+        {
+          "id": "marketing-12",
+          "reference": "interaction-feedback.md",
+          "kind": "visual",
+          "text": "Action results are announced through accessible labels or live regions.",
+          "check": "After clicking the copy button, an element with aria-live, role=status, or role=alert receives the result text, or the button's accessible name changes to state the result. Pass when either holds."
+        },
+        {
+          "id": "marketing-13",
+          "reference": "marketing-site.md",
+          "kind": "visual",
+          "text": "Public copy is product-native and simple, in product words free of internal, debug, provider, and job terminology.",
+          "check": "Extract the visible text of every public page. Pass when it contains no framework, hosting, or build tool name (Next.js, React, Vite, Tailwind, Vercel), no debug or builder language (placeholder, mock, stub, TODO, lorem, or wording lifted from the brief such as in-site destination), and a reviewer confirms it reads as written for someone deciding whether to install the app. A privacy policy naming the processors it must disclose passes."
+        },
+        {
+          "id": "marketing-14",
+          "reference": "marketing-site.md",
+          "kind": "build",
+          "text": "The header logo or wordmark links to the site root path `/`, never an in-page anchor.",
+          "check": "On every public page, find the link that wraps the header's logo or wordmark. Pass when its href is exactly `/` (or the canonical origin followed by `/`), with no `#` fragment."
+        },
+        {
+          "id": "marketing-15",
+          "reference": "routing.md",
+          "kind": "layout",
+          "text": "A standalone public page has one full descriptive word path, and a surface with child pages uses a prefix whose bare path is its collection view.",
+          "check": "List the public routes. Pass when each standalone page's path is a full word or hyphenated phrase such as /privacy, /terms, /download (an initialism readers say as a word, such as faq, counts as a word), with no abbreviation (/dl, /tos) and no query-string page selection, and any group of child pages, such as one page per platform, sits under one prefix whose bare path renders the collection."
+        },
+        {
+          "id": "marketing-16",
+          "reference": "seo.md",
+          "kind": "build",
+          "text": "Every public page exposes one canonical URL, and the site links each page by that one path.",
+          "check": "Each public page's initial HTML has exactly one <link rel=\"canonical\"> with an absolute URL naming the page's own path on the canonical host. Request each page with and without a trailing slash and, for a static build, with a .html suffix, and record each variant's status. Pass when every variant that answers 200 declares the same canonical URL or redirects to it, and every internal link to the page uses that one path."
+        },
+        {
+          "id": "marketing-17",
+          "reference": "seo.md",
+          "kind": "build",
+          "text": "The public homepage carries exactly one h1, and the product's name is in it.",
+          "check": "Fetch the homepage without JavaScript. Pass when it has exactly one <h1> and its text contains Fernhop."
+        },
+        {
+          "id": "marketing-18",
+          "reference": "seo.md",
+          "kind": "visual",
+          "text": "The first paragraph after the h1 is one server-rendered sentence, visible in the first viewport at phone width, that names the product and says what it does.",
+          "check": "In the homepage's initial HTML, the first <p> after the h1 is one sentence containing Fernhop and a verb saying what it does. Record its top and bottom edges at 390x844 and at 320x700: pass when it lies within the first viewport at both. A reviewer confirms it reads naturally aloud, with no stacked keywords."
+        },
+        {
+          "id": "marketing-19",
+          "reference": "seo.md",
+          "kind": "build",
+          "text": "The tab title puts the page's subject first and the site name last, with one separator used on every page.",
+          "check": "Collect every page's <title> from the initial HTML. Pass when every non-home title is `<subject><sep>Fernhop` with the same separator string on every page, and the homepage title is Fernhop, optionally followed by the separator and a one-line promise."
+        },
+        {
+          "id": "marketing-20",
+          "reference": "seo.md",
+          "kind": "build",
+          "text": "The tab title's subject is taken from the page's own main heading.",
+          "check": "For every non-home page, the title's subject (the part before the separator) equals that page's h1 text after trimming and case-folding."
+        },
+        {
+          "id": "marketing-21",
+          "reference": "public-discovery.md",
+          "kind": "build",
+          "text": "Every public page exposes its primary heading, descriptive text, semantic links, and canonical metadata in the initial HTML, readable without JavaScript.",
+          "check": "Fetch each public page with a plain HTTP client. Pass when the HTML contains the h1 text, the page's descriptive text, navigation as <a href> elements, the canonical link, the title, the meta description, and any structured data the page declares. Loading with JavaScript disabled shows the same content."
+        },
+        {
+          "id": "marketing-22",
+          "reference": "public-discovery.md",
+          "kind": "build",
+          "text": "robots.txt stays general and names the sitemap location, and the sitemap lists exactly the eligible public pages.",
+          "check": "GET /robots.txt answers 200 with a `User-agent: *` group and a `Sitemap:` line holding an absolute URL, and any crawler-specific group states a genuinely different access rule (record it). GET on the sitemap URL answers 200 with XML. Pass when it lists every public, available, canonical page, and omits any page served noindex, any arbitrary query URL, and anything else."
+        },
+        {
+          "id": "marketing-23",
+          "reference": "social-metadata.md",
+          "kind": "layout",
+          "text": "The favicon is the product's own mark as one SVG source with a 180x180 touch icon, wired the way the framework expects.",
+          "check": "The icon served by <link rel=\"icon\"> answers 200 as image/svg+xml and is not a framework default. A 180x180 PNG is linked as apple-touch-icon. In a Next.js App Router app the files are exactly app/icon.svg and app/apple-icon.png, with no app/favicon.ico and no metadata.icons in layout.tsx. In any other build the two files sit in the public folder and are linked from the document head."
+        },
+        {
+          "id": "marketing-24",
+          "reference": "social-metadata.md",
+          "kind": "build",
+          "text": "In-page uses of the icon, such as the header logo and the card image renderer, read one asset through one named constant instead of a redrawn copy.",
+          "check": "Grep source for the icon path. Pass when every in-page reference to the icon by URL, the header logo and a card image renderer that loads it by path, takes that path from one named constant, the header logo renders that file (an <img> or its imported SVG), and no hand-drawn copy of the mark exists in components. A card renderer that reads the same source file from disk at build time counts as reading the one asset: record how it reads it."
+        },
+        {
+          "id": "marketing-25",
+          "reference": "social-metadata.md",
+          "kind": "build",
+          "text": "Every public page carries Open Graph and platform card tags in its initial HTML, with absolute URLs, and a route that overrides metadata keeps the image, site name, and card type.",
+          "check": "Build the site for production the way its README or final message says (record the command and any env it sets), then fetch every public page without JavaScript. Pass when each head has non-empty og:title, og:description, og:image, og:url, og:site_name, og:type, and twitter:card=summary_large_image, and og:image, og:url, and the canonical link are absolute https URLs on the canonical origin (not localhost)."
+        },
+        {
+          "id": "marketing-26",
+          "reference": "social-metadata.md",
+          "kind": "build",
+          "text": "The card title is the page subject, the separator, then the product name, identical to the tab title.",
+          "check": "For every public page, og:title equals <title> exactly."
+        },
+        {
+          "id": "marketing-27",
+          "reference": "social-metadata.md",
+          "kind": "build",
+          "text": "Every public page has its own title and a description specific to that page, and no two pages share one.",
+          "check": "Collect <title>, meta description, and og:description across every public page. Pass when all are non-empty and no two pages share a title or a description."
+        },
+        {
+          "id": "marketing-28",
+          "reference": "social-metadata.md",
+          "kind": "visual",
+          "text": "Each page's card image is generated at 1200x630 with the product mark, product name, and that page's subject in the product's colors and type, the brand image belongs to the homepage alone, and no placeholder is used.",
+          "check": "Fetch og:image for every public page. Pass when each answers 200 as PNG or JPEG at 1200x630, each non-home page's image differs in bytes from the homepage's, and a reviewer sees the mark, Fernhop, and that page's subject in the site's palette and typeface."
+        },
+        {
+          "id": "marketing-29",
+          "reference": "legal-pages.md",
+          "kind": "build",
+          "text": "The site serves a privacy policy at /privacy and terms at /terms on the homepage's origin with no auth wall, and the homepage links both.",
+          "check": "GET /privacy and /terms on the served origin with no cookies: both answer 200 with the privacy policy and the terms respectively, with no redirect to another host and no sign-in. The homepage's initial HTML links both paths, usually from the footer."
+        },
+        {
+          "id": "marketing-30",
+          "reference": "legal-pages.md",
+          "kind": "visual",
+          "text": "The privacy policy describes what user data is accessed, how it is used, stored, and shared, and states that use is limited to what is described.",
+          "check": "Read /privacy. Pass when it describes, in any form, what user data is accessed, how it is used, how it is stored, and how it is shared, and states that use is limited to what is described. Record where each of the five appears."
+        },
+        {
+          "id": "marketing-31",
+          "reference": "contact-email.md",
+          "kind": "build",
+          "text": "The contact address is a `contact@` alias on the product domain, shown as a mailto link in a Contact section on both the privacy and terms pages, with no dedicated contact page.",
+          "check": "Both /privacy and /terms have a heading reading Contact followed by an <a href=\"mailto:contact@<product domain>\">, the same address on both. No /contact route exists, no role alias (support@, hello@, info@) or personal mailbox appears anywhere in the repository, and no other page shows the address."
+        },
+        {
+          "id": "marketing-32",
+          "reference": "contact-email.md",
+          "kind": "build",
+          "text": "The contact alias lives in one code constant, and every surface that shows it reads that constant.",
+          "check": "Grep source for `contact@`, docs and README excepted. Pass when it appears exactly once, in an exported constant, and each page that shows the address imports that constant."
+        },
+        {
+          "id": "marketing-33",
+          "reference": "origins.md",
+          "kind": "layout",
+          "text": "Origin resolution lives in one shared module that holds the canonical production origin as a code constant.",
+          "check": "Find the origins module. Pass when it exports the site's canonical origin constant and a resolver, the metadata base, canonical links, sitemap, and robots.txt read it, and grep finds no other https:// literal naming the product's own host and no localhost:<port> literal in source outside it (tests and docs excepted)."
+        },
+        {
+          "id": "marketing-34",
+          "reference": "origins.md",
+          "kind": "build",
+          "text": "Same-surface navigation uses relative paths.",
+          "check": "Grep every href, Link, and redirect. Pass when every link to a page of the site is a root-relative path, with no absolute URL naming the site's own host."
+        },
+        {
+          "id": "marketing-35",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Layout follows available space and input capability, never a mobile or desktop device label.",
+          "check": "Load the homepage at 390x844 once with a desktop user agent and no touch, and once with a mobile user agent and touch emulation. Pass when the two captures match apart from hover styling, and source has no user-agent sniffing or isMobile-style flag that changes layout or hides content."
+        },
+        {
+          "id": "marketing-36",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "A very narrow and a very wide viewport show the same page at a different scale: the same sections, order, arrangements, and actions, every one of them reachable, with an arrangement adapted only where its content measurably cannot fit.",
+          "check": "Capture every page one screen at a time at 1440x900, 2560x1440, 390x844, and 320x700. Pass when the ordered list of sections and headings is identical at every size, every link and button present at 1440 is reachable at 320 (record how: visible, inside a disclosure or drawer opened by a visible toggle, or otherwise), and a reviewer comparing the captures side by side finds no row that stacked or turned into different components where the side-by-side arrangement would still fit at a usable size."
+        },
+        {
+          "id": "marketing-37",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "On a phone, supporting copy sits around 13 to 15 CSS pixels: the short text that supports a heading, card, tile, or control, not a reading page's body text.",
+          "check": "At 390x844 and 320x700, measure the computed font size of supporting copy: lead lines under headings, card and tile descriptions, captions, and helper text. Leave out the body paragraphs of reading pages such as privacy and terms. Record every value. Pass when each sits around 13 to 15 CSS pixels, as the rule words it; record any value outside that range with its element so a reviewer can see how far it strays."
+        },
+        {
+          "id": "marketing-38",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "On a phone, headings step down until they wrap at most one more line than they do wide.",
+          "check": "For the h1 and each h2, compute line count as height divided by computed line-height at 1440x900, 390x844, and 320x700. Pass when each phone count is at most the 1440 count plus 1."
+        },
+        {
+          "id": "marketing-39",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "A document page's length in screens at 390 and at 320 stays within about 1.3 times the desktop page's.",
+          "check": "Screens = document scrollHeight / innerHeight. Measure every page at 1440x900, 390x844, and 320x700, the sizes the skill's layout check uses. Pass when each phone value is at most about 1.3 times that page's 1440 value. Long reading pages such as legal text follow their reading measure instead: record their values without failing them."
+        },
+        {
+          "id": "marketing-40",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Pairs and short groups (paired actions, peer tiles, short link groups) stay side by side on a phone through an explicit column count, and auto-fit grids are kept for open-ended collections.",
+          "check": "At 390x844 and 320x700, check the hero action pair, the platform download options, and each short link group. Pass when the members of each group share one row (no member sits below another), labels wrap inside each member, each container fixes its column count (a grid with an explicit track count such as repeat(2, minmax(0, 1fr)), or a row that does not wrap) rather than an auto-fit grid or wrapping flex, and any repeat(auto-fit or auto-fill) in the CSS sits on an open-ended collection with a minimum track taken from its smallest usable item."
+        },
+        {
+          "id": "marketing-41",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "A row pairing copy with an illustration stacks only when the illustration beside the copy would render its internal text below 9 CSS pixels, and a stacked illustration takes the full column width.",
+          "check": "For each row that pairs copy with an illustration, measure at 390 and 320 the illustration's actual rendered size in that row as built. If the row stays side by side, pass when the illustration's smallest internal text is at least 9 CSS pixels. If the row stacks, pass when the builder's own side-by-side arrangement at that width (force the row with its desktop column template and measure) would have put that text below 9 CSS pixels, and the stacked illustration takes the full column width."
+        },
+        {
+          "id": "marketing-42",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Each illustration or product mockup scales as one unit inside a box that reserves its rendered dimensions, so the whole subject stays in frame.",
+          "check": "Sweep 320 to 2560 in 40 px steps. For each illustration container, pass when every descendant's rect lies inside the container's rect and the container reserves its size before load (aspect-ratio, width and height, or an SVG viewBox) with a layout shift of 0."
+        },
+        {
+          "id": "marketing-43",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Reading and marketing content is bounded by maximum widths, with body text at about 45 to 75 characters per line.",
+          "check": "At 1440x900 and 2560x1440, for every body paragraph longer than one line, divide its width by the width of `0` in its font and record the result, and record the main content column's width and computed max-width. Pass when a declared maximum width caps the main content column and body lines sit at about 45 to 75 characters. The grader names any paragraph outside that range and decides whether it is still about in range."
+        },
+        {
+          "id": "marketing-44",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Every standalone interactive target on a CSS surface is at least 24 by 24 CSS pixels.",
+          "check": "At 320x700, 390x844, and 1440x900, measure every rendered a, button, input, select, summary, and [role=button] outside running sentences. Pass when every box is at least 24 by 24."
+        },
+        {
+          "id": "marketing-45",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Layout never causes horizontal scroll at any width, including with hostile content such as long unbroken URLs, paths, and filenames.",
+          "check": "Inject a 200-character unbroken filename into the lead paragraph, the first h2, and a footer element, then sweep 320 to 2560 in 10 px steps. Pass when document.scrollingElement.scrollWidth never exceeds clientWidth and no element extends past the viewport's right edge outside its own scroll container."
+        },
+        {
+          "id": "marketing-46",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "A value the reader must see whole, such as a command beside its copy button, wraps inside its box or moves the button to its own line, and never scrolls or hides behind it.",
+          "check": "At 320x700 and 390x844, find the `npm install -g fernhop` block. Pass when the full command text is visible (its text rect lies inside its container and does not overlap the copy button), and the block has no horizontal scrollbar and no text-overflow clipping."
+        },
+        {
+          "id": "marketing-47",
+          "reference": "design-tokens.md",
+          "kind": "config",
+          "text": "One token source defines colors, a typography scale, spacing, radius, elevation, and named component styles.",
+          "check": "Find the token source (CSS custom properties, a Tailwind theme block, or a tokens module). Pass when it defines entries in all six categories: color, type steps, spacing, radius, shadow or elevation, and at least one named component style such as button or card."
+        },
+        {
+          "id": "marketing-48",
+          "reference": "design-tokens.md",
+          "kind": "build",
+          "text": "Components consume tokens, and any one-off value a component needs stays consistent with the system.",
+          "check": "Grep component and page source outside the token file for hex, rgb(), hsl(), and oklch() literals and for arbitrary Tailwind values such as bg-[#...] or p-[13px], and record each with its file and line. SVG geometry (coordinates, path data, viewBox) is not a style value. Pass when components take their colors, type, spacing, radius, and shadows from tokens, and every recorded one-off value stays consistent with the system: a color that is a token's value or derived from one, a size that sits on the token scales. A reviewer decides each recorded value, and a color outside the palette fails."
+        },
+        {
+          "id": "marketing-49",
+          "reference": "font-loading.md",
+          "kind": "build",
+          "text": "Fonts load with zero flash of unstyled text: self-hosted and preloaded, through the framework font utility where one exists, displayed with font-display optional over a metric-matched fallback, and never from a runtime font CDN.",
+          "check": "Record na for the loading half when the pages use only a system stack. Otherwise Next.js loads fonts through next/font with display 'optional', Astro through its Fonts API with optional display, and any other build serves every custom face used above the fold as a same-origin woff2 with <link rel=\"preload\" as=\"font\" type=\"font/woff2\" crossorigin> in the head and font-display: optional, and the fallback face carries size-adjust, ascent-override, descent-override, and line-gap-override (a framework font utility's generated fallback counts). Load every page with network logging: pass when those hold, no request goes to a third-party font host, and, with cache disabled and slow 4G throttling, no text changes face or shifts after first paint."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "app",
+      "prompt": "Build the signed-in web app for Brindle, a tool that helps small bakeries run their wholesale orders to cafes and shops. A baker opens it every morning to see what has to be baked and delivered today.\n\nIt needs a dashboard for today, an orders list the baker can search and filter by status and customer, an order detail page where they can change the status and see the line items, a customers list with a detail page for each customer, and a settings page for the bakery's profile, delivery days, and notifications. From the orders list they should be able to select several orders and mark them delivered at once.\n\nThere is no backend or login yet: use realistic mock data (a few dozen orders across a dozen customers) kept in the browser, and act as if the baker is already signed in. It will be used on a laptop at the counter and on a phone in the van. Tell me how to run it locally when you're done.\n\nWork only inside the current directory and finish everything in this session.",
+      "expected_output": "A runnable Brindle web app with a today view, a searchable and filterable orders list with bulk mark-delivered, order and customer detail pages, and settings, where every view is addressable by URL and works at the counter and on a phone.",
+      "assertions": [
+        {
+          "id": "app-01",
+          "reference": "stack.md",
+          "kind": "config",
+          "text": "Each dependency is on its latest stable release and follows its current major's conventions.",
+          "check": "Record, for every direct dependency and dev dependency, the declared range and the version `npm view <package> version` reports at grading time. A tool whose current major ships under a renamed or split package (a router under a new package name, an SDK whose current server package is published beside its older single package) is judged against the current package's version. Pass when every declared range admits the latest stable release (for a caret range, the same major) and no configuration follows an older major's convention in place of the current one, such as a Tailwind CSS v4 install configured through a legacy tailwind.config.js instead of CSS."
+        },
+        {
+          "id": "app-02",
+          "reference": "stack.md",
+          "kind": "visual",
+          "text": "Every script, style, font, and worker the product ships is served from its own origin, with no public CDN at runtime.",
+          "check": "Load every route of the served build with a clean cache and record requests of type script, stylesheet, font, and worker. Pass when every such request's host equals the page origin, apart from a provider script the product requires, such as a payment or auth SDK, on the surface that uses it."
+        },
+        {
+          "id": "app-03",
+          "reference": "SKILL.md",
+          "kind": "config",
+          "text": "A React surface styles with Tailwind CSS and shadcn/ui set up through its CLI, with lucide-react for icons, unless a design system already exists.",
+          "check": "package.json depends on tailwindcss and lucide-react, components.json exists at the app root, and shadcn component files (for example components/ui/button.tsx, dialog.tsx, table.tsx) exist and are used by views. Fail when any is missing or a second icon library is a dependency."
+        },
+        {
+          "id": "app-04",
+          "reference": "modularity.md",
+          "kind": "build",
+          "text": "A flow is one callable capability that every trigger calls, with triggers adapting inputs and outputs but never reimplementing product rules.",
+          "check": "Find the code that changes an order's status. Pass when one function owns the transition rules (which statuses may follow which), the order detail status control and the bulk mark-delivered action both call it, and no onClick or component handler writes the status or repeats the rule itself."
+        },
+        {
+          "id": "app-05",
+          "reference": "app-surface.md",
+          "kind": "visual",
+          "text": "The app feels like its core object first: the home route opens the primary object's list or workspace, with the create action on the first screen when users create that object, and summary numbers sit above or beside it using less than half of the first screen.",
+          "check": "Open the app's root and follow any redirect. At 1440x900 and 390x844, record what the first screen shows and the height of every stat tile or chart. Pass when the home route shows the list of today's orders (rows a baker can open) on the first screen, the summary numbers sit above or beside that list and take less than half the first screen's height, and, when the app lets the baker create orders, the create action is visible on the first screen (record whether it does)."
+        },
+        {
+          "id": "app-06",
+          "reference": "routing.md",
+          "kind": "visual",
+          "text": "Every meaningful view and state has its own URL that a reload, a copied link, and Back restore.",
+          "check": "For the dashboard, an order detail, a customer detail, and each settings section, copy the URL, open it in a fresh browser context, and reload. Pass when each restores the same view and state, and Back from a detail returns to the list state it came from. The orders list's search and filters are graded under app-29."
+        },
+        {
+          "id": "app-07",
+          "reference": "ids.md",
+          "kind": "visual",
+          "text": "Private resource IDs in routes are a fixed 12-character Base58 string with no type prefix, never a name or slug.",
+          "check": "Collect every ID segment in app URLs (scope, order, customer) and in the seed data. Pass when each matches ^[1-9A-HJ-NP-Za-km-z]{12}$ and no route segment contains a customer or bakery name."
+        },
+        {
+          "id": "app-08",
+          "reference": "ids.md",
+          "kind": "layout",
+          "text": "Entity IDs are minted by one shared helper.",
+          "check": "Pass when exactly one function mints entity IDs, every site that creates an entity at runtime calls it, and grep finds no other nanoid, customAlphabet, Math.random, or getRandomValues call producing an entity ID. Record where the helper lives and whether seed IDs come from it or are written as literals in the entity format."
+        },
+        {
+          "id": "app-09",
+          "reference": "user-facing-errors.md",
+          "kind": "build",
+          "text": "No exception message, serialized exception, stack trace, request id, or framework name is rendered.",
+          "check": "Grep UI source for error.message, err.message, e.message, String(error), JSON.stringify(err, and .stack inside JSX, toast calls, or rendered state. Pass at zero occurrences that reach rendered output (a logger call is allowed)."
+        },
+        {
+          "id": "app-10",
+          "reference": "user-facing-errors.md",
+          "kind": "visual",
+          "text": "Unexpected failures show one context-specific fallback message, and the production error boundary shows product copy while the original error goes to one logging path.",
+          "check": "Write malformed data into the browser store and reload, then make one store call throw an unmapped error with a technical message. Pass when a route-level error boundary exists in source, the screen shows product copy naming the failed action with a way onward and none of the thrown text, and the caught error is passed to one logging function."
+        },
+        {
+          "id": "app-11",
+          "reference": "user-facing-errors.md",
+          "kind": "visual",
+          "text": "Error copy names the failed user action, not the subsystem, and gives one realistic next step.",
+          "check": "Force a failed status change and a failed settings save. Pass when each message names the action (for example that the order could not be marked delivered) and offers exactly one next step as text or a control, never a bare Failed or Error."
+        },
+        {
+          "id": "app-12",
+          "reference": "live-data.md",
+          "kind": "visual",
+          "text": "A change reflects in every open view without a manual refetch or reload.",
+          "check": "Open the orders list in two tabs of one browser context. Mark an order delivered in tab A and record how long tab B takes to show it. Pass when tab B shows the new status on its own, with no reload, refocus, or user action. A view that updates only on reload, on refocus, or through an interval refetch fails."
+        },
+        {
+          "id": "app-13",
+          "reference": "definition-of-done.md",
+          "kind": "build",
+          "text": "Lint, typecheck, and production builds pass for every app and package, and each deployable app defines real lint, typecheck, and build scripts that the workspace root runs.",
+          "check": "From a clean install, run the root lint, typecheck, and build, and each deployable app's own scripts. Pass when each deployable app has all three scripts, each runs a real tool (a lint script that only reruns the type checker is not a linter), and every run exits 0. Packages with no build output need no build script."
+        },
+        {
+          "id": "app-14",
+          "reference": "search-indexing.md",
+          "kind": "visual",
+          "text": "Search normalizes case and whitespace consistently.",
+          "check": "In the orders search, type a customer's name in changed case with doubled and surrounding spaces. Pass when the results equal those for the plain query."
+        },
+        {
+          "id": "app-15",
+          "reference": "product-ux.md",
+          "kind": "visual",
+          "text": "Each view has one primary action, styled as the only primary button in its main region.",
+          "check": "On the dashboard, orders list, order detail, customers list, customer detail, and settings, count the controls in the main region that share the primary button style and record each view's primary action. Pass when no view shows more than one primary-styled control at a time, the bulk action bar counts as the list's primary action while a selection exists, and every view whose primary action a reviewer can name from its capture styles that action and no other as primary. Record a view with no primary-styled control and whether it has an action that should carry that style."
+        },
+        {
+          "id": "app-16",
+          "reference": "bulk-actions.md",
+          "kind": "visual",
+          "text": "A bulk action reports partial failure when any item fails, keeps every independent success, leaves failed items selected and ready to retry, and retries only those.",
+          "check": "Select five orders including one that cannot become delivered (already delivered or cancelled, or make it fail by editing stored data), then mark them delivered. Pass when the other four persist as delivered after reload, the aggregate feedback says the action partly failed, the ineligible order shows its own outcome and stays selected, and a retry submits only that order."
+        },
+        {
+          "id": "app-17",
+          "reference": "bulk-actions.md",
+          "kind": "build",
+          "text": "Bulk work returns one structured result per requested item in input order, carrying its stable identity and a typed product state.",
+          "check": "Read the bulk function. Pass when it returns one entry per input ID in input order, each with the ID and a small product-level state (such as completed, unchanged, or failed), the UI reads each item's outcome from that result, and, where the result is typed, each state is its own variant carrying exactly the facts it promises, so an entry without its ID or a failure without its reason does not type-check."
+        },
+        {
+          "id": "app-18",
+          "reference": "interaction-feedback.md",
+          "kind": "visual",
+          "text": "Complete, partial, and failed results are announced through accessible labels or live regions.",
+          "check": "After a status change and after the bulk action, pass when an element with aria-live, role=status, or role=alert receives the result text, or the control's accessible name states the result."
+        },
+        {
+          "id": "app-19",
+          "reference": "interaction-feedback.md",
+          "kind": "visual",
+          "text": "Transient action feedback stays inside the control's footprint and never reflows the surrounding interface, and a text label that carries the action's meaning is preserved.",
+          "check": "Record the rects of the status control, the bulk action button, the settings save button, and every sibling and following element. Trigger each action and re-measure while its confirmation shows and again once it clears. Pass when the confirmation's appearance and removal move or resize nothing by more than 0 CSS pixels, and each text-labeled button's label stays readable throughout: unchanged, or replaced inside the same footprint by a word or short phrase stating the result. A layout change that persists once the confirmation clears (a changed status badge, a new history row, a bulk bar that closes because the selection emptied) is lasting page state and is not counted."
+        },
+        {
+          "id": "app-20",
+          "reference": "interaction-feedback.md",
+          "kind": "visual",
+          "text": "Selection survives pagination and unrelated controls and clears when the filter, search, or scope changes, when the user clears it, or on Escape.",
+          "check": "Select two orders, then page forward and back if the list paginates and open and close an unrelated menu: pass when both stay selected. Change the status filter: pass when selection clears. Select again and press Escape: pass when it clears."
+        },
+        {
+          "id": "app-21",
+          "reference": "interaction-feedback.md",
+          "kind": "visual",
+          "text": "In a search-centered collection, `/` and Ctrl or Cmd+K focus the existing search input and select its value without clearing it, and are ignored inside editable controls.",
+          "check": "On the orders list with a search typed, blur it and press `/`: pass when the search input is focused, its value unchanged, and fully selected. Repeat with Ctrl+K unless a command palette owns it. Focus another text field and press `/`: pass when `/` is typed there and focus stays. The placeholder shows no shortcut text."
+        },
+        {
+          "id": "app-22",
+          "reference": "routing.md",
+          "kind": "visual",
+          "text": "A route that only decides where a visitor belongs, and a bare entity URL with several child views, resolves with a history replace, so Back skips it.",
+          "check": "From an external page, open the app root and, if the app has a tenancy root, its bare /[scope]/[scopeId] URL. Pass when each lands on its default view and one press of Back returns to the page before it rather than to the bare URL."
+        },
+        {
+          "id": "app-23",
+          "reference": "app-surface.md",
+          "kind": "build",
+          "text": "The signed-in app serves its routes noindex and publishes no sitemap.",
+          "check": "Pass when every app route's response carries a noindex directive, either <meta name=\"robots\" content=\"noindex\"> in the served HTML or an X-Robots-Tag: noindex header, and no sitemap lists an app route. A robots.txt disallow is not a noindex directive and does not pass on its own."
+        },
+        {
+          "id": "app-24",
+          "reference": "seo.md",
+          "kind": "build",
+          "text": "The tab title leads with the page's own subject, taken from its main heading, and ends with the product name after one separator used everywhere.",
+          "check": "Visit every view and read document.title after data loads. Pass when every title is `<subject><sep>Brindle` with one separator string, and each subject equals the view's h1 text after trimming, case-folding, and dropping trailing punctuation."
+        },
+        {
+          "id": "app-25",
+          "reference": "seo.md",
+          "kind": "visual",
+          "text": "A page about one object leads its tab title with that object's own name, resets it when the identity changes, and verifies it after client-side navigation.",
+          "check": "Open one customer detail, then navigate client-side to another customer, then to an order detail. Pass when, once its data has loaded, each title starts with that record's own name or number rather than the type word alone, the two customer titles differ, and the previous record's name never shows while the next one loads. A type-word title while data loads is allowed."
+        },
+        {
+          "id": "app-26",
+          "reference": "social-metadata.md",
+          "kind": "build",
+          "text": "Every surface ships a deliberate favicon from the product's own mark, as an SVG with a 180x180 touch icon linked from the document head.",
+          "check": "The <link rel=\"icon\"> answers 200 as image/svg+xml and is not the framework default (vite.svg or a byte-identical template file), and a 180x180 apple-touch-icon PNG is linked. Pass when both hold."
+        },
+        {
+          "id": "app-27",
+          "reference": "routing.md",
+          "kind": "layout",
+          "text": "Private app routes nest under a tenancy scaffold, /[scope]/[scopeId]/[prefix]/[id], where the scope segment is a short token, the collection, tab, and view segments are full words, and the URL segment is the only authority for the active workspace.",
+          "check": "List the route tree. Pass when every private view (dashboard, orders, customers, settings) lives under /<scope token>/<scope ID>/..., the scope token is a short token nobody needs to read (record it), every later static segment is a full word, each collection prefix renders the list with items at /<prefix>/<id>, and no localStorage, sessionStorage, or cookie key holds an active workspace ID that routes read."
+        },
+        {
+          "id": "app-28",
+          "reference": "product-ux.md",
+          "kind": "visual",
+          "text": "No screen is a dead end: every view, including empty, not-found, and unknown-workspace states, offers a product-owned way onward.",
+          "check": "Visit an unknown path, an order ID and a customer ID that match nothing, an unknown workspace ID, and a list filtered to zero results. Pass when each renders product-owned copy, never a framework default screen, with at least one link or action onward."
+        },
+        {
+          "id": "app-29",
+          "reference": "query-state.md",
+          "kind": "visual",
+          "text": "Shareable collection state (search, filters, sort, view) lives in the URL so a reload, a copied link, and Back and Forward restore the same view.",
+          "check": "On the orders list, search, set a status filter and a customer filter, and change sort if offered. Reload: pass when the controls and rows are unchanged. Open the URL in a fresh context: pass when the view matches. Record how history grows while typing and filtering: pass when debounced search and rapid refinements replace rather than push, and Back lands on an earlier complete state (a previous filter destination or the page before the list), never an intermediate keystroke."
+        },
+        {
+          "id": "app-30",
+          "reference": "query-state.md",
+          "kind": "visual",
+          "text": "The search query uses `q`, enum values are readable words, booleans are true or false, and empty or unchosen state is omitted.",
+          "check": "Open the list fresh: pass when the URL has no query string. Type a search: the text lands only in q. Exercise every control: every enum value is a readable word or phrase (an entity filter carries the entity's ID) and every boolean is true or false. Clear the search: pass when q is gone entirely rather than empty."
+        },
+        {
+          "id": "app-31",
+          "reference": "query-state.md",
+          "kind": "visual",
+          "text": "An unknown key or value is dropped, and the URL is replaced with the canonical serialization of the valid state that remains.",
+          "check": "Visit the list with ?status=bogus&zz=1 plus one valid parameter. Pass when the page renders without error, bogus is not shown as selected, and the address bar is replaced with only the valid parameter."
+        },
+        {
+          "id": "app-32",
+          "reference": "query-state.md",
+          "kind": "layout",
+          "text": "Query parsing, validation, normalization, and serialization live in one shared domain module, and components consume typed state.",
+          "check": "Find the module exporting the list's parse and serialize functions. Pass when it exists once and no component outside it calls searchParams.get, URLSearchParams, or useSearchParams().get to interpret a query key."
+        },
+        {
+          "id": "app-33",
+          "reference": "query-state.md",
+          "kind": "visual",
+          "text": "Parameters serialize in one fixed order, `q` first, then the visible control order, then non-visible scopes, presentation, and pagination, so interaction history never changes the URL.",
+          "check": "Apply search, status filter, and customer filter in that order and copy the URL. Reset and apply them in reverse order. Pass when the two URLs are byte-identical, q comes first, and any page or cursor key comes last."
+        },
+        {
+          "id": "app-34",
+          "reference": "query-state.md",
+          "kind": "build",
+          "text": "URL state has automated contract tests for parsing, exact canonical serialization, explicit defaults and all-values, omission of empty state, dropping unsupported values, and identical serialization of equivalent interaction sequences.",
+          "check": "Find the query-state test file. For each of the six behaviors (parsing, exact canonical serialization, restoring explicit defaults and all-values, omitting empty state, dropping unsupported values, identical serialization of equivalent sequences), record the test case that covers it, or na when the build's parameters give it no occasion (an all-value only exists where selecting all is meaningful state). Pass when every applicable behavior has a case and the test command exits 0."
+        },
+        {
+          "id": "app-35",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "A very narrow and a very wide viewport show the same product at a different scale, keeping every piece of content and every action reachable, with persistent navigation moving into a drawer only when that frees the primary task.",
+          "check": "Capture every view one screen at a time at 1440x900, 2560x1440, 390x844, and 320x700. Pass when each view keeps the same sections in the same order, every link and button present at 1440 is reachable at 320 (record how: visible, inside a disclosure or drawer opened by a visible toggle, or otherwise), persistent navigation moves into a drawer only when that frees the primary task, and a reviewer finds no arrangement that changed where the wider one would still fit."
+        },
+        {
+          "id": "app-36",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "On a phone, supporting copy sits around 13 to 15 CSS pixels.",
+          "check": "At 390x844 and 320x700, record the computed font-size of every paragraph, list cell, and card description that is not a heading or form control. Pass when the values sit around 13 to 15 CSS pixels, the rule's range. The grader names any value outside it and decides whether it is still around that range."
+        },
+        {
+          "id": "app-37",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Form inputs stay at 16 CSS pixels on a phone so focus does not zoom the page.",
+          "check": "At 390x844 and 320x700, every input, textarea, and select (search, filters, settings fields) has a computed font-size of at least 16 px."
+        },
+        {
+          "id": "app-38",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Task workspaces use extra width when it reveals useful work.",
+          "check": "Record the orders list region's width and what it shows (columns, visible text per row, panes) at 1440x900 and 2560x1440. Pass when any extra width at 2560 that the list does not use would not reveal more useful work. Fail when a maximum width leaves empty margin at 2560 while rows truncate content or hide columns the extra width could show."
+        },
+        {
+          "id": "app-39",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Every standalone interactive target on a CSS surface is at least 24 by 24 CSS pixels.",
+          "check": "At 320x700, 390x844, and 1440x900, measure the activation box of every rendered a, button, input, select, checkbox (the checkbox or the label that toggles it), and [role=button] outside running sentences, including row checkboxes. Pass when every box is at least 24 by 24."
+        },
+        {
+          "id": "app-40",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Layout never causes horizontal scroll at any width, including with hostile content such as long unbroken names and identifiers.",
+          "check": "Put a 200-character unbroken string into one customer name and one order note, then view the list, both detail pages, and any dialog while sweeping 320 to 2560 in 10 px steps. Pass when document.scrollingElement.scrollWidth never exceeds clientWidth and no element extends past the viewport's right edge outside its own scroll container."
+        },
+        {
+          "id": "app-41",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Keyboard focus stays visible through every responsive rearrangement.",
+          "check": "Tab through every focusable element at 320x700 and 1440x900, including inside an open drawer. Pass when each focused element shows a visible focus indicator (record its style), lies inside the viewport after focus, and is not covered by sticky or fixed chrome."
+        },
+        {
+          "id": "app-42",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "The app shell is exactly one viewport tall with a definite height, with header, sidebar, and status bar outside the one region that scrolls.",
+          "check": "On the orders list with enough rows to overflow, at 1440x900 and 390x844: pass when document scrollHeight equals innerHeight, the shell root declares height (not only min-height) equal to innerHeight, exactly one region under the chrome scrolls, and the header and sidebar rects are unchanged after scrolling that region to the bottom."
+        },
+        {
+          "id": "app-43",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "When the app restores scroll in its scrolling region, it restores only on Back or Forward, instantly and to the exact offset, and a fresh navigation starts at the top.",
+          "check": "Scroll the orders region to at least 1000 px, open an order, and press Back, then open the list again through an in-app link. Record na when the region never restores. Otherwise pass when Back restores scrollTop to the earlier offset within 1 px with no smooth animation and the in-app link opens it at 0."
+        },
+        {
+          "id": "app-44",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "The scrollbar gutter is reserved permanently on the region that scrolls and never at the root.",
+          "check": "Run Chromium with classic, non-overlay scrollbars. Pass when html computes scrollbar-gutter auto with overflow-y not scroll, and the app's scrolling region computes scrollbar-gutter stable."
+        },
+        {
+          "id": "app-45",
+          "reference": "responsive-layout.md",
+          "kind": "visual",
+          "text": "Nothing a dialog, dropdown, filter, or late content does moves content sideways.",
+          "check": "Run Chromium with classic, non-overlay scrollbars. Record the x of the page heading and of one trailing header control at 1440x900 and 390x844. Open and close a dialog, open a dropdown, filter the list to zero results and back. Pass when both x values never change by even 1 px and html and body padding-right and margin-right never change."
+        },
+        {
+          "id": "app-46",
+          "reference": "design-tokens.md",
+          "kind": "config",
+          "text": "One token source defines colors, a typography scale, spacing, radius, elevation, and named component styles.",
+          "check": "Find the token source. Pass when it defines entries in all six categories: color, type steps, spacing, radius, shadow or elevation, and at least one named component style such as button or card."
+        },
+        {
+          "id": "app-47",
+          "reference": "design-tokens.md",
+          "kind": "build",
+          "text": "Components consume tokens, and any one-off value a component needs stays consistent with the system.",
+          "check": "Grep component source outside the token file for hex, rgb(), hsl(), and oklch() literals and for arbitrary Tailwind values such as bg-[#...] or p-[13px], and record each with its file and line. SVG geometry (coordinates, path data, viewBox) is not a style value. Pass when components take their colors, type, spacing, radius, and shadows from tokens, and every recorded one-off value stays consistent with the system: a color that is a token's value or derived from one, a size that sits on the token scales. A reviewer decides each recorded value, and a color outside the palette fails."
+        },
+        {
+          "id": "app-48",
+          "reference": "design-tokens.md",
+          "kind": "visual",
+          "text": "A product with large empty regions carries one ambient texture, a CSS-only token with a per-theme opacity, painted on a fixed non-interactive layer behind every void region, lower in dark than in light, and removed in print and forced colors.",
+          "check": "Record na when the product has no large empty regions. Otherwise pass when all of these hold. CSS defines one texture token holding an inline SVG turbulence tile (feTurbulence with a saturate 0 matrix) or a hairline grid, with an opacity token redefined per theme the product has and lower in dark than in light. The layer is position fixed with pointer-events none behind content, html holds the page color, and body is transparent. @media print and (forced-colors: active) remove it. A lossless capture shows the texture on the page background, the sidebar, and an empty pane, and any opaque region carries the same token."
+        },
+        {
+          "id": "app-49",
+          "reference": "font-loading.md",
+          "kind": "build",
+          "text": "The client app shows zero flash of unstyled text: it self-hosts the site's woff2 files, preloads each above-the-fold face, displays it with font-display optional, and gives the fallback the brand font's metrics, or uses no custom face.",
+          "check": "Record na for the loading half when the root font-family is a system stack. Otherwise pass when every custom face is a same-origin woff2 with <link rel=\"preload\" as=\"font\" type=\"font/woff2\" crossorigin> in index.html, its @font-face sets font-display: optional, and the fallback face carries size-adjust, ascent-override, descent-override, and line-gap-override (a framework font utility's generated fallback counts). In both cases no request goes to a third-party font host, and with cache disabled and slow 4G throttling no text changes face or shifts after first paint."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "repo",
+      "prompt": "Set up the codebase for Cobbleway, a product for book clubs: members keep a shared reading list, vote on the next book, and track who has read what. It needs a public website (a homepage and a pricing page), the signed-in app (a club's reading list with add, vote, and mark-as-read), and the backend that stores clubs, members, books, and votes.\n\nNothing is set up yet: no provider accounts, no domain, no keys. Choose the stack and the repository structure you would want to live with for years, and wire the environment and deployment configuration so that when I create the accounts I only have to paste in keys. Everything should install and build locally without any accounts. Tell me what I need to do next and how to run it when you're done.\n\nWork only inside the current directory and finish everything in this session.",
+      "expected_output": "A Cobbleway monorepo with a public site, a signed-in app, and a backend that installs and builds without accounts, with per-runtime env contracts and deployment config ready for keys to be pasted in, and clear next steps for the owner.",
+      "assertions": [
+        {
+          "id": "repo-01",
+          "reference": "monorepo-layout.md",
+          "kind": "layout",
+          "text": "Deployable entry points live in `apps/` and shared libraries in `packages/`, and nothing else earns a top-level slot by default.",
+          "check": "List the repository root. Pass when source lives only under apps/ and packages/, with root files limited to manifests, lockfile, workspace and task-runner config, docs, and dotfiles."
+        },
+        {
+          "id": "repo-02",
+          "reference": "naming.md",
+          "kind": "layout",
+          "text": "Each app is named by its role word: `site` for the public web surface and `app` for the signed-in product, carried through the directory and package name.",
+          "check": "Pass when the homepage and pricing page live in apps/site and the reading-list surface in apps/app, and each app's package.json name ends in its role word."
+        },
+        {
+          "id": "repo-03",
+          "reference": "monorepo-layout.md",
+          "kind": "layout",
+          "text": "Shared code lives in purpose-named packages, with the backend in its tool's native folder shape inside the package graph and pure product rules in their own package.",
+          "check": "Pass when the backend is a package (packages/backend in the reference layout) with its own package.json, a .env.example when it reads env, and the backend tool's native folder (for example convex/ with schema.ts), shared pure rules such as vote and read-state logic, route builders, or origins live in a package named for that purpose (packages/domain in the reference layout), and no package is a catch-all named shared, common, core, or utils."
+        },
+        {
+          "id": "repo-04",
+          "reference": "monorepo-layout.md",
+          "kind": "build",
+          "text": "Dependency direction is one way: apps import packages, packages never import apps, and backend packages never depend on UI packages.",
+          "check": "Grep imports. Pass when no file under packages/ imports from apps/ or a relative path into apps/, and packages/backend lists no UI package (react, ui, tokens) in its dependencies."
+        },
+        {
+          "id": "repo-05",
+          "reference": "monorepo-layout.md",
+          "kind": "config",
+          "text": "Every workspace dependency is declared explicitly with the workspace protocol.",
+          "check": "Pass when every internal package an app or package imports is listed in its package.json as `workspace:*` (or another workspace: range)."
+        },
+        {
+          "id": "repo-06",
+          "reference": "SKILL.md",
+          "kind": "config",
+          "text": "The monorepo uses Turborepo with pnpm workspaces.",
+          "check": "Pass when pnpm-workspace.yaml lists apps/* and packages/*, the root package.json has a packageManager field naming pnpm, turbo is a root dev dependency, and turbo.json defines build, lint, and typecheck tasks."
+        },
+        {
+          "id": "repo-07",
+          "reference": "rendering.md",
+          "kind": "config",
+          "text": "Each surface takes its own rendering posture: the public site renders on the server or statically with Next.js App Router, and the signed-in app is a client SPA built with Vite.",
+          "check": "Pass when apps/site depends on next with an app/ directory and no pages/ directory, and apps/app depends on vite with an index.html entry and no server rendering."
+        },
+        {
+          "id": "repo-08",
+          "reference": "SKILL.md",
+          "kind": "config",
+          "text": "App data and live sync use Convex, and auth uses Clerk, each wired so the product only needs keys pasted in.",
+          "check": "Pass when packages/backend depends on convex, apps/app depends on the Convex React client and the Clerk React SDK wrapped so the Convex client authenticates through Clerk, and every Clerk and Convex value the code needs is a key in the owning .env.example."
+        },
+        {
+          "id": "repo-09",
+          "reference": "auth.md",
+          "kind": "layout",
+          "text": "Authentication lives at a single route, `/auth`, using the provider's combined sign-in-or-up component, with no separate sign-in, sign-up, or callback routes and no route-path env keys.",
+          "check": "Pass when the app routes /auth to the provider's combined sign-in-or-up component, no /sign-in, /sign-up, /login, or /callback route exists, and no .env.example key holds a sign-in or sign-up URL."
+        },
+        {
+          "id": "repo-10",
+          "reference": "marketing-site.md",
+          "kind": "config",
+          "text": "The public site does not carry the signed-in app's weight: no auth SDK, reactive data client, or app-only package in its dependencies.",
+          "check": "Pass when apps/site's package.json lists no Clerk package, no convex package, and no app-only workspace package, and its links into the app go to the app's origin."
+        },
+        {
+          "id": "repo-11",
+          "reference": "stack.md",
+          "kind": "build",
+          "text": "Program source in every app and package is TypeScript under a tsconfig, and the typecheck exits 0.",
+          "check": "List the program source files (.js, .jsx, .mjs, .cjs, .ts, .tsx) in every app and package, excluding generated output and tool configuration files. Pass when each is .ts or .tsx and each app or package with program source has a tsconfig.json or extends a shared one. Stylesheets, markup, and data files are not program source."
+        },
+        {
+          "id": "repo-12",
+          "reference": "stack.md",
+          "kind": "config",
+          "text": "Each dependency is on its latest stable release and follows its current major's conventions.",
+          "check": "Record, for every direct dependency and dev dependency, the declared range and the version `npm view <package> version` reports at grading time. A tool whose current major ships under a renamed or split package (a router under a new package name, an SDK whose current server package is published beside its older single package) is judged against the current package's version. Pass when every declared range admits the latest stable release (for a caret range, the same major) and no configuration follows an older major's convention in place of the current one."
+        },
+        {
+          "id": "repo-13",
+          "reference": "SKILL.md",
+          "kind": "config",
+          "text": "Both React surfaces style with Tailwind CSS and shadcn/ui set up through its CLI, with lucide-react for icons.",
+          "check": "Pass when each app depends on tailwindcss and lucide-react, has a components.json, and uses shadcn component files, and no second icon library is a dependency."
+        },
+        {
+          "id": "repo-14",
+          "reference": "design-tokens.md",
+          "kind": "layout",
+          "text": "One design token layer, in one workspace package created with the first app, is the source both the site and the app import their theme from.",
+          "check": "Pass when a packages/ token package defines colors, type scale, spacing, radius, elevation, and named component styles, and both apps import their theme from it rather than defining their own palette."
+        },
+        {
+          "id": "repo-15",
+          "reference": "environment.md",
+          "kind": "layout",
+          "text": "One committed `.env.example` sits beside each runtime that reads env, and the repository root has no env file.",
+          "check": "List each app and package whose source reads env. Pass when each has a .env.example (apps/site, apps/app, and packages/backend at least when they read env), no directory that reads no env has one, and the root holds no .env* file."
+        },
+        {
+          "id": "repo-16",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "Every env file except the examples is gitignored with the `.env`, `.env.*`, `!.env.example`, `!.env.*.example` contract.",
+          "check": "The root .gitignore contains the four lines (or patterns that ignore and unignore the same paths). Record every env file present: pass when each one other than *.example is ignored by that contract, which a local .env.local is expected to be, and none is unignored."
+        },
+        {
+          "id": "repo-17",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "Env key names are stage-neutral and the same across local, staging, and production.",
+          "check": "Pass when no .env.example key carries a stage prefix or suffix (DEV_, PROD_, _STAGING, _PREVIEW), unless one process connects to several stages at once (record it), and the setup docs describe each stage filling the same keys."
+        },
+        {
+          "id": "repo-18",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "The env contract matches the code: every key a runtime reads is in its `.env.example`, and every example key is read or is a documented framework or provider key.",
+          "check": "Per runtime, diff the env keys its source reads against its .env.example. Pass when both sets are equal apart from documented framework or provider keys."
+        },
+        {
+          "id": "repo-19",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "No secret sits in source or behind a browser-exposed prefix such as `NEXT_PUBLIC_` or `VITE_`.",
+          "check": "Grep tracked files except *.example and lockfiles for secret-shaped literals (sk_live_, sk_test_, whsec_, private keys, deploy keys). Pass at zero hits, and when every NEXT_PUBLIC_ or VITE_ key is a public value (a publishable key or a URL), with secret keys only in server or backend examples."
+        },
+        {
+          "id": "repo-20",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "Env holds secrets and true environment variance, and product decisions such as route paths, plan names, limits, and feature flags live in code.",
+          "check": "Read every .env.example. Pass when each key is a secret, provider ID, deployment-specific URL, public key, or cross-app origin, and none is a route path, plan name, quota, or feature flag whose value would be the same in every stage."
+        },
+        {
+          "id": "repo-21",
+          "reference": "definition-of-done.md",
+          "kind": "build",
+          "text": "Lint, typecheck, and production builds pass for every app and package, and each deployable app defines real lint, typecheck, and build scripts that the workspace root runs.",
+          "check": "From a clean install, run the root lint, typecheck, and build, and each deployable app's own scripts. Pass when each deployable app has all three scripts, each runs a real tool (a lint script that only reruns the type checker is not a linter), and every run exits 0. Packages with no build output need no build script."
+        },
+        {
+          "id": "repo-22",
+          "reference": "deployment.md",
+          "kind": "config",
+          "text": "Each deployable app owns its own hosting config, copied from the skill's asset, that auto-deploys only `main` and `preview`, and shared packages own none.",
+          "check": "Pass when apps/site and apps/app each have a vercel.json (or the chosen host's equivalent) with the `$schema` line and `git.deploymentEnabled` of `main: true`, `preview: true`, `\"**\": false`, and neither the root nor any package has one."
+        },
+        {
+          "id": "repo-23",
+          "reference": "deployment.md",
+          "kind": "config",
+          "text": "The in-repo backend deploys from one owning app's build command, kept in the repository, so a frontend publishes only after the backend push succeeds, on every deploying stage, with the stage's credentials choosing the instance.",
+          "check": "Record the backend deploy command and the order it runs in. Pass when exactly one app's build command in the repository (hosting config or package script) runs the backend's deploy tool around the app build (for Convex, `convex deploy --cmd '<app build>'`, which runs the app build, then typechecks, regenerates code, and pushes, and fails the whole command when the push fails, so the host publishes nothing), the command names no deployment and takes the instance from the stage's deploy key, it runs for every deploying stage rather than production only, and no other app also deploys the backend. When another app deploys independently against the same backend, it also passes only when that app's build runs a preflight that requires the backend's exact generation marker and fails on anything else, and the owning app's build carries no such preflight. Record na for that part when no other app depends on the backend."
+        },
+        {
+          "id": "repo-24",
+          "reference": "continuous-integration.md",
+          "kind": "config",
+          "text": "A GitHub Actions workflow runs lint, typecheck, contract, and unit tests on every push and pull request, with the runtime and package manager pinned and a frozen-lockfile install, and stays credential-free where possible.",
+          "check": "Pass when .github/workflows/ holds a workflow triggered on push (no branch filter) and pull_request that runs lint, typecheck, and test, plus contract tests where the repository has a published contract (record na for that part otherwise), sets an explicit Node version, pins pnpm, installs with --frozen-lockfile, and reads no secret it could do without."
+        },
+        {
+          "id": "repo-25",
+          "reference": "provider-setup.md",
+          "kind": "layout",
+          "text": "A committed setup document beside each deployable app's `.env.example` lists, per stage and with no secret values, CORS, webhook URLs, allowed origins, OAuth redirect URLs, env variables, domains, deployment branch settings, and deferred items with their blockers.",
+          "check": "Pass when a setup document sits beside each deployable app's .env.example (or one document names each app) and covers, per stage, each listed item the app uses, with every item that waits on an account or URL recorded as deferred with its blocker, and no secret value."
+        },
+        {
+          "id": "repo-26",
+          "reference": "origins.md",
+          "kind": "layout",
+          "text": "Origin resolution lives in one shared module exposing a canonical, local, and preview origin and a resolver per real surface, plus an absolute-URL helper.",
+          "check": "Pass when one module in a shared package exports CANONICAL_, LOCAL_, and PREVIEW_ origin constants and a resolve<Surface>Origin() for the site and the app, plus an absolute-URL helper, and grep finds no other https:// literal naming the product's own hosts and no localhost:<port> literal outside it (tests and docs excepted)."
+        },
+        {
+          "id": "repo-27",
+          "reference": "origins.md",
+          "kind": "config",
+          "text": "Local ports form a dense ladder from 3000 for the primary public surface, ordered by the journey a person takes and then by dependency, consistent in every store and doc.",
+          "check": "Pass when the site's dev script uses 3000 and each further surface takes the next free port in the order a person meets it, with a surface another depends on taking the earlier port (the app at 3001 when nothing it needs runs locally), and every .env.example, README, and code default that names a local port agrees."
+        },
+        {
+          "id": "repo-28",
+          "reference": "domains.md",
+          "kind": "config",
+          "text": "The site lives on the apex with no www, the app on `app.`, and staging origins add a `preview.` prefix to each production host.",
+          "check": "Pass when the canonical origin constants are https://<domain> for the site and https://app.<domain> for the app, and the preview origins are https://preview.<domain> and https://preview.app.<domain>."
+        },
+        {
+          "id": "repo-29",
+          "reference": "origins.md",
+          "kind": "build",
+          "text": "Same-surface navigation uses relative paths, and cross-surface navigation goes through the shared resolvers.",
+          "check": "Grep href, Link, and redirect calls. Pass when same-surface links are root-relative and every link from the site into the app (sign-in, get started) is built from the app's resolver, never a literal host."
+        },
+        {
+          "id": "repo-30",
+          "reference": "ids.md",
+          "kind": "build",
+          "text": "Private resource IDs in routes are a fixed 12-character Base58 string with no prefix, minted by one shared helper in a shared package.",
+          "check": "Pass when exactly one helper in packages/ mints entity IDs with a 12-character Base58 alphabet, every club, book, and member ID in app routes comes from it and matches ^[1-9A-HJ-NP-Za-km-z]{12}$, and no route addresses a club or book by name or slug."
+        },
+        {
+          "id": "repo-31",
+          "reference": "routing.md",
+          "kind": "layout",
+          "text": "Private app routes nest under a tenancy scaffold, /[scope]/[scopeId]/[prefix]/[id], where the scope segment is a short token and collection segments are full words, and the URL is the only authority for the active club.",
+          "check": "List the app's route tree. Pass when every club view lives under /<scope token>/<club ID>/..., the scope token is a short token nobody needs to read (record it), later static segments are full words (such as books), and no storage key or cookie holds an active club ID that routes read."
+        },
+        {
+          "id": "repo-32",
+          "reference": "workspace-tenancy.md",
+          "kind": "layout",
+          "text": "The backend reads the acting identity and club membership only from verified identity, never from a client-supplied or unverified value alone.",
+          "check": "Pass when every backend function touching a club resolves the caller from the verified auth identity (for example ctx.auth.getUserIdentity() or a verified organization claim), accepts the club the URL selected only after confirming the caller's membership in it, before any read or write, fails closed with one product error when verified context is absent, and never decodes a token without verification."
+        },
+        {
+          "id": "repo-33",
+          "reference": "auth.md",
+          "kind": "build",
+          "text": "Authorization is enforced once, at a capability-granular gate every backend function crosses, failing closed on an unknown capability.",
+          "check": "Pass when one authorization module maps actions (add book, vote, mark read, manage members) to named capabilities, every backend query and mutation on club data calls it before doing work, it fails closed on an unknown or absent capability, and role comparisons appear only in that module."
+        },
+        {
+          "id": "repo-34",
+          "reference": "bootstrap.md",
+          "kind": "layout",
+          "text": "Every authenticated entry reads the provider identity, finds or creates the app user, ensures the default club or account exists, and resolves the active one before reading gated data, with the signup webhook only an optimization.",
+          "check": "Pass when the app's authenticated entry calls one ensure or bootstrap mutation that finds or creates the user and ensures the default club or account when missing, before any membership-gated query runs, and no user, club, or account row is created only by a webhook."
+        },
+        {
+          "id": "repo-35",
+          "reference": "live-data.md",
+          "kind": "build",
+          "text": "The reactive backend is wired end to end: views subscribe through the reactive client, mutations go through the backend, and nothing refetches on an interval.",
+          "check": "Pass when every app read of backend data uses the reactive query hook, every change (add, vote, mark read) is a backend mutation, and grep finds no setInterval or manual refetch of backend data."
+        },
+        {
+          "id": "repo-36",
+          "reference": "seo.md",
+          "kind": "build",
+          "text": "The public homepage carries exactly one h1 with the product's name, followed by one server-rendered sentence that names the product and says what it does.",
+          "check": "Fetch the site's homepage without JavaScript. Pass when it has exactly one <h1> containing Cobbleway, and the first <p> after it is one sentence naming Cobbleway and what it does."
+        },
+        {
+          "id": "repo-37",
+          "reference": "seo.md",
+          "kind": "build",
+          "text": "The tab title puts the page's subject first, taken from its main heading, and the site name last after one separator used on every page.",
+          "check": "Read <title> on the site's homepage and pricing page and document.title on the app's views after data loads. Pass when every non-home title is `<subject><sep>Cobbleway` with one separator string and a subject equal to the page's h1."
+        },
+        {
+          "id": "repo-38",
+          "reference": "routing.md",
+          "kind": "layout",
+          "text": "A standalone public page has one full descriptive word path, and a surface with child pages uses a prefix whose bare path is its collection view.",
+          "check": "Pass when the site's standalone pages are at full-word paths such as /pricing, /privacy, and /terms (an initialism readers say as a word counts), with no abbreviation, and any group of child pages sits under one prefix whose bare path renders the collection."
+        },
+        {
+          "id": "repo-39",
+          "reference": "legal-pages.md",
+          "kind": "build",
+          "text": "The public site serves a privacy policy at /privacy and terms at /terms on the homepage's origin, linked from the homepage.",
+          "check": "GET /privacy and /terms on the served site: both answer 200 with the privacy policy and the terms respectively, with no sign-in, and the homepage links both."
+        },
+        {
+          "id": "repo-40",
+          "reference": "social-metadata.md",
+          "kind": "build",
+          "text": "Every public page carries Open Graph and platform card tags in its initial HTML with absolute URLs, a page-specific description, and a title identical to the tab title.",
+          "check": "Fetch the homepage and pricing page without JavaScript. Pass when each head has og:title equal to <title>, a page-specific og:description, og:image, og:url, og:site_name, and twitter:card=summary_large_image, with absolute https URLs from the site's resolver."
+        },
+        {
+          "id": "repo-41",
+          "reference": "social-metadata.md",
+          "kind": "build",
+          "text": "Every surface ships the product's own favicon from one source asset, as an SVG with a 180x180 touch icon, wired the way each framework expects.",
+          "check": "Pass when apps/site has exactly app/icon.svg and a 180x180 app/apple-icon.png with no app/favicon.ico and no metadata.icons, apps/app links an icon.svg and a 180x180 apple-touch-icon from index.html, and every one of these files is generated from one source asset by a script in the repository (record the script)."
+        },
+        {
+          "id": "repo-42",
+          "reference": "app-surface.md",
+          "kind": "build",
+          "text": "The signed-in app serves its routes noindex and publishes no sitemap.",
+          "check": "Pass when the app's index.html carries <meta name=\"robots\" content=\"noindex\"> (or its responses send X-Robots-Tag: noindex), and no sitemap lists an app route."
+        },
+        {
+          "id": "repo-43",
+          "reference": "font-loading.md",
+          "kind": "build",
+          "text": "Fonts load with zero flash of unstyled text: the site through the framework font module and the client app through the same self-hosted, preloaded woff2 files, both with font-display optional and a metric-matched fallback.",
+          "check": "Pass when apps/site loads fonts through next/font with display 'optional', apps/app uses a system stack or self-hosts the site's woff2 files with a rel=preload link in index.html and font-display: optional, the fallback face carries size-adjust, ascent-override, descent-override, and line-gap-override (a framework font utility's generated fallback counts) on each surface with a custom face, and neither surface requests a third-party font host."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "api",
+      "prompt": "Kettlebook tracks stock counts for small independent shops. I want to open it up to developers and to AI agents: build a public HTTP API for its products and stock levels (list, look up, create, update, adjust stock with a reason, and a history of adjustments), and an MCP server so agents can do the same things. Authenticate both with API keys.\n\nUse TypeScript. There is no database yet, so keep the data in memory behind whatever structure you think is right, seeded with a few realistic products. It should be ready for real developers to read the docs and start calling it. Tell me how to run it and try it when you're done.\n\nWork only inside the current directory and finish everything in this session.",
+      "expected_output": "A runnable Kettlebook HTTP API and MCP server over one in-memory product model, both authenticated by API keys, with a published OpenAPI contract and docs a developer or agent can follow to make a first call.",
+      "assertions": [
+        {
+          "id": "api-01",
+          "reference": "stack.md",
+          "kind": "config",
+          "text": "Each dependency is on its latest stable release and follows its current major's conventions.",
+          "check": "Record, for every direct dependency and dev dependency, the declared range and the version `npm view <package> version` reports at grading time. A tool whose current major ships under a renamed or split package (a router under a new package name, an SDK whose current server package is published beside its older single package) is judged against the current package's version. Pass when every declared range admits the latest stable release (for a caret range, the same major) and no configuration follows an older major's convention in place of the current one. An @modelcontextprotocol/sdk dependency is judged against the MCP SDK's current server package when that package's major is newer."
+        },
+        {
+          "id": "api-02",
+          "reference": "http-apis.md",
+          "kind": "config",
+          "text": "A TypeScript protocol app uses Hono, including an OpenAPI-backed /v1 app.",
+          "check": "The API app's package.json depends on hono and its entry constructs a Hono app, unless the runtime already provides an equally small standards-based router (record which)."
+        },
+        {
+          "id": "api-03",
+          "reference": "auth.md",
+          "kind": "build",
+          "text": "Authorization is enforced once, at a capability-granular gate every client crosses, so the HTTP API and the MCP server inherit the same rules, and access is the intersection of what the key's scope allows.",
+          "check": "Find one authorization module that maps each action to a named capability and takes the caller's key. Pass when every HTTP route and every MCP tool that reads or writes calls it (by grep), key scope checks appear only there, it fails closed on an unknown capability, and a read-only key is refused a stock adjustment on both surfaces."
+        },
+        {
+          "id": "api-04",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "Env holds secrets and true environment variance, and product decisions such as route paths, limits, and copy live in code.",
+          "check": "Read every .env.example. Pass when each key is a secret, provider ID, deployment-specific URL, public key, or cross-app origin, and none is a route path, page-size limit, rate-limit quota, feature flag, or copy string whose value would be the same in every stage."
+        },
+        {
+          "id": "api-05",
+          "reference": "workspace-tenancy.md",
+          "kind": "layout",
+          "text": "The acting tenant is derived on the server from the verified credential, never from a client-supplied ID.",
+          "check": "Pass when each request's shop is resolved from the API key record the server looked up, no route or tool accepts a shop ID argument that selects which shop's data is read or written, and a key for shop A cannot read or adjust a product of shop B (404 or 403)."
+        },
+        {
+          "id": "api-06",
+          "reference": "environment.md",
+          "kind": "layout",
+          "text": "One committed `.env.example` sits beside each runtime that reads env, with real local values in that runtime's `.env.local`.",
+          "check": "List each app or package whose source reads process.env or a framework env helper. Pass when each has a .env.example, no directory that reads no env has one, and any real local values sit in that runtime's .env.local."
+        },
+        {
+          "id": "api-07",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "Every env file except the examples is gitignored with the `.env`, `.env.*`, `!.env.example`, `!.env.*.example` contract, and no real env file or secret is committed.",
+          "check": "The root .gitignore contains the four lines (or patterns that ignore and unignore the same paths). Record every env file present: pass when each one other than *.example is ignored by that contract, which a local .env.local is expected to be, none is unignored, and no real secret sits in a file the contract leaves tracked."
+        },
+        {
+          "id": "api-08",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "Secrets and API keys come from env, never from source literals.",
+          "check": "Grep every file except *.example and lockfiles for secret-shaped literals, including full API keys in the seed data. Pass when no usable credential is a source literal: seeded demo keys are minted at startup and printed, or read from env. Record any key-shaped literal in a test fixture and whether a running server accepts it without an operator configuring it."
+        },
+        {
+          "id": "api-09",
+          "reference": "environment.md",
+          "kind": "config",
+          "text": "The env contract matches the code: every key a runtime reads is in its `.env.example`, and every example key is read.",
+          "check": "Per runtime, diff the env keys its source reads against its .env.example. Pass when both sets are equal, apart from documented framework or provider keys."
+        },
+        {
+          "id": "api-10",
+          "reference": "deployment.md",
+          "kind": "config",
+          "text": "Each deployable app owns its own hosting config, copied from the skill's asset, that auto-deploys only `main` and `preview`, and shared packages own none.",
+          "check": "Pass when every deployable app directory (the HTTP API and the MCP server) has its own vercel.json (or the chosen host's equivalent) with the `$schema` line and `git.deploymentEnabled` of `main: true`, `preview: true`, `\"**\": false`, and no shared package has one."
+        },
+        {
+          "id": "api-11",
+          "reference": "deployment.md",
+          "kind": "build",
+          "text": "An unauthenticated request to a protected machine route gets a 401 with a `WWW-Authenticate` challenge and a JSON body, never a sign-in page or redirect.",
+          "check": "Start both servers. Call a protected /v1 route and POST a tools/call to /mcp with no key. Pass when each answers 401 with a WWW-Authenticate header and a JSON body."
+        },
+        {
+          "id": "api-12",
+          "reference": "deployment.md",
+          "kind": "build",
+          "text": "Unauthenticated discovery surfaces expose only production-acceptable information.",
+          "check": "Fetch openapi.json, any docs page, and the MCP tool list without a key. Pass when none contains internal names, unreleased promises, provider payloads, private identifiers such as internal storage keys, secret-shaped values (an illustrative key in the full real shape counts), real API keys, or undisclosed future work. A public error code such as internal_error is product vocabulary, not an internal name. Record any line the grader judges borderline and why."
+        },
+        {
+          "id": "api-13",
+          "reference": "http-apis.md",
+          "kind": "build",
+          "text": "Credential-free routes allow CORS only for the required methods and headers and are rate-limited.",
+          "check": "List every route on either surface that answers without a credential (openapi.json, docs, health, any credential-free MCP route). Send a CORS preflight from an arbitrary origin to each. Pass when Access-Control-Allow-Methods and Allow-Headers list only what those routes use, Access-Control-Allow-Origin * never comes with Allow-Credentials true, and a rate limiter sits in the request path of every one of them (middleware or gateway config). Routes that require a key are outside this rule."
+        },
+        {
+          "id": "api-14",
+          "reference": "http-apis.md",
+          "kind": "build",
+          "text": "Public metadata is cached briefly with stale revalidation.",
+          "check": "GET /openapi.json and record its Cache-Control. Pass when it includes public, a max-age of minutes rather than hours (under 3600 seconds), and a stale-while-revalidate window."
+        },
+        {
+          "id": "api-15",
+          "reference": "continuous-integration.md",
+          "kind": "config",
+          "text": "A GitHub Actions workflow runs lint, typecheck, contract, and unit tests on every push and pull request, with the runtime and package manager pinned and a frozen-lockfile install.",
+          "check": "Pass when .github/workflows/ holds a workflow triggered on push (no branch filter) and pull_request whose steps run lint, typecheck, contract tests (a step checking the API against its OpenAPI contract, which may run inside the test suite), and unit tests, with an explicit Node version, a pinned package manager (packageManager field or setup action version), and a frozen-lockfile install against a committed lockfile."
+        },
+        {
+          "id": "api-16",
+          "reference": "provider-setup.md",
+          "kind": "layout",
+          "text": "A committed setup document beside each deployable app's `.env.example` lists, per stage and with no secret values, CORS policies, allowed origins, env variables, branch and custom domains, deployment branch settings, and deferred items with their blockers.",
+          "check": "Pass when a setup document sits beside each deployable app's .env.example (or one repository document names each app) and covers, per stage, each listed item the app uses, with every item that waits on an account or URL recorded as deferred with its blocker, and no secret value."
+        },
+        {
+          "id": "api-17",
+          "reference": "definition-of-done.md",
+          "kind": "build",
+          "text": "Lint, typecheck, and production builds pass for every app and package, and each deployable app defines real lint, typecheck, and build scripts that the workspace root runs.",
+          "check": "From a clean install, run the root lint, typecheck, and build, and each deployable app's own scripts. Pass when each deployable app has all three scripts, each runs a real tool (a lint script that only reruns the type checker is not a linter), and every run exits 0. Packages with no build output need no build script."
+        },
+        {
+          "id": "api-18",
+          "reference": "http-apis.md",
+          "kind": "build",
+          "text": "The public HTTP API is served from its own role subdomain with a versioned base path, `https://api.<domain>/v1`.",
+          "check": "List the router's routes: every public API route starts with /v1/. Record where the API's canonical origin is named (origin constant, openapi.json servers[], docs, or README). Pass when it is https://api.<domain>, not a provider host or a path under another surface."
+        },
+        {
+          "id": "api-19",
+          "reference": "http-apis.md",
+          "kind": "build",
+          "text": "An OpenAPI contract is published at `https://api.<domain>/openapi.json`.",
+          "check": "GET /openapi.json at the API origin root (not under /v1): 200, application/json, and it validates as OpenAPI 3.x with zero errors (for example with redocly lint). Every public /v1 operation the router serves appears in paths. Record any other route the server answers (health, the contract itself) without failing it."
+        },
+        {
+          "id": "api-20",
+          "reference": "http-apis.md",
+          "kind": "build",
+          "text": "The contract is settled before the surface, so the runtime conforms to it.",
+          "check": "Record how the contract and the handlers are tied (a schema-first router, handlers typed from the spec's schemas, or a contract written beside hand-typed handlers). Pass when a real response from each /v1 route validates against its OpenAPI response schema with zero failures, and a request the contract rejects is refused while one it accepts is served."
+        },
+        {
+          "id": "api-21",
+          "reference": "http-apis.md",
+          "kind": "build",
+          "text": "One normalized product resource schema serves collections, direct lookup, API responses, and agent tools, and an MCP tool that returns a resource declares an outputSchema from that same schema and returns it in structuredContent.",
+          "check": "In openapi.json, list, lookup, create, and update of products reference the same components/schemas entry. The MCP tools that return a product declare an outputSchema built from the same schema module as the API (one definition imported by both, found by grep) and return structuredContent beside their text. One product fetched through each surface has identical keys."
+        },
+        {
+          "id": "api-22",
+          "reference": "model-context-protocol.md",
+          "kind": "build",
+          "text": "A remote MCP server has one product-owned endpoint at `https://mcp.<domain>/mcp`, with revision information carried in protocol fields rather than the path.",
+          "check": "POST /mcp answers a JSON-RPC tools/list. The docs or origin constant name mcp.<domain> as the host. Pass when no MCP route lives under /v1, /mcp/v2, or a dated path, and the MCP server is not mounted inside the HTTP API app's origin."
+        },
+        {
+          "id": "api-23",
+          "reference": "http-apis.md",
+          "kind": "layout",
+          "text": "Each public protocol surface, the HTTP API and the MCP server, is its own protocol app when it needs independent compatibility, scaling, caching, rate limiting, or release control, and both run over shared product capabilities.",
+          "check": "Pass when both surfaces call one shared product module for rules and storage, neither calling the other over HTTP nor re-implementing a rule, and either they are separate app directories, each with its own package.json and start script, or the grader records that nothing in the brief or build calls for independent compatibility, scaling, caching, rate limiting, or release control between them."
+        },
+        {
+          "id": "api-24",
+          "reference": "model-context-protocol.md",
+          "kind": "config",
+          "text": "The MCP server uses the official MCP SDK's current major, served on Hono through the SDK's Hono adapter or its web-standard transport.",
+          "check": "Record the MCP SDK packages the app depends on and what `npm view` reports for the SDK's current server package. Pass when the MCP app depends on the SDK's current major package (not only its older single package when a newer server package is published beside it) and hono, and its entry uses the SDK's official Hono adapter or its web-standard Streamable HTTP transport. Fail on a hand-rolled JSON-RPC dispatcher or a Node-only transport wrapped in another framework."
+        },
+        {
+          "id": "api-25",
+          "reference": "model-context-protocol.md",
+          "kind": "build",
+          "text": "Ordinary tool calls use buffered JSON responses, with no streaming path unless a feature requires it.",
+          "check": "POST a tools/call to /mcp with Accept: application/json, text/event-stream, using each protocol revision the server claims. Pass when every response's Content-Type is application/json and no GET stream or subscription handler exists."
+        },
+        {
+          "id": "api-26",
+          "reference": "model-context-protocol.md",
+          "kind": "build",
+          "text": "The server implements `server/discover`, answers every request without a prior discover call, and supports the client lifecycle it claims.",
+          "check": "Send server/discover, then a tools/list with no prior discover in a fresh session. Pass when each succeeds. When the server or its docs claim support for an older lifecycle, also send an initialize handshake from that revision: pass when it succeeds and the docs publish the tested client matrix."
+        },
+        {
+          "id": "api-27",
+          "reference": "agent-tool-design.md",
+          "kind": "build",
+          "text": "Tool annotations stay truthful: read-only tools are marked read-only, and any tool that can update or replace existing state is marked destructive.",
+          "check": "In tools/list, every tool whose handler performs no write has readOnlyHint true, and every tool that updates a product or adjusts stock has destructiveHint true or omitted (never false). Cross-check against handlers."
+        },
+        {
+          "id": "api-28",
+          "reference": "model-context-protocol.md",
+          "kind": "build",
+          "text": "Exposure is never the security boundary: the gate enforces every call and returns a clean, instructive, protocol-neutral error naming what is unsupported.",
+          "check": "Call a write tool with a read-only key and a tool on a product the key's shop cannot reach. Pass when each result is an error whose text names the refused action or missing resource in plain language, with no JSON-RPC codes, stack traces, or SDK wording in the message."
+        },
+        {
+          "id": "api-29",
+          "reference": "model-context-protocol.md",
+          "kind": "build",
+          "text": "One static tool catalog is advertised to every caller, and authorization happens per call.",
+          "check": "Call tools/list with every kind of key the build can issue: read-write and read-only, a key for another shop, and a key for a shop with no products when the build can create one (record which kinds exist). Pass when the tool arrays are byte-identical, the list handler has no branch on the caller, and each tool takes every identifier it needs as an argument."
+        },
+        {
+          "id": "api-30",
+          "reference": "model-context-protocol.md",
+          "kind": "build",
+          "text": "Published capability metadata advertises only what the server actually enforces or serves.",
+          "check": "Compare every scope or permission named in openapi.json securitySchemes, the docs, and any protected-resource metadata with the scopes the gate checks: pass when the two sets are equal. The MCP server's declared capabilities include listChanged, subscribe, resources, or prompts only when a handler serves them."
+        },
+        {
+          "id": "api-31",
+          "reference": "agent-tool-design.md",
+          "kind": "build",
+          "text": "Each distinct capability has one tool, and an extra tool beats a conditional schema, with each description standing on its own.",
+          "check": "Pass when no two tools reach the same operation, no tool takes a mode, action, or operation argument that switches between operations or decides create versus update, and no tool description names a sibling tool."
+        },
+        {
+          "id": "api-32",
+          "reference": "agent-tool-design.md",
+          "kind": "build",
+          "text": "Reads may resolve names, destructive operations take stable IDs, and an ambiguous read returns each candidate with its stable ID.",
+          "check": "Pass when every update and stock-adjust tool and route requires a product ID and accepts no name in its place. When any read accepts a name, look up a name two products share: pass when it returns both with their IDs instead of picking one. Record na for that half when no read resolves names."
+        },
+        {
+          "id": "api-33",
+          "reference": "agent-tool-design.md",
+          "kind": "build",
+          "text": "Refusals teach: a validation refusal is typed and names the field, its limit, and what was received, and says what to send instead without echoing the rejected value.",
+          "check": "Send a 5,000-character value in the adjustment's free-text field and a quantity far outside the allowed range through both the API and MCP. Pass when each refusal carries a typed code, names the field, states the limit and the received measurement, says what to send instead, and does not contain the full submitted value, and the MCP refusal arrives as a tool result with isError true rather than a JSON-RPC protocol error."
+        },
+        {
+          "id": "api-34",
+          "reference": "agent-tool-design.md",
+          "kind": "build",
+          "text": "Tool names are imperative verb then noun under the server's one plurality convention, and each description opens with a compact sentence carrying the verbs callers reach for.",
+          "check": "Record each tool name and its description's first sentence with its word count. Pass when every name starts with a verb followed by a noun in one separator style, plurality follows one convention across the server, and a reviewer judges each first sentence a compact retrieval sentence that names the resource and carries the verbs a caller would search for."
+        },
+        {
+          "id": "api-35",
+          "reference": "ids.md",
+          "kind": "build",
+          "text": "API keys carry a type prefix, naming the stage whenever the key type exists in more than one stage, followed by a dashless version 4 UUID body minted from the runtime's crypto UUID generator through one shared helper.",
+          "check": "Find the key minting helper. Pass when it is the only minting site, calls crypto.randomUUID() and strips the dashes, every key the running server issues or prints matches ^[a-z][a-z0-9]*(_[a-z0-9]+)*_([0-9a-f]{32})+$, and, when keys exist in more than one stage, the prefix names the stage (record the prefixes)."
+        },
+        {
+          "id": "api-36",
+          "reference": "origins.md",
+          "kind": "build",
+          "text": "Any displayed origin, base URL, example request, or copyable command is built from the resolver, so each stage shows its own URLs.",
+          "check": "Grep the docs page, openapi.json servers[], and any code that prints try-it commands. Pass when none holds a literal production host outside the origins module, and starting the server with the build's origin override or stage input set to another origin changes every displayed base URL to it (record the input used)."
+        }
+      ]
+    }
+  ]
+}

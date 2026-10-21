@@ -4,26 +4,27 @@ Provider dashboards are part of the product. A setting that can break the app is
 
 Provider resources should be understandable from the dashboard alone. Fill optional descriptions, labels, and tags with the product, operational purpose, and environment or shared scope. Use canonical names from the repo, and prefer concise metadata that helps both people and automation distinguish similar resources across stages. Resource-specific formats, such as DNS record comments, remain authoritative where defined.
 
-Track near the runtime contract:
+Keep a committed setup document beside each deployable app's `.env.example` that lists, per stage and never with secret values:
 
 - CORS policies
-- Webhook URLs and signing secrets
+- Webhook URLs and the store holding each signing secret
 - Allowed origins
 - OAuth redirect URLs
 - Env variables per stage
 - Branch and custom domains
 - Storage lifecycle rules
 - Deployment branch settings
+- Deferred items with their blockers
 
 When onboarding providers, work one provider or one small sub-step at a time: make the change, write values into the correct store, confirm, then move on. Where the user takes a step, give it to them one step at a time rather than as a full checklist in one message.
 
-Report missing or pasted values by key name and store location only. Never echo a secret value back after it is provided.
-
-Some steps need a public URL that does not exist yet, such as a webhook target before the first staging deploy. Defer those explicitly, note what will unblock them, and keep a running list of deferred items rather than guessing a value.
+Some steps need a public URL that does not exist yet, such as a webhook target before the first staging deploy. Defer those explicitly, note what will unblock them, and keep them in the setup document rather than guessing a value.
 
 Every provider resource exists once per stage. A dev-tier app, key, or install pointing at production, or a production one reusing dev credentials, is not a shortcut, it is a wrong webhook target and a shared blast radius. Create the production resource when the stage exists rather than borrowing the development one and planning to fix it later.
 
-Provider branding is part of setup, not decoration. Fill the logo, name, support contact, and links on every consent screen, app listing, and connector entry, so a user granting access sees the product rather than an unnamed client. Where a provider derives the product's identity from the site itself, make the site say it: automated reviewers read the homepage heading as the app name.
+Provider branding is part of setup, not decoration. Fill the logo, name, support contact, and links on every consent screen, app listing, and connector entry, so a user granting access sees the product rather than an unnamed client.
+
+Consent-screen and app-listing branding is reviewed against the live page, and passing it is quick once the page agrees with the registration. Saving anything on a branding form usually invalidates an existing verified result, so a later logo upload silently undoes an earlier verification. A verified result often has to be published separately before users see it, and expires if it is not. Finish by re-reading the status and confirming it says the branding is being shown, not merely that it verified.
 
 ## Provider Shape
 
@@ -46,14 +47,6 @@ Wire each provider as completely as its known dependencies allow, across dev/tes
 - When one provider, key, or surface is added, rotated, or removed on an onboarded product, diff the contracts against the stores and fill only the delta, across every existing stage.
 
 Adapt the order when a provider forces a different sequence.
-
-## Advertised Capability Must Match Granted Capability
-
-When a product's integration relies on a client registering itself dynamically, the authorization server's advertised metadata is a promise that the client will hold it to. A host reads `scopes_supported`, requests everything advertised, and only then discovers that a dynamically registered client is not permitted to hold those scopes. The rejection lands after the user has already signed in, so the host cannot show it and reports a generic connection error. The product looks broken, the logs look clean, and every endpoint returns 200.
-
-So make what the authorization server advertises match what a registered client can actually obtain. If the provider advertises instance-wide scopes that its dynamically registered clients cannot hold, that is the bug, and it is fixed in the provider's configuration rather than worked around in each host.
-
-Check the same class of mismatch anywhere metadata is published: grant types, response types, and refresh-token support. A client registered without `refresh_token` will work perfectly until the first access token expires.
 
 ## Verify By Completing The Real Flow
 

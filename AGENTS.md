@@ -9,6 +9,8 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 | `SKILL.md` | Trigger, default stack, reference-loading map, non-negotiables, audit |
 | `references/*.md` | One single concept per file, named by paradigm |
 | `assets/` | Exact copyable starter files governed by an owning reference |
+| `scripts/check-layout.mjs` | The layout check an agent runs on its own served build, with `package.json` naming it for the remote route |
+| `evals/` | Behavioral test briefs, their assertions, and the clean-room harness. Maintainer-only, never loaded at use time |
 | `README.md` | Short human summary |
 
 One owner per opinion. Each reference owns its concept. Other files use the term or shape without restating the rule. The reference-loading map lives in `SKILL.md` once. References assume the agent already loaded what their section needs.
@@ -56,10 +58,25 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - **Sparing examples.** Use a concrete example only to clarify a shape or structure, never to fix a naming choice. Do not anchor a name with an example token the reader could copy verbatim instead of choosing the most accurate name for their own case.
 - **Positive rules.** State the action to take, not the mistake to avoid. Write "Use a role name for the integration" rather than "Do not name the integration after the vendor". A negative rule names the failure and quietly anchors it as the thing to copy. A positive rule points only at the correct move. A bare prohibition such as "Do not collapse the two surfaces" is weaker than "Keep each surface its own deployable". Reserve a "do not" only when no positive phrasing carries the same force, and never turn a banned example into a label the reader could lift verbatim.
 
+## Behavioral Testing
+
+A rule that shows up in what an agent builds, on screen, in the file layout, in config, or in the build output, is proven by clean-room builds before it is committed. Hold the whole change, including any edit to this process, to the monolith-audit skill, read from RemoteSkill or wherever it is installed. The steps:
+
+1. Find the evals in `evals/evals.json` whose prompt exercises the rule, and give each an assertion that decides the rule from the build alone: a measurement and its threshold, or a file and what it holds. When no eval exercises it, add one: a request a real person would type, about an invented product, that never mentions the rule. The evals cover a public site, a signed-in app, a new repository, and an HTTP API with an MCP server, so a rule about billing, uploads, background jobs, or another surface they do not reach usually needs a new eval.
+2. Snapshot the skill as last committed and as changed, outside any repository.
+3. Build each affected eval with both snapshots in fresh sessions, following `evals/harness/README.md`: at least one Claude Opus and one GPT Sol build per snapshot, four at a time, 20 minutes each. Confirm from every session record that the skill loaded in its builds and that nothing else of the owner's did.
+4. Blind the builds and grade every assertion of the affected evals as `evals/harness/GRADER.md` describes: install, build, serve the production build, capture and measure it at four widths, look at every capture, and use every action the prompt asks for.
+5. Have critics judge the rendered builds blind as `evals/harness/CRITIC.md` describes, a GPT critic for the Claude-built builds and a Claude critic for the GPT-built ones, answer every finding in writing, and resume each critic with the answers until it withdraws or holds each one.
+6. Pass when every changed-snapshot build passes each changed rule's assertions, a not-applicable grade counting as not passed, no assertion that every last-committed build passed fails in a changed build, and the critic holds no blocking finding against a changed build that the last-committed builds did not also have.
+7. When it fails, rewrite the rule into something an agent can check against its own output, such as a number, a file, a named shape, or a line in the layout check, and run again. After four rounds, stop and report what still fails instead of committing it.
+8. Leave the change uncommitted for the owner's review, with a proposed commit message that names the evals run, the builds per snapshot, and the pass counts. Commit only after the owner approves. Delete the run folder, which holds copied credentials, and confirm by listing that no copy remains.
+
+A rule that needs live providers, DNS, real payments, or dashboards is not built. It gets a critic's review against the provider's first-party documentation instead.
+
 ## Compatibility Posture
 
 Treat the current intended product contract as truth. Compatibility is never an automatic courtesy for unreleased, internal, or mistaken behavior.
 
 Add compatibility only when an explicit supported contract, deployed client, public integration, durable user data, or approved rollout requires it. Name the preserved contract, its consumers, its removal condition if temporary, and the verification that proves both old and new behavior remain intentional.
 
-Before finishing, confirm every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped as the release-versioning skill requires, and the README layout matches the actual files.
+Before finishing, confirm the behavioral tests above passed for every buildable rule the change touches, every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped as the release-versioning skill requires, and the README layout matches the actual files.

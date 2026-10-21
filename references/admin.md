@@ -1,8 +1,8 @@
 # Admin
 
-Admin is a gated internal surface, not a hidden corner of the user app. Gate it explicitly by an admin role checked on the server, never by an unlinked route or client-only check.
+Admin is a gated internal surface, not a hidden corner of the user app.
 
-Keep the operator and admin allowlist the server checks against in versioned code, reviewed in code review. Who counts as internal staff is a product decision, so it lives with the code alongside the other product constants.
+Grant admin through a staff-only grant that the server alone can write, held by the auth provider as membership in the product's internal staff organization or as server-only user metadata, and check that grant on the server. Keep it independent of every workspace and tenant role, since customers administer their own workspaces. Keep the list of who holds it in the provider, set per stage, and record the grant procedure in the repository.
 
 What admin surfaces exist for:
 
@@ -10,6 +10,6 @@ What admin surfaces exist for:
 - Viewing usage and cost so thin margins stay visible
 - Support actions on accounts and workspaces
 
-Keep raw provider errors, job IDs, and storage keys here, where operators need them, and out of the user-facing product entirely.
+The admin surface is where raw provider errors, job IDs, and storage keys are shown.
 
-Hide admin from users who lack the role rather than showing a forbidden screen. The absence of the entry point is the gate's visible form.
+A non-admin sees no admin entry point, and an admin URL they open shows the product's not-found page.

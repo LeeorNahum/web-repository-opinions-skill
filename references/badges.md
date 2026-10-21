@@ -21,7 +21,7 @@ The badge lives one segment under the resource's canonical public URL, as a file
 /[prefix]/[id]/badge.svg
 ```
 
-The extension names the format, because a badge is a file that Markdown renderers and image proxies must recognize as an image without fetching it, the same reason a published OpenAPI document carries `.json`. Answer that URL with the image itself rather than redirecting to wherever the bytes live, because a redirect on an image URL breaks caching proxies. It is a credential-free public read and carries that posture.
+The extension names the format, because a badge is a file that Markdown renderers and image proxies must recognize as an image without fetching it. Answer that URL with the image itself rather than redirecting to wherever the bytes live, so the badge's own cache and validator headers are the ones the proxy sees. It is a credential-free public read and carries that posture.
 
 Presentation is chosen by query parameter, in the product's fixed order, with defaults omitted:
 
@@ -35,13 +35,13 @@ Those two are the whole contract. The badge has no caller-chosen color, label, l
 Two audiences cache a badge, and they get different headers:
 
 - Image proxies in front of Markdown renderers hold an image indefinitely unless told otherwise. Send `Cache-Control: no-cache` plus a validator, an entity tag derived from everything the badge shows, so the proxy revalidates on each view and gets a cheap not-modified answer while nothing changed.
-- The product's own edge caches the badge briefly with stale revalidation through the edge-scoped cache header, so README traffic is absorbed before it reaches the origin.
+- The product's own edge caches the badge briefly with stale revalidation through `CDN-Cache-Control` or the host's CDN-targeted equivalent, so README traffic is absorbed before it reaches the origin.
 
 Re-check the resource's public state on every origin hit. A cache hit is never an authorization.
 
 ## A Dead Or Unshared Link
 
-A resource that is not public, whether it was never shared, has been unshared, or never existed, answers with one neutral badge that shows the product mark and names nothing, so the badge cannot be used to probe which identifiers exist and a stale badge cannot keep announcing what it pointed at. Serve it as a successful response, because a non-success status behind an image proxy turns into a broken-image glyph, and the neutral image is the refusal. Give it the same validator treatment, so a resource shared again repairs its badges on the next view.
+A resource that is not public, whether it was never shared, has been unshared, or never existed, answers with one neutral badge that shows the product mark and names nothing, so the badge cannot be used to probe which identifiers exist and a stale badge cannot keep announcing what it pointed at. Serve it as a successful response, so every renderer shows the neutral image and the status reveals nothing about which identifiers exist. The neutral image is the refusal. Give it the same validator treatment, so a resource shared again repairs its badges on the next view.
 
 ## Snippets
 

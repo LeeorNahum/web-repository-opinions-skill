@@ -9,6 +9,8 @@ The opinions are paradigm-named and provider-stated: sections are named for what
 - `SKILL.md` is the spine: thesis, default stack, the reference-loading map, core non-negotiables, and the audit procedure.
 - `references/` holds one single concept per file, loaded on demand.
 - `assets/` holds copyable starter files for a target repo.
+- `scripts/check-layout.mjs` is the layout check an agent runs on its served build, and `package.json` lets it run from GitHub.
+- `evals/` holds the behavioral test prompts, their assertions, and the clean-room harness, for maintainers.
 - `AGENTS.md` is the editing and maintenance contract for this skill.
 
 ## Coverage

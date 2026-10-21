@@ -3,14 +3,16 @@
 Use `apps/` for deployable entry points and `packages/` for shared libraries. Nothing else earns a top-level slot by default.
 
 ```text
-product-slug/
+Product-Name/
   apps/
     site/      public marketing, SEO, docs, pricing, legal, help
-    app/       signed-in product, private routes, account, billing, admin
+    app/       signed-in product, private routes, account, billing
+    admin/     internal admin surface, once the product needs one
   packages/
     backend/   backend functions, jobs, provider adapters, schema
     domain/    pure product rules, route builders, permissions, limits, origins
     config/    shared TypeScript and tooling config
+    tokens/    shared design tokens and theme, created with the first app
     ui/        shared UI primitives, only once real ones exist
   package.json
 ```
@@ -19,7 +21,7 @@ Apps are thin. They compose routes, layouts, runtime adapters, and env wiring. S
 
 Dependency direction is one way. Apps import packages. Packages never import apps. Backend packages never depend on UI packages.
 
-Each package has one clear purpose. Avoid catch-all names like `shared`, `common`, or `core`, which become junk drawers. Do not create `packages/ui` before real reusable primitives exist. Do not create `packages/types` when the types belong to `domain` or `backend`.
+Each package has one clear purpose, so none becomes a junk drawer. Create `packages/ui` once two apps share a real primitive. Keep types in the package that owns their concept.
 
 Declare workspace dependencies explicitly:
 
@@ -39,10 +41,10 @@ packages/backend/
   .env.example
   convex/
     schema.ts
-    *_generated/
+    _generated/
 ```
 
-One backend serves the whole product. Public site, signed-in app, future mobile, and admin share it when they are one product. Do not split the backend per app unless the products are genuinely separate.
+One backend serves the whole product. Public site, signed-in app, future mobile, and admin share it when they are one product. Split the backend only when the products are genuinely separate.
 
 Future mobile or desktop clients become new apps under `apps/` that reuse the same packages and backend, never a fork of product logic.
 

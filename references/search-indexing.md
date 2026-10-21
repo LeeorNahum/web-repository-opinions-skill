@@ -12,7 +12,7 @@ Keep fetched contents temporary when they exist only to satisfy the current requ
 
 ## Query Behavior
 
-Normalize case and whitespace consistently. Choose token matching, phrase matching, ranking, and field weighting deliberately, then test those semantics as domain behavior.
+Normalize case and whitespace consistently. Write tests that pin case folding, whitespace collapse, token versus phrase matching, and field precedence, such as a title match ranking above a body match.
 
 Search implementation belongs behind a product-level interface so the storage engine or provider can change without rewriting callers.
 
@@ -28,7 +28,7 @@ When changing indexed material:
 6. Confirm removed material no longer matches.
 7. Remove obsolete indexing functions and references.
 
-Do not wipe primary objects, relationships, metrics, or public IDs to rebuild a derived search field.
+Rebuild a derived search field in place, leaving primary objects, relationships, metrics, and public IDs untouched.
 
 ## Verification
 

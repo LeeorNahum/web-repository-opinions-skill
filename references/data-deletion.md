@@ -11,9 +11,7 @@ Define when the object stops appearing in normal reads. Mark it as deleting befo
 Process the graph in explicit bounded phases:
 
 1. Remove dependent relationships and child rows.
-2. Remove deduplication, index, aggregate, cache, and auxiliary state.
+2. Remove deduplication, index, aggregate, cache, and auxiliary state, and the stored objects, found through the write ledger rather than the rows being deleted.
 3. Remove the primary record last when it anchors the remaining cleanup.
 
-Every phase is idempotent. Persist progress, schedule the next bounded step, and let repeated invocation resume safely. This bounded, resumable sequence is a saga: each phase commits its own step, and where a step cannot simply be retried forward it carries a compensating action that undoes partial work and keeps counters and aggregates correct.
-
-Keep counters and aggregate state accurate on every deletion path. Test interruption and repeated execution at each phase boundary.
+Run each phase as a bounded, idempotent job step, which makes the sequence a saga: where a step cannot simply be retried forward, it carries a compensating action that undoes partial work, so counters and aggregate state stay accurate on every deletion path. Test interruption and repeated execution at each phase boundary.

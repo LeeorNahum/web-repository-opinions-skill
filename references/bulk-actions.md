@@ -12,7 +12,7 @@ Return one structured result for every requested item. Include the stable input 
 - Preserve the user's input order in returned results and combined output.
 - Retry only unresolved items.
 
-Remove completed items from pending retry state and keep failed items actionable. Do not roll back independent successes to simplify the UI.
+Keep every independent success committed, even when rolling it back would simplify the UI.
 
 ## Partial Versus Atomic
 
@@ -27,9 +27,11 @@ When partial output is allowed, include only successful items and no error place
 
 Record metrics, usage, and deduplication only for items included in the successful durable side effect. Run non-critical accounting with settled promises so it cannot reverse a completed primary action.
 
-Keep concurrency limits conservative and explicit. The limit protects provider quotas, browser resources, and backend execution without changing result order.
+Set the concurrency limit as a named constant beside the operation, sized to the provider's documented rate limit where one exists. The limit protects provider quotas, browser resources, and backend execution without changing result order.
 
 ## Retry Experience
+
+The aggregate control reports partial failure when any item fails, even if useful partial output succeeded, while each item's own control keeps its own outcome.
 
 After partial failure:
 
