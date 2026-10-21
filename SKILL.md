@@ -145,7 +145,7 @@ Operating philosophy:
 - Read [references/runtime-truth.md](references/runtime-truth.md) when deciding whether a change is actually complete.
 - Read [references/promotion.md](references/promotion.md) when promoting work between deployment stages.
 - Read [references/definition-of-done.md](references/definition-of-done.md) before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.
-- Run the [layout check script](scripts/check-layout.mjs) against the served production build of every web surface before calling it done, as definition-of-done.md describes. Add `--app` for a signed-in app shell, and `--help` lists what it fails on. Run it from GitHub, which brings its own Playwright, or from the installed skill, which uses the project's. Either way, install Chromium once with `npx playwright install chromium`.
+- Run the [layout check script](scripts/check-layout.mjs) against the served production build of every web surface before calling it done, as responsive-layout describes. Add `--app` for a signed-in app shell, and `--help` lists what it fails on. Run it from GitHub, which brings its own Playwright, or from the installed skill, which uses the project's. Either way, install Chromium once with `npx playwright install chromium`.
 
   ```bash
   npx --yes github:LeeorNahum/web-repository-opinions-skill <served-url> --paths=<route>,<route>
@@ -171,7 +171,7 @@ Operating philosophy:
 - Env holds secrets and true environment variance. Product decisions live in code.
 - Same env key names across stages. Values change by store, not the key.
 - Branches are deployment roles: `dev` is local, `preview` is hosted staging on dev resources, `main` is production.
-- Check quota before expensive work and charge it only after durable success. Expensive jobs retry only on user action. Failed states must be actionable.
+- Check quota before expensive work, reserve it when parallel requests could overspend it, and record usage only after durable success. Expensive jobs retry only on user action. Failed states must be actionable.
 - User-facing failures use product-owned copy. Raw exception, provider, framework, request, and stack details stay internal.
 - A change is done when the runtime it depends on is true, not when TypeScript compiles.
 

@@ -12,8 +12,6 @@ Return one structured result for every requested item. Include the stable input 
 - Preserve the user's input order in returned results and combined output.
 - Retry only unresolved items.
 
-Keep every independent success committed, even when rolling it back would simplify the UI.
-
 ## Partial Versus Atomic
 
 Choose semantics from the operation:
@@ -31,7 +29,7 @@ Set the concurrency limit as a named constant beside the operation, sized to the
 
 ## Retry Experience
 
-The aggregate control reports partial failure when any item fails, even if useful partial output succeeded, while each item's own control keeps its own outcome.
+A control that acts on the whole set reports partial failure when any item fails, even if useful partial output succeeded, while each item's own control keeps its own outcome.
 
 After partial failure:
 

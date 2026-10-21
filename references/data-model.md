@@ -4,7 +4,7 @@ Model entities around the product's core object and the ownership boundary that 
 
 When many users can reference the same object, model the shared object separately from each user's relationship and relationship-owned metadata. Define object deletion independently from relationship deletion.
 
-Ship every object a person can create with a way to remove it in the product, containers that hold other objects included, and decide with its design who may remove it and what goes with it. An object the product is obliged to keep, by law or by agreement, is voided or closed instead, and what it needs to stay complete is kept with it.
+Give everything a person creates a way to remove it in the product, containers that hold other objects included, and decide in its design who may remove it and what goes with it. A record the product must keep, by law or by agreement, such as an issued invoice, is voided or closed instead of deleted, and what it references stays.
 
 Value precedence is fixed: user-edited values outrank generated values, and generated values outrank defaults. A generated name or summary never overwrites something the user authored.
 

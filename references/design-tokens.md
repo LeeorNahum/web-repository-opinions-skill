@@ -2,7 +2,7 @@
 
 A product gets one design token layer that every surface draws from, so the public site and the signed-in app feel like one product even when they are separate codebases. When a product has more than one app, keep the token source in one workspace package that every app imports its theme from.
 
-Keep tokens in a single source of truth: colors, typography scale, spacing, radius, elevation, and named component styles. Components consume tokens, and any one-off value a component needs stays consistent with the system.
+Keep tokens in a single source of truth: colors, typography scale, spacing, radius, elevation, and named component styles. Components consume tokens rather than one-off values that contradict the system.
 
 When a design decision changes, update the token source rather than patching a component. A new color, type step, or component pattern goes into the token layer first.
 

@@ -6,7 +6,7 @@ The database is the source of truth for metadata, ownership, status, and permiss
 
 ## Buckets
 
-Use a dedicated bucket per asset class and a separate bucket per stage, matching the two provider stages, so dev/test bytes never mix with production bytes. One asset class, such as video, is one bucket pair (dev and prod). Split into more buckets only when a distinct asset class needs different access, lifecycle, or region, not by default.
+Use a dedicated bucket per asset class and a separate bucket per stage, matching the two credential tiers, so dev/test bytes never mix with production bytes. One asset class, such as video, is one bucket pair (dev and prod). Split into more buckets only when a distinct asset class needs different access, lifecycle, or region, not by default.
 
 ## Keys
 
@@ -44,4 +44,4 @@ An object put can land after its owning row is deleted, and no row-driven sweep 
 
 **Lifecycle rules are for prefixes that are short-lived by construction**, staging areas and export downloads, where every object is garbage after a known age. Keep lifecycle expiry off every prefix that holds served content: age and date conditions cannot tell a stranded byte from a live one that was uploaded long ago. The ledger is the mechanism. A lifecycle rule is only correct where age genuinely implies garbage.
 
-Give every bucket that accepts multipart uploads a rule that aborts incomplete uploads within seven days. Some stores, the default store among them, add one to every new bucket, so confirm it is present. An unfinished upload is never served, so its age always means garbage.
+Give every bucket that accepts multipart uploads a rule that aborts incomplete uploads within seven days. Some stores add one to every new bucket, so confirm it is present. An unfinished upload is never served, so its age always means garbage.

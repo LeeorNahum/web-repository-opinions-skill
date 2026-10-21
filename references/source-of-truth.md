@@ -1,6 +1,6 @@
 # Source Of Truth
 
-Pick one durable owner per fact. This is the single source of truth principle: one authoritative owner per fact, with every other copy a cache or a reference and never a competing authority. The app orchestrates between owners. It does not duplicate truth casually.
+Pick one durable owner per fact, with every other copy a cache or a reference and never a competing authority. The app orchestrates between owners. It does not duplicate truth casually.
 
 | Fact | Owner |
 | --- | --- |
@@ -13,8 +13,6 @@ Pick one durable owner per fact. This is the single source of truth principle: o
 | Deploy and runtime env values | Hosting and provider stores |
 
 The database references object keys, and object storage never becomes a second app database. The app reads subscription truth from the billing provider rather than mirroring it as the authority.
-
-When two systems seem to hold the same fact, decide which one is authoritative and make the other a cache or a reference, not a competing source.
 
 ## Documents Need An Owner Too
 

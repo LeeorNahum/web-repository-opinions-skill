@@ -30,7 +30,7 @@ Some providers gate this behavior behind custom credentials. In Clerk specifical
 
 ## Stage Separation
 
-Use separate OAuth credentials per stage. Each auth instance issues a different redirect URI, and a credential validates the exact redirect URI on every login, so sharing one credential across dev and production widens the blast radius of a leak. Keep dev/test and production credentials separate, matching the two provider stages.
+Use separate OAuth credentials per stage. Each auth instance issues a different redirect URI, and a credential validates the exact redirect URI on every login, so sharing one credential across dev and production widens the blast radius of a leak. Keep dev/test and production credentials separate, matching the two credential tiers.
 
 Integration contract names, such as a JWT template name, can be code conventions. Make them env only if deployments truly need different names.
 
@@ -89,6 +89,6 @@ When an account closes, keep a small record that outlives every row it owned: a 
 - The provider deleted the identity and said so: the subject can never issue or refresh a credential again, so the record is a tombstone kept comfortably past the longest credential life, then dropped so this never becomes a permanent list of everyone who left.
 - The product closed the account while the provider identity still exists: that subject can still sign in and still refresh, so the record must never expire, or the closure quietly ends on a date. Retention only ever lengthens, and a later provider event never puts an expiry back.
 
-Make the origin a required argument with no default, because the safe answer differs and a default silently picks the unsafe one for the caller that most needs the other. And when permanence is encoded as an absent expiry field, every expiry scan must range only over records that have the field, because an unbounded range can reach the records with no expiry and delete exactly the refusals that must never be forgotten.
+Make who closed the account a required argument with no default, because the safe answer differs and a default silently picks the unsafe one for the caller that most needs the other. And when permanence is encoded as an absent expiry field, every expiry scan must range only over records that have the field, because an unbounded range can reach the records with no expiry and delete exactly the refusals that must never be forgotten.
 
 Ask before changing OAuth callback hosts or production auth settings.

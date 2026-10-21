@@ -21,6 +21,4 @@ For that verification, the privacy policy must describe what user data is access
 
 Each legal page names who runs the product, a person or a legal entity, and carries a "Last updated" date that moves whenever its text changes in a way that matters to a reader. Privacy laws commonly require a notice to name who controls the data, some require the date it last changed, and terms need an identifiable party to bind.
 
-Write each page as a consumer product's own website page: short sections under plain headings, addressed to the visitor, with no tables and the "Last updated" date at the top. Say what happens to the visitor's data rather than how the code handles it, and name third parties by role, except an AI model provider, which is named outright.
-
-Before writing, read two or three comparable products' published pages, shape the draft on them, and hold the draft against them as the check. Publish only statements the shipped code backs. Keep the legal text only in the site's source, with no separate draft or document copy.
+Write each page for the visitor, in short sections under plain headings, with the "Last updated" date at the top. Say what happens to the visitor's data rather than how the code handles it. Name third parties by role, so swapping a vendor does not make the page false, and by name only where a law or a provider's policy requires it. Publish only statements the shipped code backs, and keep the legal text in the site's source alone, so no second copy drifts from what is published.

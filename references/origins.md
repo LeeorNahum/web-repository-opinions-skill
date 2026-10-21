@@ -43,6 +43,6 @@ Order the ladder by two rules, applied in that order:
 1. Canonical appearance: place each surface in the order a person first meets it in the product's own journey.
 2. Dependency necessity: when one surface must be running for another to function, the depended-on surface takes the earlier port.
 
-A site, an app, and an API the app cannot start without take `3000` for the site, `3001` for the API, and `3002` for the app.
+A site, an app, and an API the app cannot start without take `3000` for the site, `3001` for the API, and `3002` for the app, since a person never meets the API and dependency alone places it.
 
 The same two-rule ordering governs any ordered enumeration the product defines, not only ports, such as the surfaces listed in docs and env files. Keep the ladder dense, and keep every store, doc, and code default that names a port consistent with it, so a developer can guess a surface's local origin without consulting a list that may have drifted.

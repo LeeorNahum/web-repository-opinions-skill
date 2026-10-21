@@ -17,7 +17,7 @@ Provider identity and application identity solve different problems. The provide
 Track whether a reference follows the provider default or was explicitly chosen.
 
 - Let default references follow the provider's current default.
-- Keep an explicitly chosen version, such as a branch, tag, or revision, explicit.
+- Keep explicit branches, tags, versions, and revisions explicit.
 - Preserve the tracked path exactly.
 - Treat a missing path as a source failure rather than guessing a move or rename.
 

@@ -14,4 +14,4 @@ Process the graph in explicit bounded phases:
 2. Remove deduplication, index, aggregate, cache, and auxiliary state, and the stored objects, found through the write ledger rather than the rows being deleted.
 3. Remove the primary record last when it anchors the remaining cleanup.
 
-Run each phase as a bounded, idempotent job step, which makes the sequence a saga: where a step cannot simply be retried forward, it carries a compensating action that undoes partial work, so counters and aggregate state stay accurate on every deletion path. Test interruption and repeated execution at each phase boundary.
+Run each phase as a bounded, idempotent job step that persists its progress and schedules the next, so a repeated invocation resumes safely. That makes the sequence a saga: where a step cannot simply be retried forward, it carries a compensating action that undoes partial work, so counters and aggregate state stay accurate on every deletion path. Test interruption and repeated execution at each phase boundary.

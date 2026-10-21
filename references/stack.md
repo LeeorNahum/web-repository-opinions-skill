@@ -6,10 +6,6 @@ TypeScript is the floor, not a choice. Prefer one language across apps, packages
 
 Prefer the latest stable release of each tool, and follow its current conventions rather than an older major's. Look up each dependency's current version with the package manager, such as `npm view <package> version`, before adding it. Keep the parts of the toolchain that must agree on the same major, so the config, build, types, and rendered runtime stay consistent.
 
-## Components
-
-In a React surface, set up shadcn/ui with its CLI (`shadcn init`, then `shadcn add` for each control) and take buttons, inputs, dialogs, menus, and tables from it before writing one by hand. Its components read the token layer, so the product's look stays in tokens, and lucide-react supplies their icons.
-
 ## Serve Dependencies From Your Own Origin
 
 Serve every script, style, font, and worker bundle the product itself ships from its own origin. Load a provider script from the provider's host only when the provider requires it, such as a payment or auth SDK, and only on the surfaces that use it. Everything else is a real dependency in the manifest, bundled or self-hosted.

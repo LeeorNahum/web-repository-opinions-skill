@@ -33,4 +33,4 @@ A product that ships an installer names its publisher explicitly, and the name i
 
 ## Durable Names
 
-Name things for what they will still be a year from now, with no word that marks a moment, a migration, or a version.
+Name things for what they will still be a year from now, with no word that marks a moment or a migration.

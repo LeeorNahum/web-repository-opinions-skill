@@ -2,9 +2,8 @@
 
 Every product gets addresses on its own domain, hosted where its owner lives. A person's own products share that person's one hosted mailbox seat, each product domain added as a secondary domain on it. A company, project, or legal entity gets its own workspace on its own domain, so it can be handed over, staffed, or closed without touching anyone's personal mail. Either way the service receives each domain's mail through its own MX records and sends as any alias natively, so a reply from a product address needs no relay and no per-alias credential.
 
-- Route each person-facing alias into the person's own mailbox, or forward it from the hosted seat, and read, answer, and send as the alias from there.
+- Route each person-facing alias into the person's own mailbox, or forward it from the hosted seat, and read, answer, and send as the alias from there, through the mailbox provider's own servers rather than a third-party relay, so mail leaves signed with the product domain's DKIM and passes DMARC.
 - A product address sends under the product's name alone, set as the display name on its send-as entry. Where the provider requires a first and last name on an account that is not a person, use the product name and `Team`.
-- When the person reads mail in a personal mailbox at the same provider, add each alias there as a send-as address that sends through the provider's own SMTP server, signed in as the seat with an app password. Mail then leaves signed with the product domain's DKIM and passes DMARC, with no third-party relay.
 - To add a product, add the domain to its owner's seat or workspace, publish its MX, SPF, DKIM, and DMARC records in DNS, with DMARC at `p=quarantine`, turn DKIM signing on at the provider, and then add the alias. Where the provider offers the DKIM key only later, add the alias without waiting, then publish DKIM and turn signing on.
 - Retire an alias when its product ends.
 - An alias is ready once a message from outside reaches it and a message from it reaches an outside mailbox with DKIM signed by the product domain and SPF and DMARC passing.

@@ -10,6 +10,6 @@ Order on any route that can be opened directly:
 4. Resolve the workspace the route addresses, when it addresses one.
 5. Only then read protected data, gated by membership or by a share of the resource.
 
-Find or create the app user and ensure the default workspace or account on every authenticated entry, and treat the signup webhook as an optimization. Webhooks can lag, fail, or arrive after the user first opens the app, so the webhook is never the source of the row.
+Treat the signup webhook as an optimization, never the source of the row, because webhooks can lag, fail, or arrive after the user first opens the app.
 
 A first sign-in reaches working data with no refresh. When one needs a refresh, the order of operations is wrong, not the timing.

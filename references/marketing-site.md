@@ -13,8 +13,6 @@ Responsibilities:
 
 The public site should not carry private data, auth-gated workflows, or provider-backed actions, apart from a storefront's cart and its handoff to checkout. It links into the app. It does not become the app.
 
-Keep public copy product-native and simple.
-
 ## Header Link
 
 The logo or wordmark in the header links to the site root path, `/`, rather than an in-page anchor. The root is the top of the page, it is the same destination from every page and every scroll depth, and it leaves no stray fragment in the address bar. Anchors are for sections, not for home.

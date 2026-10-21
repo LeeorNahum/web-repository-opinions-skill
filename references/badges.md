@@ -41,7 +41,7 @@ Re-check the resource's public state on every origin hit. A cache hit is never a
 
 ## A Dead Or Unshared Link
 
-A resource that is not public, whether it was never shared, has been unshared, or never existed, answers with one neutral badge that shows the product mark and names nothing, so the badge cannot be used to probe which identifiers exist and a stale badge cannot keep announcing what it pointed at. Serve it as a successful response, so every renderer shows the neutral image and the status reveals nothing about which identifiers exist. The neutral image is the refusal. Give it the same validator treatment, so a resource shared again repairs its badges on the next view.
+A resource that is not public, whether it was never shared, has been unshared, or never existed, answers with one neutral badge that shows the product mark and names nothing, so the badge cannot be used to probe which identifiers exist and a stale badge cannot keep announcing what it pointed at. Serve it as a successful response, because a non-success status behind an image proxy turns into a broken-image glyph, and the neutral image is the refusal. Give it the same validator treatment, so a resource shared again repairs its badges on the next view.
 
 ## Snippets
 

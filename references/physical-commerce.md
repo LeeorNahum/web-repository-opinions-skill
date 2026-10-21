@@ -10,7 +10,7 @@ Default: Shopify, reached through its Storefront API from the product's own app.
 - The platform owns the catalog, prices, inventory, the cart's line items, checkout, payments, tax, shipping, discounts, order records, and order email. Merchants edit there and the site reflects it.
 - The only navigation off the site is the checkout button, which sends the buyer to the platform's hosted checkout on a subdomain of the site's domain. Nothing else lives on that subdomain.
 
-Build the site as the product's own app, outside the platform's theme system. A theme renders in the platform's template language, the platform's Git integration connects only a branch laid out as a theme, and every visual change routes through the platform. That couples the whole site to the one piece that should stay a black box.
+Build the site as the product's own app, outside the platform's theme system. A theme renders in the platform's template language, and every visual change routes through the platform. That couples the whole site to the one piece that should stay a black box.
 
 Serve the shop pages from the site too, so the cart and any sign-in stay in one app instead of breaking at the seam between two sessions.
 

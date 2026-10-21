@@ -16,7 +16,7 @@ Keep under the preference:
 - Fades and changes of color or opacity, which move nothing and change no size or shape.
 - A short entrance that moves an element a few pixels once.
 
-Judge every animation on the surface against that line, and record which side each falls on beside the surface's design rules. Replace rather than remove where the motion carries meaning: a light that would travel across the screen can fade out where it was and in where it goes. Follow a change to the preference while the surface is open.
+Judge every animation on the surface against that line. Replace rather than remove where the motion carries meaning: a light that would travel across the screen can fade out where it was and in where it goes. Follow a change to the preference while the surface is open.
 
 ## Verification
 

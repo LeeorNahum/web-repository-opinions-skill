@@ -13,7 +13,7 @@ Each external system sits behind one boundary that speaks the product's own voca
 
 Migrate a replacement with the strangler fig pattern: stand the new adapter up beside the old one and route callers over once it covers every case, removing the old integration only after the new one is proven. Keep provider payloads, model names, and SDK types from leaking past the adapter into general app code.
 
-The app's data and auth client bindings are the product's own framework layer, so UI code uses them directly. Every server-side provider SDK, such as payments, email, storage, models, or commerce, sits behind one owning adapter, a module or package that is the only code importing it.
+The exception is the app's data and auth client bindings, which are the product's own framework layer, so UI code uses them directly. Every server-side provider SDK, such as payments, email, storage, models, or commerce, sits behind one owning adapter, a module or package that is the only code importing it.
 
 ## Make Capabilities Routable
 

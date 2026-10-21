@@ -42,7 +42,6 @@ When the product serves HTML or JavaScript its users supply, serve it from a sep
 - Give each item its own subdomain on the content domain, so each item has its own origin and its own storage.
 - When the product frames an item, frame it by its URL on the content domain. Markup written into the product's own page, inline or through `srcdoc`, runs as the product.
 - Request the content domain's entry in the private section of the Public Suffix List, and set every cookie the product issues on the content domain host-only with the `__Host-` prefix, because a browser whose copy of the list lacks that entry treats every item on the domain as one site.
-- When an item's code needs to know its viewer, give it a pseudonym the server derives per item, so no identifier follows a viewer across items.
 - When the product frames its items, keep the content domain out of search, with the framing page's address as the canonical one.
 
 The exception is a product with no separate domain. It serves the content with an opaque origin through an enforced `Content-Security-Policy: sandbox` response header without `allow-same-origin`, at the cost of browser storage.

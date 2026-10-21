@@ -1,6 +1,6 @@
 # Uploads
 
-Upload user files directly from the browser to object storage. Vercel, the default host, caps a function request body at 4.5 MB, so a proxied upload breaks on ordinary files.
+Upload user files directly from the browser to object storage, never through an app server route.
 
 Flow:
 

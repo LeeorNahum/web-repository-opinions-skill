@@ -1,6 +1,6 @@
 # Workspace Tenancy
 
-Give a product workspaces when it needs shared ownership, membership, or policy now or its owner says it will, because retrofitting an ownership boundary costs far more than carrying one early. A product whose data will only ever belong to one person keeps that data on the user account, with no organization layer.
+Give a product workspaces when it needs shared ownership, membership, or policy now or in a stated plan, because retrofitting an ownership boundary costs far more than carrying one early. A product whose data will only ever belong to one person keeps that data on the user account, with no organization layer.
 
 When a product's collaboration model is workspaces, back every workspace with the auth provider's organization object, the user's first workspace included. One organization per workspace gives every workspace the same membership, invitation, role, and token contract from day one, and the provider's verified organization context is what every surface checks a workspace selection against. Clerk Organizations are the default pick, and the paradigm holds for any provider tenant object.
 
@@ -18,13 +18,12 @@ When a product's collaboration model is workspaces, back every workspace with th
 - Under either scope, verify every call's target on the server against a live membership or a share of that resource, with its role, intersected with the token's scope. A single organization claim proves nothing about another workspace. A client may name its target workspace for the server to verify. A filter that only narrows what a view lists never selects the workspace a call acts on. Revocation reaches existing credentials, because every call rechecks.
 - An individual share grants that resource alone, never its workspace's other resources or its member list.
 - Fail closed when verified identity is absent, or when neither a live membership nor a share covers the target, with one clear product error.
-- Answer an organization webhook with non-2xx until its prerequisite row exists, and write every mirror idempotently so redelivery converges.
 
 ## The Provider's UI Speaks The Product's Vocabulary
 
 When the provider's own prebuilt components, an organization switcher, an organization or account management panel, become a primary surface for renaming, membership, or settings, they still carry the provider's own words in their labels by default: `organization`, `member`, `personal account`. Override those strings to the product's own tenancy term everywhere the provider renders, not only in the app's own copy. A component that still says the provider's word is a leak, not an accepted exception. Most providers expose a localization or strings-override mechanism for exactly this.
 
-Override the provider's complete default string resource rather than a hand-maintained list of keys: profile subpages, confirmation dialogs, and error states hide strings a partial override misses. Start from the resource version matched to the installed SDK, transform every string to the product's term, and keep interpolation placeholders exactly as the provider names them, because its templating resolves them by name. Find a leaking string's entry by searching the default resource for its text, and pin the SDK version the transform was built against, since the override surface can change between releases. Pin the transform with a test over the whole resource, proving no provider term survives and every placeholder does.
+Override the provider's complete default string resource rather than a hand-maintained list of keys: profile subpages, confirmation dialogs, and error states hide strings a partial override misses. Start from the resource version matched to the installed SDK, transform every string to the product's term, and keep interpolation placeholders exactly as the provider names them, because its templating resolves them by name. Pin the transform with a test over the whole resource, proving no provider term survives and every placeholder does.
 
 ## Creation Limits And Seat Coherence
 
@@ -38,4 +37,4 @@ Override the provider's complete default string resource rather than a hand-main
 - Re-key an existing workspace row to its real organization only on verified facts read from the provider: the user is currently a member and the provider names them creator, with exactly one qualifying organization. Refuse ambiguity and report it. Never select an organization by display name, list position, or age.
 - Run the reconciliation as a dry run first and report exact counts before writing.
 - Patch the workspace row in place so its stable public id and every child row survive. A migration that moves children has the wrong shape.
-- Rebind only where the creator fact is verified rather than compensating with writes from a caller's own token claims.
+- Let webhook redelivery converge event ordering: answer non-2xx when a prerequisite mirror has not landed, keep every mirror idempotent under redelivery, and rebind only where the creator fact is verified rather than compensating with writes from a caller's own token claims.

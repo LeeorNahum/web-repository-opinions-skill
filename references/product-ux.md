@@ -2,10 +2,10 @@
 
 Design every screen around a real human path, not a template average of nearby patterns. For each page, decide what the viewer should notice first, next, and last, then build to that order.
 
-- Give each view one primary action, styled as the only primary button in its main region.
+- Give each view at most one primary action, styled as the only primary button in its main region.
 - Give every view, including empty, not-found, and error states, at least one link or action onward.
 - Hide actions a user cannot take instead of showing disabled or error-producing controls.
-- Write every visible label, status, and message in product words, free of internal, debug, provider, and job terminology. A privacy policy still names the processors it must disclose. Provider job IDs, raw webhook states, model names, and storage keys appear only in admin.
+- Write every visible label, status, and message in product words, free of internal, debug, provider, and job terminology. Legal pages still disclose the third parties they must. Provider job IDs, raw webhook states, model names, and storage keys appear only in admin, unless the user chooses among them.
 
 Use product-owned dialogs, sheets, menus, and inline forms for user input and destructive confirmation. Browser-native prompt, confirmation, and alert dialogs are not product interfaces and must not ship.
 

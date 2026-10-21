@@ -2,7 +2,7 @@
 
 Provider-backed and long-running work runs as explicit jobs with explicit state, never as fire-and-forget calls scattered through route handlers.
 
-Give every job a test for a provider success followed by a failed database write, for a row whose provider object is gone, and for a second start while one run is in flight.
+Design and test every job for a provider success followed by a failed database write, a row whose provider object is gone, a person who leaves between steps, and a second start while one run is in flight.
 
 User-facing job status stays coarse. Store the internal step and the raw provider detail as metadata for operators, and show the user a simple, honest state.
 

@@ -16,11 +16,11 @@ For **Next.js App Router**, ship three files in `app/` and nothing else:
 - `app/apple-icon.png`: the same icon as a 180x180 PNG. Next.js auto-generates `<link rel="apple-touch-icon">` for iOS home screen bookmarks.
 - `app/favicon.ico`: the same icon rastered at 16, 32, and 48 for browsers and one size above 48 for search results. Next.js serves it at `/favicon.ico`, where crawlers also look, and links it beside the SVG.
 
-Let the two files generate every icon tag, with no `metadata.icons` in `layout.tsx`, and keep `public/` for brand assets beyond the favicon.
+Let these files generate every icon tag, with no `metadata.icons` in `layout.tsx`, and keep `public/` for brand assets beyond the favicon.
 
-For a client build such as Vite, put the generated `icon.svg` and a 180x180 `apple-touch-icon.png` in `public/` and link both from `index.html`.
+For a client build such as Vite, put the generated `icon.svg`, `favicon.ico`, and a 180x180 `apple-touch-icon.png` in `public/` and link them from `index.html`.
 
-Keep the in-page path in a named constant so all callers stay in sync if the path ever changes, and confirm the build serves that path with a 200 before pointing the header at it.
+Keep the in-page path in a named constant so all callers stay in sync if the path ever changes.
 
 ## Brand Image Formats
 

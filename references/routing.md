@@ -1,6 +1,6 @@
 # Routing
 
-Every meaningful view and state has its own URL that a reload, a copied link, and Back restore. Route paths are product architecture. They live in code and docs, never in env.
+Every meaningful view has its own URL that a reload and a copied link restore. Route paths are product architecture. They live in code and docs, never in env.
 
 Use one canonical route model per concept: one path per thing, never a long path and a short path alive together.
 

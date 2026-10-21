@@ -24,7 +24,7 @@ Every provider resource exists once per stage. A dev-tier app, key, or install p
 
 Provider branding is part of setup, not decoration. Fill the logo, name, support contact, and links on every consent screen, app listing, and connector entry, so a user granting access sees the product rather than an unnamed client.
 
-Consent-screen and app-listing branding is reviewed against the live page, and passing it is quick once the page agrees with the registration. Saving anything on a branding form usually invalidates an existing verified result, so a later logo upload silently undoes an earlier verification. A verified result often has to be published separately before users see it, and expires if it is not. Finish by re-reading the status and confirming it says the branding is being shown, not merely that it verified.
+Consent-screen and app-listing branding is reviewed against the live page. Saving a branding form can undo an earlier verification, and a verified result may still need publishing before users see it, so finish by re-reading the status until it says the branding is shown.
 
 ## Provider Shape
 

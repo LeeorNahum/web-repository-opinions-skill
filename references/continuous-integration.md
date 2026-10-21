@@ -2,7 +2,8 @@
 
 Use GitHub Actions for repository verification by default. Keep deployment with the existing hosting integration when it already owns that job. Give each runtime and published artifact one publishing owner.
 
-- Run lint, typecheck, contract, and unit tests on every push and every pull request. Pin the runtime and package manager and install from the frozen lockfile.
+- Ship the workflow with the repository's first change. Run lint, typecheck, contract, and unit tests on every push and every pull request. Pin the runtime and package manager and install from the frozen lockfile.
+- Give each deployable app real `lint`, `typecheck`, and `build` scripts that the workspace root runs.
 - Keep verification non-deploying and credential-free where possible. Give generation and deployment separate commands when generation contacts or changes a provider.
 - Run live-service and installed-client checks explicitly, with bounded timeouts and scoped credentials. Report an unavailable check as unverified, not passed.
 - Validate a release candidate before publishing it. Separately verify the published artifact and update channel afterward, so the pre-release gate never requires its own future release to exist.
@@ -34,6 +35,5 @@ A gate you run wrong is a gate you did not run, and the failure is silent: the c
 
 - **Know what your runner's cache flags mean before repeating them.** Check whether the invocation reads cached results, writes new entries, or does both. Use the runner's documented controls when a check must execute again, and confirm from its output that it did.
 - **A flag on the workspace script is not always a flag on the runner.** Package managers forward extra arguments to the underlying script, so the same flag can land on the task runner in one invocation and on the tool inside a package in another, where it is an unknown option. Check where it landed rather than assuming.
-- **A fresh worktree is not a working checkout.** Reviewing a snapshot in a detached worktree requires installing dependencies there first. Otherwise every gate fails for a reason that has nothing to do with the change, and the review reports on the runner instead of the code.
 
 Prefer the smallest command that proves the thing, and read its output rather than its exit code.

@@ -9,7 +9,7 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 | `SKILL.md` | Trigger, default stack, reference-loading map, non-negotiables, audit |
 | `references/*.md` | One single concept per file, named by paradigm |
 | `assets/` | Exact copyable starter files governed by an owning reference |
-| `scripts/check-layout.mjs` | The layout check an agent runs on its own served build, with `package.json` naming it for the remote route |
+| `scripts/check-layout.mjs` | The layout check an agent runs on its own served build, with `package.json` letting it run straight from GitHub |
 | `README.md` | Short human summary |
 | `evals/` | Behavioral cases with their assertions, fixture projects, the clean-room harness, and recorded rounds. Maintainer-only: `SKILL.md` never routes to it |
 
@@ -36,7 +36,7 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - Bump `metadata.version` by the release-versioning skill's rules for skills.
 - Encode a default only when backed by user preference or real usage.
 - Treat criticism as evidence to reassess an opinion, not an automatic instruction to remove or preserve it.
-- Admit an opinion only when its scope is clear and it improves decisions across multiple unrelated web products. Keep a proven project pattern out of the skill when its generality is still uncertain.
+- Hold only durable, reusable, generic opinions that apply across web repositories. Anything else belongs in a project's own docs. Admit an opinion only when its scope is clear and it improves decisions across multiple unrelated web products. Keep a proven project pattern out of the skill when its generality is still uncertain.
 - Distinguish universal invariants, conditional patterns, product choices, and implementation details. State the condition for a conditional pattern instead of promoting it as a universal invariant.
 - Give broad sections an attention budget. A batch of related additions must not dominate Core Non-Negotiables, the repository audit, or README coverage merely because they were edited together.
 - Judge every addition against the whole file, not the size or focus of the current prompt. Give it only the heading level, repetition, and surrounding coverage its enduring importance warrants. Prefer fitting a narrow rule into its existing owner over creating a new section or widening several summary files around it.
@@ -69,4 +69,4 @@ Treat the current intended product contract as truth. Compatibility is never an 
 
 Add compatibility only when an explicit supported contract requires it: outside users depending on the old shape under terms someone can name, such as a deployed client the owner does not control, a public integration, durable user data, or an approved rollout. A product being live is not a contract. Name the preserved contract, its consumers, its removal condition if temporary, and the verification that proves both old and new behavior remain intentional.
 
-Before finishing, confirm every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped as the release-versioning skill requires, and the README layout matches the actual files.
+Before finishing, confirm every `references/*.md` file appears in the `SKILL.md` reference-loading map, no reference names a tool in its title or restates another reference's rule, every bullet starts capitalized, `metadata.version` is bumped as the release-versioning skill requires and `package.json` carries the same version, and the README layout matches the actual files.

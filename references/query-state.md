@@ -9,7 +9,7 @@ Put shareable collection state in the URL so a reload, copied link, browser navi
 - Omit empty values and state the user has not chosen.
 - Give an explicit all-value to a control only when selecting all is meaningful state rather than the absence of a filter.
 - Address pagination in the URL when a position is a distinct, linkable destination, such as a page number or a cursor into a large result set. Treat an incremental "load more" that only deepens the current view as view depth the base view already restores, and leave it out of the URL.
-- Treat an unknown key or value as invalid: drop it and replace the URL with the canonical serialization of the valid state that remains, instead of silently maintaining an unreleased contract.
+- Treat an unknown value of a key the product owns as invalid: drop it and replace the URL with the canonical serialization of the valid state that remains, instead of silently maintaining an unreleased contract. Leave keys the product does not own, such as campaign tags, untouched.
 
 Centralize parsing, validation, normalization, and serialization in shared domain logic. UI components consume typed state rather than interpreting query strings independently.
 
@@ -52,7 +52,7 @@ These are automated parser and serializer tests, not a visual checklist.
 
 Make a creation or "adder" modal a URL-addressable view like any other, openable by a query parameter or a route, so it can be linked, shared, and deep-linked into from an onboarding step or a partner's setup link. Restoring the URL reopens the same modal.
 
-Pre-fill only non-sensitive fields from the URL, and only as a convenience for the shape of the form. URLs are logged, shared, and kept in history, so a creation form reads secrets and access-granting values from the authenticated session, and what a user may see is decided by that session, never by a query parameter. A URL carries access only as a purpose-built, expiring token, such as a signed download URL or an invitation link.
+Pre-fill only non-sensitive fields from the URL, and only as a convenience for the shape of the form. Keep secrets and access-granting values out of URLs, which are logged, shared, and kept in history. What a user may see is decided by their session, never by a query parameter. A URL carries access only as a purpose-built, expiring token, such as a signed download URL or an invitation link.
 
 ## Third-Party And Embedded Views
 

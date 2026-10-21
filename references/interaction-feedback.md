@@ -53,7 +53,6 @@ Selection survives pagination and unrelated controls. Clear it when the filter, 
 
 For a search-centered collection, `/` focuses the search input. `Ctrl/Cmd+K` does too, unless the product has a command palette, which then owns it.
 
-- Focus the existing search input.
 - Select its current value without clearing it.
 - Ignore shortcuts inside editable controls, dialogs, menus, and listboxes.
 - Preserve native find and select-all behavior.
