@@ -80,3 +80,21 @@ Old `494d475` against new `6758ea3`, the contact-page revision before it was reb
 | tallyho-footer-pages | restraint | 3/3 | 3/3 | 3/3 | 3/3 |
 
 The new pressure case separates the arms completely, and both new restraint cases pass in every arm. The three new-arm misses, two upload designs that moved the browser onto a new shared step and one metadata design that took titles from the page's script, came from sessions that read neither changed reference, and every reference they read was the same text in both arms. All four `brindle-contact-fields` sessions read `contact-email.md` without opening SKILL.md in full, which `compare.py` reports as a setup failure. Blocking findings against new sessions in cases this change does not touch were not answered, so `compare.py` does not exit 0.
+
+## Removal cases, in a run of their own
+
+Old `a5d484d` against the revision that adds the removal rule to the data model, on Claude Opus alone, with fresh Opus sessions grading every letter, so these rounds have no cross-model check. Only the two new cases ran, each round against the rule's wording at that time, and the last against the final wording. In the first round the pressure case asked for a whole launch scope, and every arm planned removal there, so later rounds narrowed it to the workspace settings page. Its third round lost two old sessions to a failed start and is not scored. The other cases were not rerun after the loading map line for the data model was widened.
+
+| Case | Role | Round | old opus | new opus | old opus2 | new opus2 |
+| --- | --- | :---: | :---: | :---: | :---: | :---: |
+| containers-ship-with-deletion, launch scope | pressure | 1 | 3/3 | 3/3 | 3/3 | 3/3 |
+| containers-ship-with-deletion | pressure | 2 | 2/2 | 2/2 | 0/2 | 2/2 |
+| containers-ship-with-deletion | pressure | 4 | 0/2 | 2/2 | 2/2 | 2/2 |
+| containers-ship-with-deletion | pressure | 5 | 2/2 | 2/2 | 2/2 | 2/2 |
+| containers-ship-with-deletion | pressure | 6 | 2/2 | 2/2 | 2/2 | 2/2 |
+| retained-records-are-voided | restraint | 1 | 2/2 | 2/2 | 2/2 | 2/2 |
+| retained-records-are-voided | restraint | 4 | 2/2 | 2/2 | 2/2 | 1/2 |
+| retained-records-are-voided | restraint | 5 | 2/2 | 2/2 | 2/2 | 2/2 |
+| retained-records-are-voided | restraint | 6 | 2/2 | 2/2 | 2/2 | 2/2 |
+
+The gain is thin: two of the ten old sessions on the pressure case left workspace deletion out of scope, and no new session did. The one new miss, in the fourth round, deleted a client along with its issued invoices at account closure, which led to keeping what a kept record needs to stay complete. Blocking findings against new-arm designs stand in every round, none of them about removal, so `compare.py` does not exit 0.

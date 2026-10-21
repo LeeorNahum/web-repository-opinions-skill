@@ -533,6 +533,57 @@
      "text": "Every footer link to a page on the site goes to a page that already exists or that the plan creates. The footer has no link to a page the plan leaves unbuilt."
     }
    ]
+  },
+  {
+   "id": 15,
+   "name": "containers-ship-with-deletion",
+   "fixture": "boards",
+   "role": "pressure",
+   "opinions": [
+    "data-model",
+    "workspace-tenancy",
+    "data-deletion",
+    "product-ux"
+   ],
+   "prompt": "Design Pinwheel's workspace settings page and the backend operations behind it (see docs/brief.md), and write it to docs/workspace-settings.md. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "The settings page lets an Owner delete the workspace in the product, says who may do it, and states what deleting it does to its boards, cards, members, and pending invitations.",
+   "assertions": [
+    {
+     "id": "containers-ship-with-deletion-01",
+     "kind": "semantic",
+     "text": "A workspace Owner can delete the workspace from the product, not only through support, a later release, or the auth provider's own dashboard."
+    },
+    {
+     "id": "containers-ship-with-deletion-02",
+     "kind": "semantic",
+     "text": "The design states what deleting a workspace does to its boards, cards, members, and pending invitations."
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "name": "retained-records-are-voided",
+   "fixture": "ledger",
+   "role": "restraint",
+   "opinions": [
+    "data-model",
+    "data-deletion",
+    "product-ux"
+   ],
+   "prompt": "We start building Tallyhouse next week (see docs/brief.md). Write docs/launch-scope.md: every screen and every backend operation the app needs at launch for clients and invoices, and what each one does. I'm away until tomorrow, so make the calls you can and note what you assumed.\n\nWork only inside the current directory.",
+   "expected_output": "Draft invoices can be deleted, issued invoices cannot be deleted or edited and are corrected by credit note or voided, and clients with issued invoices are archived rather than deleted.",
+   "assertions": [
+    {
+     "id": "retained-records-are-voided-01",
+     "kind": "semantic",
+     "text": "No launch operation, screen, or account action deletes or edits an issued invoice. An issued invoice is corrected by a credit note, or voided while it stays on record."
+    },
+    {
+     "id": "retained-records-are-voided-02",
+     "kind": "semantic",
+     "text": "A client who has issued invoices is not deleted along with them: the client is archived or kept, or deletion is refused while issued invoices exist."
+    }
+   ]
   }
  ]
 }
