@@ -2,12 +2,12 @@
 
 Name by paradigm, not by provider. A thing is named for what it does so the name survives a tool swap.
 
-| Identifier                                      | Convention      | Example                          |
-| ----------------------------------------------- | --------------- | -------------------------------- |
-| Repo and canonical folder                       | Title-Dash-Case | `Product-Web`                    |
-| Deployable code slug, package name, import path | kebab-case      | `product-web`, `@product/domain` |
-| Source folders                                  | lowercase       | `apps/`, `src/`, `auth/`         |
-| App surface in `apps/`                          | role word       | `site`, `app`, `admin`, `studio` |
+| Identifier                                      | Convention      | Example                           |
+| ----------------------------------------------- | --------------- | --------------------------------- |
+| Repo and canonical folder                       | Title-Dash-Case | `Product-Name`                    |
+| Deployable code slug, package name, import path | kebab-case      | `product-name`, `@product/domain` |
+| Source folders                                  | lowercase       | `apps/`, `src/`, `auth/`          |
+| App surface in `apps/`                          | role word       | `site`, `app`, `admin`, `studio`  |
 
 ## Surface Names
 
@@ -31,8 +31,6 @@ Name a module, function, or folder after the capability it provides, not the ven
 
 A product that ships an installer names its publisher explicitly, and the name is the one on its code-signing certificate. Set it before the first public release. A bundler given no publisher derives one from the application identifier, the operating system lists that as the publisher of the installed product, and a package catalog requires its manifest to match what the operating system lists. A bundler may also name the place it keeps the installer's own records after the publisher, so changing the name once people have installed the product is a migration of those records, not a one-line edit.
 
-## Env Keys
+## Durable Names
 
-Env keys keep the same name across every stage. The value changes by store, never the key. The stage is not encoded into the key name.
-
-Avoid names that describe a temporary process or a moment in time. A name should still read true a year later.
+Name things for what they will still be a year from now, with no word that marks a moment, a migration, or a version.

@@ -7,10 +7,9 @@ Put shareable collection state in the URL so a reload, copied link, browser navi
 - Use `q` for the primary free-text search query.
 - Use readable enum values and `true` or `false` for booleans.
 - Omit empty values and state the user has not chosen.
-- Preserve an explicitly selected default when that choice must survive sharing or reload.
 - Give an explicit all-value to a control only when selecting all is meaningful state rather than the absence of a filter.
 - Address pagination in the URL when a position is a distinct, linkable destination, such as a page number or a cursor into a large result set. Treat an incremental "load more" that only deepens the current view as view depth the base view already restores, and leave it out of the URL.
-- Reject unknown formats instead of silently maintaining an unreleased contract.
+- Treat an unknown key or value as invalid: drop it and replace the URL with the canonical serialization of the valid state that remains, instead of silently maintaining an unreleased contract.
 
 Centralize parsing, validation, normalization, and serialization in shared domain logic. UI components consume typed state rather than interpreting query strings independently.
 
@@ -30,7 +29,7 @@ The fixed order is the durable requirement. No HTTP or browser standard gives qu
 
 ## Defaults And History
 
-An untouched default may stay absent. Once the user explicitly selects that default, preserve it when the product promises that copied URLs represent the chosen state.
+An untouched default stays out of the URL. A default the user explicitly selects is written to the URL, so a copied link reproduces the choice.
 
 Use history replacement for debounced search and rapid control changes that refine one view. Use history pushes when each state is a meaningful navigation destination the user should step through with Back.
 
@@ -44,7 +43,7 @@ Add contract tests when URL state is part of the product:
 - Serialize state into the exact canonical URL.
 - Restore explicit defaults and all-values.
 - Omit untouched and empty state.
-- Reject unsupported formats.
+- Drop unsupported values and replace the URL with the canonical form.
 - Prove equivalent interaction sequences serialize identically.
 
 These are automated parser and serializer tests, not a visual checklist.
@@ -53,10 +52,10 @@ These are automated parser and serializer tests, not a visual checklist.
 
 Make a creation or "adder" modal a URL-addressable view like any other, openable by a query parameter or a route, so it can be linked, shared, and deep-linked into from an onboarding step or a partner's setup link. Restoring the URL reopens the same modal.
 
-Pre-fill only non-sensitive fields, and only as a convenience for the shape of the form. Never put a secret, or any value that confers access or reveals private data, in a URL: URLs are logged, shared, and kept in history, and what a user may see is decided by their authenticated session, never by a query parameter. A sensitive value is always supplied behind auth, not through the link.
+Pre-fill only non-sensitive fields from the URL, and only as a convenience for the shape of the form. URLs are logged, shared, and kept in history, so a creation form reads secrets and access-granting values from the authenticated session, and what a user may see is decided by that session, never by a query parameter. A URL carries access only as a purpose-built, expiring token, such as a signed download URL or an invitation link.
 
 ## Third-Party And Embedded Views
 
-The same rule extends past your own dialogs. When a workflow's step is a meaningful destination, a payment portal step, an embedded settings surface someone would reload, bookmark, or land on directly, give it a real route instead of leaving it an anonymous popover, even when a third-party SDK owns its rendering. Most managed-auth and managed-billing component libraries expose a navigation mode that renders their panel as a page at a URL you choose instead of a modal.
+The same rule extends past your own dialogs. When a workflow's step is a meaningful destination, a payment portal step, an embedded settings surface someone would reload, bookmark, or land on directly, give it a real route instead of leaving it an anonymous popover, even when a third-party SDK owns its rendering. When a provider component offers both a page mode and a modal mode, choose by the rules below.
 
-Weigh what navigation mode actually mounts before choosing it. A provider panel with internal tabs brings its own sub-routes, in the provider's vocabulary, under whatever URL it is mounted at, and needs a routing adapter the SDK supports. When those provider-owned segments have no place in the product's URL contract, or the panel is a control someone opens, acts in, and closes rather than a destination anyone shares, use the provider's modal mode over the current view: its internal tab state stays virtual, and the product URL underneath stays unchanged and restorable. A transient menu, popover, or tooltip stays out of the URL. A panel that is a real destination gets one.
+Weigh what page mode actually mounts before choosing it. A provider panel with internal tabs brings its own sub-routes, in the provider's vocabulary, under whatever URL it is mounted at, and needs a routing adapter the SDK supports. When those provider-owned segments have no place in the product's URL contract, or the panel is a control someone opens, acts in, and closes rather than a destination anyone shares, use the provider's modal mode over the current view: its internal tab state stays virtual, and the product URL underneath stays unchanged and restorable. A transient menu, popover, or tooltip stays out of the URL. A panel that is a real destination gets one.

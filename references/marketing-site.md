@@ -1,6 +1,6 @@
 # Marketing Site
 
-The public site owns reach, not product complexity. It should not inherit signed-in app weight.
+The public site owns reach, not product complexity. Keep the auth SDK, the reactive data client, and every app-only package out of the public site's dependencies.
 
 Responsibilities:
 
@@ -13,9 +13,7 @@ Responsibilities:
 
 The public site should not carry private data, auth-gated workflows, or provider-backed actions, apart from a storefront's cart and its handoff to checkout. It links into the app. It does not become the app.
 
-Keep public copy product-native and simple. Never expose internal, provider, or implementation language on a public page.
-
-Separating the public site from the signed-in app improves build size, security posture, routing clarity, and future deployment flexibility.
+Keep public copy product-native and simple.
 
 ## Header Link
 

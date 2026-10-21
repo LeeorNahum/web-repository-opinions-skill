@@ -9,7 +9,7 @@ Treat every provider, framework, transport, database, and backend error as inter
 - Use one context-specific fallback for unexpected failures.
 - Keep raw messages available only to approved logs and diagnostics.
 
-Never render an exception message directly. Framework wrappers often combine safe wording with request IDs, function names, stack locations, provider payloads, and deployment details.
+Render only mapped product copy, never an exception message. Framework wrappers often combine safe wording with request IDs, function names, stack locations, provider payloads, and deployment details.
 
 ## Classification
 
@@ -29,7 +29,6 @@ Provider status codes and internal failure names may choose the classification, 
 
 - Name the failed user action, not the subsystem.
 - Give one realistic next step.
-- Keep routine feedback inside the existing control or validation area.
 - Reserve full-page error states for failures that prevent the page from serving its purpose.
 - Keep the same failure class worded consistently across dialogs, toasts, forms, and pages.
 

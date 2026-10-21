@@ -20,3 +20,7 @@ Some providers, such as a Google OAuth consent screen, will not verify an app un
 For that verification, the privacy policy must describe what user data is accessed, how it is used, stored, and shared, and must state that use is limited to what is described.
 
 Each legal page names who runs the product, a person or a legal entity, and carries a "Last updated" date that moves whenever its text changes in a way that matters to a reader. Privacy laws commonly require a notice to name who controls the data, some require the date it last changed, and terms need an identifiable party to bind.
+
+Write each page as a consumer product's own website page: short sections under plain headings, addressed to the visitor, with no tables and the "Last updated" date at the top. Say what happens to the visitor's data rather than how the code handles it, and name third parties by role, except an AI model provider, which is named outright.
+
+Before writing, read two or three comparable products' published pages, shape the draft on them, and hold the draft against them as the check. Publish only statements the shipped code backs. The site's source is the pages' only copy.

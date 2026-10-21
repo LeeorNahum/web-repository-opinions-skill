@@ -8,11 +8,9 @@ Lay out hosts around one canonical origin per surface, with the primary surface 
 
 When the apex uses the `.app` TLD or a native mobile app is planned, prefer `web.` for the browser app unless a different subdomain better matches its role, so `app` never names two things at once. A native mobile app takes no subdomain.
 
-The subdomain is the role word, matching the surface name. There is no need for generic alternatives like `application` or `dash`.
+Use no `www`. Serve and link the apex as the canonical host, even where the hosting platform recommends `www` as primary. If a www host exists at the registrar, redirect it to the apex at DNS, hosting, CDN, or edge, never in app code. This is a one-time setup, not an ongoing concern in app logic.
 
-Use no `www`. Serve and link the apex directly. If a www host exists at the registrar, redirect it to the apex at DNS, hosting, CDN, or edge, never in app code. This is a one-time setup, not an ongoing concern in app logic.
-
-## Every other domain you own is an alias, not a second home
+## Aliases Redirect To The Canonical Host
 
 `www` is only the most common case of a wider rule. A product usually accumulates other hosts: a second top-level domain bought defensively, a domain from an earlier name, a common misspelling, a short link domain. None of them is a place the product lives. A former domain that only the owner and their own tools ever used is retired with its name rather than kept as an alias. The domain for user-supplied code, below, is a serving origin of its own, not an alias.
 
@@ -22,11 +20,11 @@ Never serve the same content on two domains. Two live copies split search rankin
 
 Attach aliases to the same hosting project as the canonical origin rather than parking them at the registrar. One project means one certificate story and one redirect rule, and the alias inherits the canonical host's configuration instead of drifting from it.
 
-One failure worth expecting, because it looks like something else:
-
-- **An alias cannot serve until its target can.** A redirect host has nothing to redirect to until the canonical origin has a successful production deployment. Before that, the alias may fail to complete a TLS handshake at all, which reads as a certificate or DNS fault and is neither. Deploy the canonical origin first, then judge the alias.
+Give the canonical origin a successful production deployment before judging an alias, because a redirect host has nothing to redirect to until its target serves.
 
 Verify an alias by requesting a path with a query string, not just the bare host. A redirect that drops the path looks correct on the home page and loses every real link.
+
+## Staging Hosts
 
 Staging uses a `preview.` prefix on the production host so it has real, stable origins instead of random platform URLs:
 
@@ -36,8 +34,6 @@ Staging uses a `preview.` prefix on the production host so it has real, stable o
 | App | `app.example.com` | `preview.app.example.com` |
 
 Use custom domains everywhere, including for staging origins, OAuth origins, and webhook URLs. Remove the auto-generated platform alias once custom domains are attached, and keep it out of any provider allowlist.
-
-The canonical production origin is a code constant, not a fallback string hidden inside a route handler.
 
 ## User-Supplied Code Runs On Its Own Domain
 

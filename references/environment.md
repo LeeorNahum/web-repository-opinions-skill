@@ -9,10 +9,9 @@ Env is for secrets and true environment variance, not a general settings file. T
 - Put one committed `.env.example` beside each runtime that reads env.
 - Put real local values in that runtime's `.env.local` and never commit it.
 - Keep `.env.example` in the same key order and grouping as `.env.local`.
-- Use the same key names across local, staging, and production. The store supplies different values.
-- Do not create `LOCAL_*`, `DEV_*`, and `PROD_*` triples unless one process truly connects to multiple stages at once.
-- Do not add a root `.env*` unless root code genuinely reads env at runtime. Package scripts, the monorepo tool, and workspace manifests do not justify it.
-- Do not create host-specific example files by default. Add a mode-specific example only when the required key set genuinely differs or a specific build artifact requires a different file.
+- Use the same stage-neutral key names across local, staging, and production. The store supplies different values. Add a stage-scoped name only when one process connects to several stages at once.
+- Keep env files beside the runtimes that read them. Leave the repository root without one unless root code reads env at runtime. Package scripts, the monorepo tool, and workspace manifests do not justify it.
+- Keep one example per runtime. Add a mode-specific example only when the required key set genuinely differs or a specific build artifact requires a different file.
 
 ## Keep In Env
 
@@ -65,8 +64,6 @@ Each runtime that reads env gets its own `.env.example` and `.env.local` pair:
 packages/backend/.env.example -> packages/backend/.env.local
 ```
 
-Root package scripts, workspace manifests, and build orchestration tools do not justify a root env file.
-
 ## Provider Stores
 
 Values live in exactly one durable store per stage:
@@ -111,7 +108,7 @@ Treat `NEXT_PUBLIC_*`, `VITE_*`, and similar prefixes as browser-exposed. Never 
 5. Remove unused or future-only keys unless clearly marked.
 6. Replace hardcoded production URL fallbacks with required env, safe origin inference, or a documented constant.
 7. Verify deployed stage separation for provider-backed services.
-8. Report missing values as key names and store locations, never secret values.
+8. Report missing or pasted values as key names and store locations, never secret values.
 
 If build or test output depends on env, update the build tool's task env inputs intentionally rather than adding a root env file as a workaround.
 

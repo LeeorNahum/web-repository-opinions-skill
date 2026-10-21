@@ -9,6 +9,7 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 | `SKILL.md` | Trigger, default stack, reference-loading map, non-negotiables, audit |
 | `references/*.md` | One single concept per file, named by paradigm |
 | `assets/` | Exact copyable starter files governed by an owning reference |
+| `scripts/check-layout.mjs` | The layout check an agent runs on its own served build, with `package.json` naming it for the remote route |
 | `README.md` | Short human summary |
 | `evals/` | Behavioral cases with their assertions, fixture projects, the clean-room harness, and recorded rounds. Maintainer-only: `SKILL.md` never routes to it |
 

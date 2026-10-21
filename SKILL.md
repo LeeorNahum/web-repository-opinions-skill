@@ -35,18 +35,28 @@ Prefer these unless the product has a stronger reason not to. Swap the tool, kee
 | Transactional email | Resend | An existing transactional provider |
 | Rich text | BlockNote or equivalent block JSON | Plain text or markdown is enough |
 | LLM calls | Vercel AI SDK over a hosting-aware, swappable gateway (production model and provider pools are product-specific) | The product needs a different routing or provider path |
+| Repository verification | GitHub Actions | The repository lives on another forge |
 
 ## Reference Loading
 
 This skill's substance lives in its references. The map below only points to them, so consult the skill for decisions and not just implementation. Before acting on any topic, read every reference that could touch it, in full, including the ones that seem only adjacent, and read deeply rather than skim. Bias hard toward loading: if a reference might cover what you are about to plan, decide, name, review, or build, read it rather than guess. Loading more references, and reading each completely, is cheap. Acting on a topic blind, or on a half-read reference, is not. Re-read the owning reference whenever a decision in its area comes back up.
+
+Whatever else applies, read at least the starting set for each surface the work builds, before writing its first file:
+
+| Surface | Starting set |
+| --- | --- |
+| Public site | marketing-site, rendering, seo, public-discovery, social-metadata, legal-pages, contact-email, responsive-layout, design-tokens, font-loading, interaction-feedback, definition-of-done |
+| Signed-in app | app-surface, spa-feel, routing, query-state, ids, product-ux, interaction-feedback, user-facing-errors, loading-states, responsive-layout, design-tokens, font-loading, seo, social-metadata, definition-of-done |
+| New repository | stack, monorepo-layout, naming, environment, branches, deployment, continuous-integration, provider-setup, origins, domains, definition-of-done, and the set of every surface it holds |
+| Public API or MCP server | http-apis, model-context-protocol, agent-tool-design, auth, ids, user-facing-errors, abuse-resistance, environment, deployment, continuous-integration, definition-of-done |
 
 Architecture:
 
 - Read [references/stack.md](references/stack.md) when choosing or swapping tech building blocks.
 - Read [AI model routing guidance](references/ai-model-routing.md) when a product calls LLMs, chooses production models or providers, designs model fallback, or accounts for model cost.
 - Read [references/monorepo-layout.md](references/monorepo-layout.md) when creating or reorganizing apps and packages.
-- Read [references/naming.md](references/naming.md) when naming folders, packages, slugs, surfaces, or workspace imports, or the publisher of a product that ships an installer.
-- Read [references/modularity.md](references/modularity.md) when designing how systems connect, naming integration boundaries, or keeping flows swappable.
+- Read [references/naming.md](references/naming.md) when naming folders, packages, slugs, surfaces, integrations, or workspace imports, or the publisher of a product that ships an installer.
+- Read [references/modularity.md](references/modularity.md) when designing how systems connect, placing integration boundaries, or keeping flows swappable.
 
 Rendering and feel:
 
@@ -59,7 +69,7 @@ Surfaces:
 - Read [references/marketing-site.md](references/marketing-site.md) when building the public site.
 - Read [references/physical-commerce.md](references/physical-commerce.md) when a product sells physical goods, connects a commerce platform, or is asked to build inside a commerce platform's theme system.
 - Read [references/app-surface.md](references/app-surface.md) when building the signed-in product.
-- Read [references/seo.md](references/seo.md) when handling SEO for public pages.
+- Read [references/seo.md](references/seo.md) when handling SEO for public pages or setting the tab title of any page.
 - Read [references/public-discovery.md](references/public-discovery.md) when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
 - Read [references/legal-pages.md](references/legal-pages.md) when deciding whether a product needs a privacy policy or terms of service, adding or editing either page or another legal page a provider requires, laying out the footer's links to them, or building the sign-up or checkout step where terms are agreed to.
 - Read [references/contact-email.md](references/contact-email.md) when a page, manifest, profile, or listing needs a contact address or a support URL, when building the contact page, or before any personal mailbox would appear on a public surface.
@@ -86,16 +96,16 @@ Runtime and environment:
 - Read [references/environment.md](references/environment.md) when creating, auditing, repairing, or filling env files, deciding which store holds a value, or keeping provider env separated by stage.
 - Read [references/branches.md](references/branches.md) when mapping branches to deployment stages and provider credential tiers.
 - Read [references/deployment.md](references/deployment.md) when creating a hosting project, configuring which branches deploy, or wiring how hosting runs. Use the [deployment configuration asset](assets/vercel.json) when applying its branch-gating defaults.
-- Read [references/continuous-integration.md](references/continuous-integration.md) when adding verification workflows, release automation, or checks required before promotion, or deciding which branches trigger artifact-building workflows.
+- Read [references/continuous-integration.md](references/continuous-integration.md) when adding verification workflows, release automation, or checks required before promotion, running verification gates through a task runner, or deciding which branches trigger artifact-building workflows.
 - Read [references/dns.md](references/dns.md) when creating DNS records, proxy settings, or record comments.
 
 Auth and data:
 
-- Read [references/auth.md](references/auth.md) when wiring authentication and social sign-in posture.
+- Read [references/auth.md](references/auth.md) when wiring authentication and social sign-in posture, enforcing authorization, verifying tokens or origins, or closing accounts.
 - Read [references/workspace-tenancy.md](references/workspace-tenancy.md) when deciding whether a product needs workspaces, backing them with the auth provider's organizations, shaping the home workspace, sharing one resource with someone outside its workspace, choosing an agent grant's workspace scope, or migrating existing workspaces onto organizations.
 - Read [references/bootstrap.md](references/bootstrap.md) when ensuring user, workspace, and membership exist on authenticated entry.
 - Read [references/data-model.md](references/data-model.md) when modeling entities, names, and value precedence, or deciding how a person removes what they create.
-- Read [references/source-of-truth.md](references/source-of-truth.md) when deciding which system owns which fact.
+- Read [references/source-of-truth.md](references/source-of-truth.md) when deciding which system owns which fact, or which document governs another.
 - Read [references/live-data.md](references/live-data.md) when wiring a reactive backend so the UI updates live.
 - Read [references/search-indexing.md](references/search-indexing.md) when defining searchable fields, indexing fetched data, or running search migrations.
 - Read [references/external-sources.md](references/external-sources.md) when importing, canonicalizing, checking, or recovering provider-owned resources.
@@ -103,7 +113,7 @@ Auth and data:
 
 Media and jobs:
 
-- Read [references/object-storage.md](references/object-storage.md) when storing large files or deciding how stored bytes are delivered publicly.
+- Read [references/object-storage.md](references/object-storage.md) when storing large files, deciding how stored bytes are delivered publicly, or building any control that downloads a file.
 - Read [references/uploads.md](references/uploads.md) when moving bytes into storage from a browser, a script, a CLI, an integration, or an agent.
 - Read [references/background-jobs.md](references/background-jobs.md) when running provider-backed or long-running work.
 - Read [references/bulk-actions.md](references/bulk-actions.md) when one user action processes multiple independent items or supports partial success.
@@ -124,7 +134,7 @@ Frontend and UI:
 - Read [references/animation-runtime.md](references/animation-runtime.md) when building or reviewing any animation, transition, timed reveal, or scroll-triggered effect, so it plays at the right speed and survives toolbar resizes, slow or fast frame rates, hidden tabs, and pages restored from history on every engine.
 - Read [references/reduced-motion.md](references/reduced-motion.md) when a surface animates anything or honors a reduced-motion preference.
 - Read [references/product-ux.md](references/product-ux.md) when shaping the primary path, states, and product-native language.
-- Read [references/path-display.md](references/path-display.md) when showing file paths, directory listings, breadcrumbs, or a browsable tree's root.
+- Read [references/path-display.md](references/path-display.md) when showing file paths, directory listings, breadcrumbs, a browsable tree's root, or any separator-delimited value that may need truncating, such as a namespaced identifier.
 - Read [references/interaction-feedback.md](references/interaction-feedback.md) before building any confirmation that appears after an action, such as a copy button's "Copied", a saved or sent notice, a toast, or an inline status, because that feedback must never reflow or resize what surrounds it. Also read it when coordinating action states, selection surfaces, bulk feedback, or global search shortcuts.
 - Read [references/user-facing-errors.md](references/user-facing-errors.md) when presenting failures from providers, frameworks, backend functions, validation, or unexpected exceptions.
 - Read [references/design-tokens.md](references/design-tokens.md) when defining a design token layer, or when a surface leaves a large flat region of one color, which is where the product's ambient texture belongs.
@@ -135,6 +145,12 @@ Operating philosophy:
 - Read [references/runtime-truth.md](references/runtime-truth.md) when deciding whether a change is actually complete.
 - Read [references/promotion.md](references/promotion.md) when promoting work between deployment stages.
 - Read [references/definition-of-done.md](references/definition-of-done.md) before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.
+- Run the [layout check script](scripts/check-layout.mjs) against the served production build of every web surface before calling it done, as definition-of-done.md describes. Pass every route a crawl from the start page would miss, and add `--app` for a signed-in app shell. `--help` lists what it fails on. Run it from GitHub, which brings its own Playwright, or from the installed skill, which uses the project's; either way Chromium must be installed once with `npx playwright install chromium`.
+
+  ```bash
+  npx --yes github:LeeorNahum/web-repository-opinions-skill <served-url> --paths=<route>,<route>
+  node <skill-root>/scripts/check-layout.mjs <served-url> --paths=<route>,<route>
+  ```
 - Read [references/versioning.md](references/versioning.md) when bumping versions or keeping version mentions in sync.
 - Read [references/cleanup.md](references/cleanup.md) when removing dead flows, stale docs, or temporary artifacts.
 
@@ -169,7 +185,7 @@ When invoked to audit a web repo:
 4. Confirm per-runtime env contracts, no root env clutter, and same key names across stages.
 5. Check ownership boundaries, external sources, search scope, media storage, and bounded data work.
 6. Verify user-facing failures, partial results, feedback, and responsive interaction states remain coherent.
-7. Confirm branch-to-stage mapping, deploy gating, migrations, webhooks, DNS records, and provider setup are documented near the runtime contract.
+7. Confirm branch-to-stage mapping, deploy gating, migrations, webhooks, DNS records, and provider setup are recorded in each deployable app's setup document.
 8. Report mismatches by category and file area, never by leaking secret values or one-off product names.
 
-Several references end with an "Ask before" line for their riskiest changes, such as production domains, DNS, credentials, billing mode, public sharing, and provider resources. Honor those where the topic lives.
+Several references carry an "Ask before" line for their riskiest changes, such as production domains, DNS, credentials, billing mode, public sharing, and provider resources. Honor those where the topic lives.

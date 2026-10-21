@@ -17,7 +17,7 @@ Provider identity and application identity solve different problems. The provide
 Track whether a reference follows the provider default or was explicitly chosen.
 
 - Let default references follow the provider's current default.
-- Keep explicit branches, tags, versions, and revisions explicit.
+- Keep an explicitly chosen version, such as a branch, tag, or revision, explicit.
 - Preserve the tracked path exactly.
 - Treat a missing path as a source failure rather than guessing a move or rename.
 
@@ -29,7 +29,7 @@ Run provider checks from meaningful access paths such as initial import, current
 
 Classify failures by certainty:
 
-- Definitive failure proves the tracked repository, reference, object, or path is unavailable.
+- Definitive failure proves the tracked source, reference, object, or path is unavailable.
 - Transient failure includes rate limits, authentication configuration, ambiguous authorization, provider outages, networks, and timeouts.
 
 Only definitive failures advance destructive lifecycle state. Keep provider codes, retry schedules, and internal reasons out of user-facing copy.
@@ -42,17 +42,15 @@ Let a user's primary fetch or use action perform an immediate recovery attempt w
 
 ## Discover, Review, Then Commit
 
-An import points at something the product does not control, so the user rarely knows what is inside it. Do not make them guess and then punish the guess with an error.
+An import points at something the product does not control, so the user rarely knows what is inside it. Show them what is there before they commit, rather than punishing a guess with an error.
 
 Split the flow: a free, idempotent discovery read that reports what was actually found, a review step that shows it in the product's own language, and only then the commit. Discovery names each candidate by its real identity, read from the source itself, rather than by its path or by an assumption about how the source is laid out.
 
-Accept every level of the address a user might reasonably paste, not only the one canonical shape. If a location contains several importable things, offer them all and let the user choose any subset, because dependencies between them are the user's knowledge and not the product's. A location containing exactly one is the same flow with the review step collapsed, never a different code path.
+Accept every level of the address a user might paste, at least the owner or account, the resource root, and a deep link to a sub-location, and resolve each into the same discovery flow. If a location contains several importable things, offer them all and let the user choose any subset, because dependencies between them are the user's knowledge and not the product's. A location containing exactly one is the same flow with the review step collapsed, never a different code path.
 
-Check and reserve quota for the whole selected batch in one decision before starting, or a per-item check will admit a batch that the limit was written to prevent.
+## Skip Unusable Entries
 
-## Skip, Do Not Abort
-
-A source contains entries the product cannot use: links, submodules, oversized files, unsupported types, junk. Each of these is a reason to leave that entry out and say so, not a reason to fail the whole import. One unusable file in a corner of a repository must never be able to reject everything the user asked for.
+A source contains entries the product cannot use: links, nested references, oversized files, unsupported types, junk. Each of these is a reason to leave that entry out and say so, not a reason to fail the whole import. Import everything usable even when one entry is not.
 
 Apply the scope filter first. An entry outside what the user is importing cannot be a reason to reject anything, and checking it before scoping turns unrelated content into a failure.
 

@@ -1,14 +1,14 @@
 # Routing
 
-Route paths are product architecture. They live in code and docs, never in env.
+Every meaningful view and state has its own URL that a reload, a copied link, and Back restore. Route paths are product architecture. They live in code and docs, never in env.
 
-Use one canonical route model per concept. Do not keep a long path and a short path alive for the same thing.
+Use one canonical route model per concept: one path per thing, never a long path and a short path alive together.
 
 ## Full Names And Collection Prefixes
 
 A standalone page that is only ever itself gets a full, descriptive path. A surface that holds child pages or items gets a prefix, and the bare prefix is the collection view for what lives under it.
 
-- A leaf page with no children uses its full word: a single about page, a pricing page, a frequently-asked-questions page, an auth page. There is no shorter form, because there is nothing nested to disambiguate.
+- A leaf page with no children uses its full word: a single about page, a pricing page, a frequently-asked-questions page, an auth page. There is no shorter form, because there is nothing nested to disambiguate. An initialism readers already say as a word, such as faq, counts as the full word.
 - A surface that contains items or subpages uses a prefix, and visiting the bare prefix shows the collection. The items live directly under it.
 
 ```text
@@ -40,8 +40,6 @@ Public routes for a marketing site are full descriptive leaf paths:
 /help/uploads
 ```
 
-Links must survive reorganization. Do not nest a stable entity under a reorganizable parent in the URL when moving the parent would break shared links. If an entity can move between parents, keep it at its own top-level prefix rather than under the parent's path.
-
 ## An Entity URL Resolves To Its Default View
 
 A view has a URL. An entity has a URL too, and the two are not always the same URL. When an entity holds several child views (tabs, panels, modes), the bare entity URL has nothing of its own to render, so it resolves, with a history replace, to that entity's default child view. A tenancy root resolves to its default surface. An item with tabs resolves to its default tab.
@@ -54,16 +52,18 @@ A view has a URL. An entity has a URL too, and the two are not always the same U
 
 ## The Active Workspace Lives In The URL
 
-The URL is the sole owner of which workspace (organization, team, account scope) a private app view addresses. Never hold the active workspace in provider session state, a cookie, or client memory as an authority the URL merely reflects.
+The URL selects which workspace (organization, team, account scope) a private app view addresses. Read the active workspace from the URL, and let provider session state, cookies, and client memory follow it.
 
-- Every private route that addresses one workspace nests under the workspace prefix (`/[workspace]/...`), so any such view is a shareable snapshot of exactly where it points, including the workspace.
-- A view that spans workspaces, such as a library across all of them, lives outside the prefix and carries its workspace filter as query state. It needs no active workspace at all.
-- A workspace switcher, where the product has one, is navigation: switching links to the same surface under the other workspace's prefix. It does not mutate session state and reload.
+- Every private route that addresses one workspace nests under the workspace scaffold (`/[scope]/[scopeId]/...`), so any such view is a shareable snapshot of exactly where it points, including the workspace.
+- A view that spans workspaces, such as a library across all of them, lives outside the scaffold and carries its workspace filter as query state. It needs no active workspace at all.
+- A workspace switcher, where the product has one, is navigation: switching links to the same surface under the other workspace's scaffold. It does not mutate session state and reload.
 - When the auth provider carries its own active-organization session state, the app syncs that state to follow the URL segment on entry (activating the matching organization), then renders. A deep link into any workspace the user belongs to works from a cold session without bouncing through a chooser. The session follows the URL, never the other way around.
 - The server still authorizes by verified identity and by membership or an individual share. The URL selects among what the caller can already reach and never grants access. A workspace segment that gives the caller neither a membership nor a share of the addressed resource fails to a clear product-owned screen.
 
+## Stable Links
+
+Links must survive reorganization. Give an entity that can move between parents its own top-level prefix rather than a place under the parent's path, so moving the parent never breaks a shared link.
+
 Owner-nest a public resource only when the owner is part of how people identify, browse, and verify it. In that case, the owner segment supplies meaningful public context rather than database lookup scope. Keep the child ID globally unique, give the resource one canonical owner-nested URL, and keep ownership stable for the lifetime of that URL.
 
-Use a top-level route when the resource is understood independently, can move between owners, or would keep the same identity after an ownership change. Do not create a second short alias for an owner-nested canonical route unless a real migration or sharing requirement appears.
-
-Same-app navigation uses relative paths. Cross-app navigation goes through origin helpers, never hardcoded hosts.
+Use a top-level route when the resource is understood independently, can move between owners, or would keep the same identity after an ownership change. Give an owner-nested resource that one URL, and add a short alias only when a real migration or sharing requirement appears.

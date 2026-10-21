@@ -12,13 +12,15 @@ Every icon surface derives from that one asset by a script, never by hand: the f
 
 For **Next.js App Router**, ship three files in `app/` and nothing else:
 
-- `app/icon.svg` - Next.js auto-generates `<link rel="icon">` and serves it at `/icon.svg`. Use `/icon.svg` for in-page references such as the site header logo and OG image renderer.
-- `app/apple-icon.png` - the same icon as a 180x180 PNG. Next.js auto-generates `<link rel="apple-touch-icon">` for iOS home screen bookmarks.
-- `app/favicon.ico` - the same icon rastered at 16, 32, and 48 for browsers and one size above 48 for search results. Next.js serves it at `/favicon.ico`, where crawlers also look, and links it beside the SVG.
+- `app/icon.svg`: Next.js auto-generates `<link rel="icon">` from it and serves it at `/icon.svg`. Use `/icon.svg` for in-page references such as the site header logo and OG image renderer.
+- `app/apple-icon.png`: the same icon as a 180x180 PNG. Next.js auto-generates `<link rel="apple-touch-icon">` for iOS home screen bookmarks.
+- `app/favicon.ico`: the same icon rastered at 16, 32, and 48 for browsers and one size above 48 for search results. Next.js serves it at `/favicon.ico`, where crawlers also look, and links it beside the SVG.
 
-Do not add `metadata.icons` in `layout.tsx`. The files above handle it automatically with no configuration. Do not copy the icon into `public/` unless the product has additional brand assets beyond the favicon. Do not use `rel="shortcut icon"` - it is deprecated.
+Let the two files generate every icon tag, with no `metadata.icons` in `layout.tsx`, and keep `public/` for brand assets beyond the favicon.
 
-Keep the in-page path in a named constant so all callers stay in sync if the path ever changes.
+For a client build such as Vite, put the generated `icon.svg` and a 180x180 `apple-touch-icon.png` in `public/` and link both from `index.html`.
+
+Keep the in-page path in a named constant so all callers stay in sync if the path ever changes, and confirm the build serves that path with a 200 before pointing the header at it.
 
 ## Brand Image Formats
 
@@ -34,19 +36,19 @@ A correct card contains:
 
 - The page's own subject as the title, then the product name after the site's one separator, exactly as the tab is titled.
 - A description of that page in particular, specific enough that no two pages share one.
-- A generated image at the standard card size showing the product mark, the product name, and the page's subject, in the product's colors and type, built from the same subject the title uses. The site-wide brand image belongs to the homepage alone, and a placeholder belongs nowhere.
+- A generated 1200x630 image showing the product mark, the product name, and the page's subject, in the product's colors and type, built from the same subject the title uses. The site-wide brand image belongs to the homepage alone, and a placeholder belongs nowhere.
 
 Getting the tags onto the page:
 
 - Set a base URL in each surface's root so relative metadata resolves to absolute URLs.
-- Provide both the Open Graph fields and the platform-specific card fields, including the large-image card type, so the card renders across tools.
+- Provide both the Open Graph fields and the platform-specific card fields, including `twitter:card` set to `summary_large_image`, so the card renders across tools.
 - Render the tags on the server for every page, including one whose body is client-rendered, and resolve the page's subject in the same server lookup that resolves the page.
 - When a route overrides part of the metadata, confirm the image, the site name, and the card type survive, because a nested override commonly replaces the parent's whole object rather than merging into it, and the card quietly loses its image.
 - Verify by pasting a real link into a real tool, signed out, rather than assuming the tags are correct. Tools cache a card by URL, so re-check after a change with the tool's own refresh.
 
 ## Public Versus Private
 
-Public pages earn rich, specific metadata and preview cards. Private pages produce no card about their content: a generic, content-free fallback names the product and nothing else. Never leak private content into a title, description, or preview image. The split mirrors the SEO posture: detail in public, opacity in private.
+Public pages earn rich, specific metadata and preview cards. Private pages produce no card about their content: a generic, content-free fallback names the product and nothing else. Keep private content out of every server-rendered title, description, and preview image. The split mirrors the SEO posture: detail in public, opacity in private.
 
 A page that stops being public, because sharing was turned off or the resource was removed, drops to the same content-free fallback, so a link that outlives its share cannot keep naming what it pointed at.
 

@@ -4,10 +4,6 @@ Build the product as connected capabilities, not one long implementation welded 
 
 Treat boundaries like standard pipe fittings. A capability should accept a product-shaped input, perform one owned job, and return a product-shaped output that another capability can consume. Its first caller and first destination are examples, not permanent parts of its identity.
 
-## Name By Role, Not Vendor
-
-Name modules, functions, and folders after the capability they provide, not the provider behind it and not a forced generic placeholder. Choose the most accurate word for what the code actually does in this product, then keep the vendor name inside the adapter that talks to it. When the vendor changes, only the adapter changes, and every caller keeps working. Picking the truest concept name, rather than defaulting to either the vendor or a vague catch-all, is what keeps the boundary meaningful.
-
 ## Isolate Integrations Behind Adapters
 
 Each external system sits behind one boundary that speaks the product's own vocabulary. This is the ports and adapters (hexagonal) pattern: the product owns the port in its own terms, and each adapter translates one provider onto it, acting as an anti-corruption layer that keeps provider shapes out of the product's model. Callers depend on the capability, not on the provider's response shape, error format, or SDK. Two levels of swap stay cheap:
@@ -16,6 +12,8 @@ Each external system sits behind one boundary that speaks the product's own voca
 - Swapping an entire system for another touches only the boundary, not the flows that use it.
 
 Migrate a replacement with the strangler fig pattern: stand the new adapter up beside the old one and route callers over once it covers every case, removing the old integration only after the new one is proven. Keep provider payloads, model names, and SDK types from leaking past the adapter into general app code.
+
+The app's data and auth client bindings are the product's own framework layer, so UI code uses them directly. Every server-side provider SDK, such as payments, email, storage, models, or commerce, sits behind one owning adapter, a module or package that is the only code importing it.
 
 ## Make Capabilities Routable
 
@@ -27,7 +25,7 @@ UI, public API, MCP, jobs, and webhooks call shared product capabilities. They a
 
 ## Think In The Whole Chain
 
-Design each flow as a sequence of explicit connections. Name what each step accepts, owns, returns, and may fail to produce. A flow should be extendable, reorderable, and partially reusable without copying its internal rules or breaking every caller.
+Design each flow as a sequence of explicit connections. Give each step its own function that owns one job, with a typed input, a typed result, and named failure kinds. A flow should be extendable, reorderable, and partially reusable without copying its internal rules or breaking every caller.
 
 ## Right-Size The Complexity
 

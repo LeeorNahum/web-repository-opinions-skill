@@ -1,6 +1,6 @@
 # Bootstrap
 
-Never assume the auth provider's user and the app database's user exist at the same moment. A robust app bootstraps on every authenticated entry.
+The auth provider's user and the app database's user can come into existence at different moments. A robust app bootstraps on every authenticated entry.
 
 Order on any route that can be opened directly:
 
@@ -10,6 +10,6 @@ Order on any route that can be opened directly:
 4. Resolve the workspace the route addresses, when it addresses one.
 5. Only then read protected data, gated by membership or by a share of the resource.
 
-Do not rely only on a signup webhook to create user-owned rows. Webhooks can lag, fail, or arrive after the user first opens the app. The webhook is an optimization, not the source of the row.
+Find or create the app user and ensure the default workspace or account on every authenticated entry, and treat the signup webhook as an optimization. Webhooks can lag, fail, or arrive after the user first opens the app, so the webhook is never the source of the row.
 
-If a first-login flow ever requires a refresh to work, the order of operations is wrong, not the timing.
+A first sign-in reaches working data with no refresh. When one needs a refresh, the order of operations is wrong, not the timing.
