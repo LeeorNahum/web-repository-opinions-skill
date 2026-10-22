@@ -105,3 +105,13 @@ Both subject arms and every critic are Opus, because Sol had reached its usage l
 | tallyho-footer-pages | restraint | 3/3 | 3/3 | 3/3 | 3/3 |
 | containers-ship-with-deletion | pressure | 2/2 | 2/2 | 2/2 | 2/2 |
 | retained-records-are-voided | restraint | 2/2 | 2/2 | 2/2 | 2/2 |
+
+## Round 8
+
+The three cases that cover the stale-write guard, after each session's read history was made its own. Both subject arms and every critic are Opus, because Sol had again reached its usage limit. One blocking finding against a new session is held: the rule does not say where a stateless server keeps each session's read history.
+
+| Case | Role | old opus | new opus | old opus2 | new opus2 |
+| --- | --- | :---: | :---: | :---: | :---: |
+| account-wide-agent-grant | control | 7/8 | 8/8 | 8/8 | 8/8 |
+| file-catalog-with-saved-data | pressure | 3/6 | 6/6 | 3/6 | 6/6 |
+| established-precondition-contract | restraint | 2/2 | 2/2 | 2/2 | 2/2 |
