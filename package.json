@@ -1,6 +1,6 @@
 {
   "name": "web-repository-opinions",
-  "version": "1.42.0",
+  "version": "1.43.0",
   "description": "Captures and measures a served web surface at four widths and reports the layout problems a person would see.",
   "type": "module",
   "bin": {
