@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.43.0"
+  version: "1.44.0"
 ---
 
 # Web Repository Opinions
@@ -47,7 +47,7 @@ Whatever else applies, read at least the starting set for each surface the work 
 | --- | --- |
 | Public site | marketing-site, rendering, seo, public-discovery, social-metadata, legal-pages, contact-email, responsive-layout, design-tokens, font-loading, interaction-feedback, definition-of-done |
 | Signed-in app | app-surface, spa-feel, routing, query-state, ids, product-ux, interaction-feedback, user-facing-errors, loading-states, responsive-layout, design-tokens, font-loading, seo, social-metadata, definition-of-done |
-| New repository | stack, monorepo-layout, naming, environment, branches, deployment, continuous-integration, provider-setup, origins, domains, definition-of-done, and the set of every surface it holds |
+| New repository | stack, monorepo-layout, naming, environment, branches, deployment, continuous-integration, build-caches, provider-setup, origins, domains, definition-of-done, and the set of every surface it holds |
 | Public API or MCP server | http-apis, model-context-protocol, agent-tool-design, auth, ids, user-facing-errors, abuse-resistance, environment, deployment, continuous-integration, definition-of-done |
 
 Architecture:
@@ -97,6 +97,7 @@ Runtime and environment:
 - Read [references/branches.md](references/branches.md) when mapping branches to deployment stages and provider credential tiers.
 - Read [references/deployment.md](references/deployment.md) when creating a hosting project, configuring which branches deploy, or wiring how hosting runs. Use the [deployment configuration asset](assets/vercel.json) when applying its branch-gating defaults.
 - Read [references/continuous-integration.md](references/continuous-integration.md) when adding verification workflows, release automation, or checks required before promotion, running verification gates through a task runner, or deciding which branches trigger artifact-building workflows.
+- Read [references/build-caches.md](references/build-caches.md) when writing a repository's gitignore for build output, configuring the task runner's cache, setting up a Rust crate such as a desktop app's backend, or when `.turbo`, `.next`, or `target` folders grow.
 - Read [references/dns.md](references/dns.md) when creating DNS records, proxy settings, or record comments.
 
 Auth and data:

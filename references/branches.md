@@ -20,6 +20,7 @@ Agent Git rules:
 - Merge `dev` into `preview` for a hosted staging deploy.
 - Merge `preview` into `main` only for production releases with explicit approval.
 - Push only with explicit user approval.
+- After an approved push, run the repository's build-cache prune when it has one.
 
 The point of the system: every change lands on `dev` first, `preview` proves it on real hosted infrastructure while still using safe dev/test resources, and `main` is the only place production credentials and live data are touched.
 
