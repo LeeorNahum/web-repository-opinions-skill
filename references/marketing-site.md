@@ -2,7 +2,7 @@
 
 The public site owns reach, not product complexity. Keep the auth SDK, the reactive data client, and every app-only package out of the public site's dependencies.
 
-Responsibilities:
+Responsibilities, for whichever of these the product has:
 
 - SEO and discovery
 - Marketing and product education

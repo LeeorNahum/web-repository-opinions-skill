@@ -7,3 +7,5 @@ Keep selection metadata and operating instructions separate. The skill descripti
 Teach the agent to search with the narrowest filter the interface offers, preserve canonical product and source URLs, and route to supporting material only when the current task needs it. Match every instruction to fields and operations the public interface actually exposes.
 
 Use the open Agent Skills directory contract for the shared instruction artifact. Keep host-specific installation metadata and connection steps in the owning adapter when they are only packaging concerns. When configuring that host is the skill's workflow, keep its required connection steps and runtime prerequisites in the skill instructions, including how the agent satisfies them.
+
+Name a skill for the job it does, in words that stand on their own, because a standalone install drops a plugin's namespace and shows the bare skill name. When a repository owns a skill, keep its source in the folder that publishes it, such as the agent plugin's, and keep `.agents/skills` for the skills that apply to working in the repository.

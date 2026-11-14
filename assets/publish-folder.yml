@@ -1,0 +1,96 @@
+# Publishes one folder of the main repository to its own repository.
+# Copy to .github/workflows/publish-<folder-name>.yml once per published folder,
+# then replace every <placeholder>: the folder in both `paths` and `FOLDER`, the
+# manifest that holds its version, the target repository, and the workflow name.
+name: Publish <folder-name>
+
+on:
+  push:
+    branches: [dev, preview, main]
+    paths:
+      - "<folder>/**"
+  workflow_dispatch:
+    inputs:
+      adopt:
+        description: Publish on top of a target branch whose latest commit this workflow did not make, once, to take over an existing repository
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow_ref }}
+  cancel-in-progress: false
+
+env:
+  FOLDER: <folder>
+  MANIFEST: <JSON manifest in the folder that holds its version>
+  TARGET: <owner>/<Product-Name>-<Role>
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Publish
+        env:
+          TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          ADOPT: ${{ inputs.adopt || false }}
+        run: |
+          set -euo pipefail
+          bot_name='github-actions[bot]'
+          bot_email='41898282+github-actions[bot]@users.noreply.github.com'
+          url="https://x-access-token:${TOKEN}@github.com/${TARGET}.git"
+          version="$(jq -r '.version // empty' "$FOLDER/$MANIFEST")"
+          target="$RUNNER_TEMP/target"
+
+          status=0
+          git ls-remote --exit-code "$url" "refs/heads/$BRANCH" > /dev/null || status=$?
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+            echo "::error::Could not read $TARGET."
+            exit "$status"
+          fi
+
+          if [ "$status" -eq 0 ]; then
+            git clone --quiet --depth 1 --branch "$BRANCH" "$url" "$target"
+            last="$(git -C "$target" log -1 --format='%ce %s')"
+            if [ "$ADOPT" != true ] && ! [[ "$last" =~ ^"$bot_email "(Update|Release\ [0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+              echo "::error::The latest commit on $TARGET $BRANCH was not made by this workflow: $last"
+              exit 1
+            fi
+            previous="$(jq -r '.version // empty' "$target/$MANIFEST" 2> /dev/null || true)"
+          else
+            git init --quiet --initial-branch "$BRANCH" "$target"
+            git -C "$target" remote add origin "$url"
+            previous=''
+          fi
+
+          find "$target" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$FOLDER/." "$target/"
+          git -C "$target" add --all
+          if git -C "$target" rev-parse --verify --quiet HEAD > /dev/null && git -C "$target" diff --cached --quiet; then
+            echo "Nothing changed in $FOLDER."
+            exit 0
+          fi
+
+          message='Update'
+          tag=''
+          if [ -n "$version" ] && [ "$version" != "$previous" ]; then
+            message="Release $version"
+            if [ "$BRANCH" = main ]; then
+              tag="v$version"
+            fi
+          fi
+
+          git -C "$target" -c user.name="$bot_name" -c user.email="$bot_email" commit --quiet --message "$message"
+          if [ -n "$tag" ]; then
+            git -C "$target" tag "$tag"
+            git -C "$target" push --atomic origin "HEAD:refs/heads/$BRANCH" "refs/tags/$tag"
+          else
+            git -C "$target" push origin "HEAD:refs/heads/$BRANCH"
+          fi

@@ -66,12 +66,13 @@ packages/backend/.env.example -> packages/backend/.env.local
 
 ## Provider Stores
 
-Values live in exactly one durable store per stage:
+Each store below owns its part of one stage:
 
 | Store | Owns |
 | --- | --- |
+| Secrets store | The permanent copy of every value, per stage, including values no provider can show again or that exist in no provider |
 | `.env.example` | Committed contract and setup hints |
-| `.env.local` | Developer-local real values, gitignored |
+| `.env.local` | Developer-local working copy, gitignored |
 | Hosting platform env (staging scope) | Deployed non-production surface values |
 | Hosting platform env (production scope) | Deployed production surface values |
 | Backend deployment env | Secrets the backend functions read, per deployment |
@@ -84,16 +85,7 @@ Inspect local and example files without printing secrets. Use provider CLIs or d
 
 The committed contracts are the spec. Read every `.env.example` and the code that reads env to learn the exact keys and which runtime owns each, then fill those keys without inventing or renaming any. Derive what the repo and filled stores already provide. A value that is not yet derivable is asked for or recorded as a deferral tied to the step that produces it, never a placeholder and never a silent blank.
 
-Fill `.env.local` as a one-to-one copy of its `.env.example` with real values. Values bound for a deployed store get their own copy-paste file in a folder outside every git repo, chosen at the start of setup, so filled secrets never sit in a git tree. Name each `.env.<destination>.tmp` so the env gitignore still catches it, and make it a one-to-one copy of the matching example filled for one destination, so it pastes in one action:
-
-```text
-.env.<backend>-dev.tmp                dev backend deployment
-.env.<backend>-prod.tmp               prod backend deployment
-.env.<host>-staging-<surface>.tmp     host project, staging scope
-.env.<host>-production-<surface>.tmp  host project, production scope
-```
-
-Delete the copy-paste files once their stage is set up.
+Fill `.env.local` as a one-to-one copy of its `.env.example` with real values.
 
 ## Public And Server-Only
 

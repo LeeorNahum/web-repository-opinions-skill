@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.45.0"
+  version: "1.46.0"
 ---
 
 # Web Repository Opinions
@@ -30,6 +30,7 @@ Prefer these unless the product has a stronger reason not to. Swap the tool, kee
 | Billing | Stripe | A region or model Stripe does not serve |
 | Heavy media bytes | Cloudflare R2 | Already standardized on S3 or another store |
 | Hosting | Vercel | A surface Vercel cannot host well |
+| Secrets store | Doppler | The organization already keeps its secrets in another store with syncs to the same destinations |
 | Physical commerce | Shopify, headless through its Storefront API | The catalog already lives on another commerce platform |
 | DNS | Cloudflare | Registrar lock-in |
 | Transactional email | Resend | An existing transactional provider |
@@ -45,16 +46,18 @@ Whatever else applies, read at least the starting set for each surface the work 
 
 | Surface | Starting set |
 | --- | --- |
-| Public site | marketing-site, rendering, seo, public-discovery, social-metadata, legal-pages, contact-email, responsive-layout, design-tokens, font-loading, interaction-feedback, definition-of-done |
-| Signed-in app | app-surface, spa-feel, routing, query-state, ids, product-ux, interaction-feedback, user-facing-errors, loading-states, responsive-layout, design-tokens, font-loading, seo, social-metadata, definition-of-done |
-| New repository | stack, monorepo-layout, naming, environment, branches, deployment, continuous-integration, build-caches, provider-setup, origins, domains, definition-of-done, and the set of every surface it holds |
-| Public API or MCP server | http-apis, model-context-protocol, agent-tool-design, auth, ids, user-facing-errors, abuse-resistance, environment, deployment, continuous-integration, definition-of-done |
+| Public site | marketing-site, rendering, seo, public-discovery, social-metadata, legal-pages (which decides whether the site has any), responsive-layout, design-tokens, font-loading, interaction-feedback, definition-of-done |
+| Signed-in app | app-surface, legal-pages, spa-feel, routing, query-state, ids, product-ux, interaction-feedback, user-facing-errors, loading-states, responsive-layout, design-tokens, font-loading, seo, social-metadata, definition-of-done |
+| New repository | stack, monorepo-layout, naming, environment, secrets-store (when a runtime reads env), branches, deployment, continuous-integration, build-caches, provider-setup, origins, domains, definition-of-done, and the set of every surface it holds |
+| Public API or MCP server | http-apis, model-context-protocol, agent-tool-design, auth, ids, user-facing-errors, abuse-resistance, environment, secrets-store, deployment, continuous-integration, definition-of-done |
+| Agent plugin | agent-plugins, agent-skills, published-folders, legal-pages, model-context-protocol, agent-tool-design, versioning, definition-of-done |
 
 Architecture:
 
 - Read [references/stack.md](references/stack.md) when choosing or swapping tech building blocks.
 - Read [AI model routing guidance](references/ai-model-routing.md) when a product calls LLMs, chooses production models or providers, designs model fallback, or accounts for model cost.
 - Read [references/monorepo-layout.md](references/monorepo-layout.md) when creating or reorganizing apps and packages.
+- Read [references/published-folders.md](references/published-folders.md) when a part of the product needs a repository of its own, such as an agent plugin, or when publishing a folder of the main repository to another repository. Use the [publish workflow asset](assets/publish-folder.yml) for each published folder.
 - Read [references/naming.md](references/naming.md) when naming folders, packages, slugs, surfaces, integrations, or workspace imports, or the publisher of a product that ships an installer.
 - Read [references/modularity.md](references/modularity.md) when designing how systems connect, placing integration boundaries, or keeping flows swappable.
 
@@ -72,7 +75,7 @@ Surfaces:
 - Read [references/seo.md](references/seo.md) when handling SEO for public pages or setting the tab title of any page.
 - Read [references/public-discovery.md](references/public-discovery.md) when exposing public pages to crawlers, sitemaps, scrapers, and no-JavaScript verification.
 - Read [references/legal-pages.md](references/legal-pages.md) when deciding whether a product needs a privacy policy or terms of service, adding or editing either page or another legal page a provider requires, laying out the footer's links to them, or building the sign-up or checkout step where terms are agreed to.
-- Read [references/contact-email.md](references/contact-email.md) when a page, manifest, profile, listing, consent screen, or provider support field needs a contact address or a support URL, when building the contact page, or before any personal mailbox would appear on a public surface.
+- Read [references/contact-email.md](references/contact-email.md) when a product gains a legal page, when a page, manifest, profile, listing, consent screen, or provider support field needs a contact address or a support URL, when building the contact page, or before any personal mailbox would appear on a public surface.
 - Read [references/domain-mail.md](references/domain-mail.md) when setting up email for a domain: choosing which seat or workspace hosts it, naming its sender, routing a product address to a monitored inbox, filtering routed mail, sending and replying as the address, or finishing its picture, logo, footer, and test send at the mailbox provider.
 - Read [references/test-identities.md](references/test-identities.md) when creating or verifying an account that is not a person: for automated testing, for a store or platform reviewer, or for provider administration.
 - Read [references/social-metadata.md](references/social-metadata.md) when building or reviewing any page a person can open without signing in, so it ships its favicon and the link preview card a pasted URL expands into. Also read it when a page frames content users wrote, or when exporting a brand image for any surface, provider, or profile.
@@ -94,6 +97,7 @@ Identity and URLs:
 Runtime and environment:
 
 - Read [references/environment.md](references/environment.md) when creating, auditing, repairing, or filling env files, deciding which store holds a value, or keeping provider env separated by stage.
+- Read [references/secrets-store.md](references/secrets-store.md) when a repository's runtimes read env: setting up the secrets store, creating or rotating any key, filling env after a fresh clone, or wiring a sync to hosting, CI, or a provider.
 - Read [references/branches.md](references/branches.md) when mapping branches to deployment stages and provider credential tiers.
 - Read [references/deployment.md](references/deployment.md) when creating a hosting project, configuring which branches deploy, or wiring how hosting runs. Use the [deployment configuration asset](assets/vercel.json) when applying its branch-gating defaults.
 - Read [references/continuous-integration.md](references/continuous-integration.md) when adding verification workflows, release automation, or checks required before promotion, running verification gates through a task runner, or deciding which branches trigger artifact-building workflows.
@@ -155,6 +159,7 @@ Operating philosophy:
   ```
 - Read [references/versioning.md](references/versioning.md) when bumping versions or keeping version mentions in sync.
 - Read [references/cleanup.md](references/cleanup.md) when removing dead flows, stale docs, or temporary artifacts.
+- Read [references/catch-up.md](references/catch-up.md) when asked whether a repository is missing anything from these opinions, or to bring an existing repository up to them.
 
 ## Core Non-Negotiables
 
@@ -184,7 +189,7 @@ When invoked to audit a web repo:
 1. Classify public versus signed-in surfaces, whether their rendering posture matches, and whether every publicly reachable page ships a favicon and a correct link preview card.
 2. Inspect URL IDs, route paths, query-state restoration, and link stability across reorganization.
 3. Check auth bootstrap, workspace creation, and permission-gated UI that hides unavailable actions.
-4. Confirm per-runtime env contracts, no root env clutter, and same key names across stages.
+4. Confirm per-runtime env contracts, every env value kept in the secrets store, no root env clutter, and same key names across stages.
 5. Check ownership boundaries, external sources, search scope, media storage, and bounded data work.
 6. Verify user-facing failures, partial results, feedback, and responsive interaction states remain coherent.
 7. Confirm branch-to-stage mapping, deploy gating, migrations, webhooks, DNS records, and provider setup are recorded in each deployable app's setup document.

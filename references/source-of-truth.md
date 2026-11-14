@@ -10,7 +10,7 @@ Pick one durable owner per fact, with every other copy a cache or a reference an
 | Login identity | Auth provider |
 | External resource identity, canonical metadata, and availability | Source provider |
 | Pure product rules and constants | Domain package |
-| Deploy and runtime env values | Hosting and provider stores |
+| Deploy and runtime env values | Secrets store, copied to hosting and provider stores |
 
 The database references object keys, and object storage never becomes a second app database. The app reads subscription truth from the billing provider rather than mirroring it as the authority.
 
