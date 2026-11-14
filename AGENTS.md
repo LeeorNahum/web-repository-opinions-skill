@@ -11,7 +11,6 @@ Rules for editing the **web-repository-opinions** skill. User-facing opinions li
 | `assets/` | Exact copyable starter files governed by an owning reference |
 | `scripts/check-layout.mjs` | The layout check an agent runs on its own served build, with `package.json` letting it run straight from GitHub |
 | `README.md` | Short human summary |
-| `evals/` | Behavioral cases with their assertions, fixture projects, the clean-room harness, and recorded rounds. Maintainer-only: `SKILL.md` never routes to it |
 
 One owner per opinion. Each reference owns its concept. Other files use the term or shape without restating the rule. The reference-loading map lives in `SKILL.md` once. References assume the agent already loaded what their section needs.
 
@@ -59,9 +58,9 @@ A repository-opinions skill is opinionated and explicit, names its default tools
 - **Sparing examples.** Use a concrete example only to clarify a shape or structure, never to fix a naming choice. Do not anchor a name with an example token the reader could copy verbatim instead of choosing the most accurate name for their own case.
 - **Positive rules.** State the action to take, not the mistake to avoid. Write "Use a role name for the integration" rather than "Do not name the integration after the vendor". A negative rule names the failure and quietly anchors it as the thing to copy. A positive rule points only at the correct move. A bare prohibition such as "Do not collapse the two surfaces" is weaker than "Keep each surface its own deployable". Reserve a "do not" only when no positive phrasing carries the same force, and never turn a banned example into a label the reader could lift verbatim.
 
-## Evaluating A Change
+## Behavioral Tests
 
-Run the suite in `evals/` for any change to an opinion, as `evals/harness/README.md` describes, with the old and new skill compared in the same round. When no case exercises the change, add one: a request a real product owner would make, in a fixture project that never names the rule. Pair every case where the rule should change a decision with one where applying it too broadly would be wrong. Raw run output, such as answers, changes, transcripts, and per-session grading, stays local: commit only the cases, fixtures, harness, and the per-round scores in `evals/results/SUMMARY.md`.
+Add a behavioral test only when the owner asks for one after a rule failed in a real build: a request a real product owner would make, in a test project that never names the rule. Tests live in `evals/`.
 
 ## Compatibility Posture
 
