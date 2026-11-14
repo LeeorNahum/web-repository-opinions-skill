@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.44.0"
+  version: "1.45.0"
 ---
 
 # Web Repository Opinions
@@ -106,6 +106,7 @@ Auth and data:
 - Read [references/workspace-tenancy.md](references/workspace-tenancy.md) when deciding whether a product needs workspaces, backing them with the auth provider's organizations, shaping the home workspace, sharing one resource with someone outside its workspace, choosing an agent grant's workspace scope, or migrating existing workspaces onto organizations.
 - Read [references/bootstrap.md](references/bootstrap.md) when ensuring user, workspace, and membership exist on authenticated entry.
 - Read [references/data-model.md](references/data-model.md) when modeling entities, names, and value precedence, or deciding how a person removes what they create.
+- Read [references/settings.md](references/settings.md) when adding, storing, or saving a setting for a workspace, a person, or a device, or laying out a settings screen.
 - Read [references/source-of-truth.md](references/source-of-truth.md) when deciding which system owns which fact, or which document governs another.
 - Read [references/live-data.md](references/live-data.md) when wiring a reactive backend so the UI updates live.
 - Read [references/search-indexing.md](references/search-indexing.md) when defining searchable fields, indexing fetched data, or running search migrations.
