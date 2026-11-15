@@ -1,13 +1,13 @@
 # Environment
 
-Env setup should be boring, explicit, and hard to drift. An env example is a contract, not a secret store and not a deployment database. Each runtime owns its own contract. Deployed environments supply values through their host or provider.
+Env setup should be boring, explicit, and hard to drift. An env example is a contract, not a secret store and not a deployment database. Each runtime owns its own contract. In a repository with a production stage, deployed environments supply values through their host, build, or provider.
 
 Env is for secrets and true environment variance, not a general settings file. This is the twelve-factor posture: configuration that varies by deploy lives in the environment, and stages stay at parity by sharing key names so only values differ by store.
 
 ## Core Standard
 
 - Put one committed `.env.example` beside each runtime that reads env.
-- Put real local values in that runtime's `.env.local` and never commit it.
+- Put real local values in that runtime's `.env.local` and never commit it. In a repository with no secrets store, that file is the only home of its keys, and a new or changed key is edited there directly.
 - Keep `.env.example` in the same key order and grouping as `.env.local`.
 - Use the same stage-neutral key names across local, staging, and production. The store supplies different values. Add a stage-scoped name only when one process connects to several stages at once.
 - Keep env files beside the runtimes that read them. Leave the repository root without one unless root code reads env at runtime. Package scripts, the monorepo tool, and workspace manifests do not justify it.
@@ -35,11 +35,11 @@ If a value changes product behavior and should be reviewed, prefer code. If it c
 
 ## Stages
 
-Three conceptual stages. Key names stay the same across all three. Only the values change by store.
+Up to three conceptual stages: `local` always, `production` when the repository has a production stage, and `staging` when it deploys. Key names stay the same across every stage. Only the values change by store.
 
 - `local`: values in `.env.local`, used from the developer machine.
-- `staging`: deployed non-production values, in the hosting platform's staging scope and the dev/test tier of each provider.
-- `production`: live values in the production host and provider environments.
+- `staging`: deployed non-production values, in the staging scope of the host or backend deployment and the dev/test tier of each provider.
+- `production`: live values in the production host or shipped build and the provider environments.
 
 When provider resources can mix between stages, identify the intended source before wiring values. Pointing the wrong stage at a production provider is a category of mistake worth catching explicitly.
 
@@ -66,13 +66,13 @@ packages/backend/.env.example -> packages/backend/.env.local
 
 ## Provider Stores
 
-Each store below owns its part of one stage:
+Each store the repository has owns its part of one stage:
 
 | Store | Owns |
 | --- | --- |
-| Secrets store | The permanent copy of every value, per stage, including values no provider can show again or that exist in no provider |
+| Secrets store | Where the repository keeps one, the permanent copy of every value, per stage, including values no provider can show again or that exist in no provider |
 | `.env.example` | Committed contract and setup hints |
-| `.env.local` | Developer-local working copy, gitignored |
+| `.env.local` | Developer-local values, gitignored: a copy the secrets store fills where one exists, and the only copy where none does |
 | Hosting platform env (staging scope) | Deployed non-production surface values |
 | Hosting platform env (production scope) | Deployed production surface values |
 | Backend deployment env | Secrets the backend functions read, per deployment |
@@ -99,7 +99,7 @@ Treat `NEXT_PUBLIC_*`, `VITE_*`, and similar prefixes as browser-exposed. Never 
 4. Remove root env files unless justified.
 5. Remove unused or future-only keys unless clearly marked.
 6. Replace hardcoded production URL fallbacks with required env, safe origin inference, or a documented constant.
-7. Verify deployed stage separation for provider-backed services.
+7. When the repository has a production stage, verify stage separation for provider-backed services.
 8. Report missing or pasted values as key names and store locations, never secret values.
 
 If build or test output depends on env, update the build tool's task env inputs intentionally rather than adding a root env file as a workaround.

@@ -4,11 +4,11 @@ Give a remote MCP server one product-owned endpoint:
 
 - Remote MCP: `https://mcp.<domain>/mcp`
 
-Use the official MCP SDK's current major for protocol behavior, served through its web-standard transport on Hono. Verify tokens directly with the auth provider's backend SDK rather than through framework-specific MCP helpers, so the provider stays a swappable implementation of the authorization server role.
+Use the official MCP SDK's current major for protocol behavior, with a remote server served through its web-standard transport on Hono. Verify tokens directly with the auth provider's backend SDK rather than through framework-specific MCP helpers, so the provider stays a swappable implementation of the authorization server role.
 
 Use buffered JSON responses for ordinary serverless tool calls. Add a streaming or subscription path only when the feature requires it and the hosting runtime is proven to keep that path alive. Keep request handling stateless when the selected protocol revision carries all required context per request. Add shared session state only for a supported client revision or application feature that actually requires it.
 
-Keep the application route at `/mcp`. MCP revision information belongs in the protocol fields defined by the selected revision, not in an application API path version.
+Keep a remote server's application route at `/mcp`. MCP revision information belongs in the protocol fields defined by the selected revision, not in an application API path version.
 
 ## Revision Policy
 
@@ -25,6 +25,8 @@ Exposure decides what a public surface advertises. It is never the security boun
 Advertise one static catalog to every caller and authorize per call. Many clients cache the advertised surface on first connect and refresh it only on a change notification they may never subscribe to. A catalog that shifts with the caller's connected resources strands such a client on a stale surface, and a caller with no resources yet is the worst case, seeing almost nothing. Each tool takes every identifier it needs as an argument, so no tool depends on state an earlier call set. A call against a resource that cannot run it reaches the gate and comes back as that instructive error.
 
 ## Authorization
+
+This section covers a remote server. A local server over stdio takes its credentials from its environment, as the protocol directs, and runs no authorization flow.
 
 Published capability metadata is a promise. Advertise only scopes, grant types, response types, refresh behavior, extensions, and change notifications the server actually enforces or serves. Challenge and advertise only scopes every registered client can obtain, in the 401 `WWW-Authenticate` `scope` and the protected resource metadata's `scopes_supported`, because a host requests what is advertised and a scope it cannot hold fails after sign-in, where the host shows only a generic connection error. When the authorization provider advertises scopes its registered clients cannot hold, fix the provider's configuration rather than each host.
 

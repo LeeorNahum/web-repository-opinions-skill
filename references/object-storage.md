@@ -6,7 +6,7 @@ The database is the source of truth for metadata, ownership, status, and permiss
 
 ## Buckets
 
-Use a dedicated bucket per asset class and a separate bucket per stage, matching the two credential tiers, so dev/test bytes never mix with production bytes. One asset class, such as video, is one bucket pair (dev and prod). Split into more buckets only when a distinct asset class needs different access, lifecycle, or region, not by default.
+Use a dedicated bucket per asset class and a separate bucket per credential tier the repository uses, so dev/test bytes never mix with production bytes. In a repository with a production stage, one asset class, such as video, is one bucket pair (dev and prod). Split into more buckets only when a distinct asset class needs different access, lifecycle, or region, not by default.
 
 ## Keys
 

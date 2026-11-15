@@ -1,6 +1,6 @@
 # Deployment
 
-Each deployable app owns one hosting project, its public domain, and its runtime environment contract. Shared packages do not own deployments.
+Everything here applies to a repository that deploys, and Branch Deployment and the dashboard settings in Runtime Configuration only where a hosting project builds from it. Where none does, the workflow or release build that deploys the backend for each stage stands in for the app's build. Each hosted app owns one hosting project, its public domain, and its runtime environment contract. Shared packages do not own deployments.
 
 Keep provider project boundaries aligned with deployable app boundaries. Split a surface into its own hosting project when the product needs it, usually in this order: site, signed-in app, API, MCP, admin, webhooks, then job runtimes. Every separate app must be able to deploy, roll back, and scale without coupling its release to another surface.
 
@@ -32,7 +32,7 @@ Private, experimental, and local-only protocol access uses an explicit private t
 
 ## Dependent Service Deployment
 
-A backend whose code lives in this repository is part of what a branch push ships, not a separate errand afterward. Wire it into the owning app's build so one push deploys the whole runtime for that stage. If deploying a stage still needs someone to run a command by hand, that is a defect in the pipeline.
+A backend whose code lives in this repository is part of what a branch push ships, not a separate errand afterward. Wire it into the owning app's build so one push, or one release build, deploys the whole runtime for that stage. If deploying a stage still needs someone to run a command by hand, that is a defect in the pipeline.
 
 Do this by overriding the app's build command to run the service's own deploy tool, giving it the app build as a command to run inside the deploy. Most such tools take exactly this shape. With Convex the build command becomes `convex deploy --cmd '<the app build>'`. It runs the app build first with the deployment's URL injected, so the client cannot be pointed at a different deployment than the one being pushed, then pushes the backend. Put the build command in the repository, not in a hosting dashboard, so it is reviewable and cannot drift per project.
 
@@ -45,4 +45,3 @@ Do this by overriding the app's build command to run the service's own deploy to
 - Give each dependent service one deployment owner so parallel app builds cannot race to publish it.
 - Keep local development commands for interactive work. Hosted promotion should use the automated path.
 - Where a stage shares an instance with local development, it still deploys, and a build replaces what a developer pushed from their machine until their next local push. Prefer giving the stage its own instance, and treat sharing as the thing to fix rather than a reason to skip deploying.
-- Give each parallel worktree or agent its own development backend deployment, because a push of the whole function set replaces whatever the others pushed.

@@ -1,6 +1,6 @@
 # Build Caches
 
-Build caches grow until something evicts them. Gitignoring a cache keeps it out of Git and does nothing for the disk, so give each cache an age bound. Configure it once in the repo where the tool supports it, and otherwise run a prune after each approved push.
+Build caches grow until something evicts them. Gitignoring a cache keeps it out of Git and does nothing for the disk, so give each cache an age bound. Configure it once in the repo where the tool supports it, and otherwise run a prune after each approved commit to `main`.
 
 - Gitignore `.turbo`, `.next`, `node_modules`, and Rust `target/`.
 - Exclude the framework's own cache from every task's build outputs (the `outputs` list in `turbo.json`, with `"!.next/cache/**"` beside `".next/**"`), so the task runner does not store it again inside each entry.
@@ -19,4 +19,4 @@ Cargo never prunes a project's `target` folder. Its automatic cleanup covers onl
 - Prune with `cargo sweep --time 14` from the crate folder, installed once with `cargo install cargo-sweep`. It reads Cargo's fingerprints, so it removes whole stale units that a rebuild regenerates.
 - Keep last-access-time updates enabled on the volume, because cargo-sweep measures age by last access. On Windows, `fsutil behavior query disablelastaccess` reports it.
 - Delete `target/debug/incremental` in the same prune, because cargo-sweep leaves it alone. It is a cache the next build recreates, and that build recompiles the crate's own workspace code but not its dependencies.
-- Run both steps after each approved push. The cargo-sweep README calls the tool unmaintained, so look for an active replacement when installing it.
+- Run both steps after each approved commit to `main`. The cargo-sweep README calls the tool unmaintained, so look for an active replacement when installing it.

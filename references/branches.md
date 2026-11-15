@@ -1,6 +1,6 @@
 # Branches
 
-Branches are deployment roles, not just code lines. Use `main`, never `master`, as the production branch.
+Branches are deployment roles, not just code lines. Use `main`, never `master`, as the production branch. A repository that does not deploy has `dev` and `main` alone. Its `main` is the released line, and also its production when the repository has a production stage. A repository that deploys maps its branches to stages:
 
 | Branch | Stage | Provider credentials | Deploys |
 | --- | --- | --- | --- |
@@ -18,9 +18,9 @@ Agent Git rules:
 
 - Default commit target is `dev` unless the user asks for `preview` or `main`.
 - Merge `dev` into `preview` for a hosted staging deploy.
-- Merge `preview` into `main` only for production releases with explicit approval.
+- Merge `preview` into `main` only for production releases with explicit approval. Without `preview`, merge `dev` into `main` for a release, with the same approval.
 - Push only with explicit user approval.
-- After an approved push, run the repository's build-cache prune when it has one.
+- After each approved commit to `main`, run the repository's build-cache prune when it has one.
 
 The point of the system: every change lands on `dev` first, `preview` proves it on real hosted infrastructure while still using safe dev/test resources, and `main` is the only place production credentials and live data are touched.
 

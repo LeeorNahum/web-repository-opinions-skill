@@ -3,7 +3,7 @@ name: "web-repository-opinions"
 description: "Use for any web work: planning, deciding, designing, scaffolding, naming, reviewing, auditing, or implementing anything in a TypeScript or web-technology repo, including a marketing site, signed-in app, SaaS, extension, desktop or mobile surface, and backend-only pieces of a web product. Holds opinionated defaults for architecture, URLs, environment and deployment, auth and data ownership, media and jobs, billing, public interfaces, and product UI. When unsure whether it applies, load it."
 metadata:
   author: "Leeor Nahum"
-  version: "1.46.0"
+  version: "1.47.0"
 ---
 
 # Web Repository Opinions
@@ -12,7 +12,9 @@ A web product is more than its Git repo. The real product is code plus database,
 
 Build around the thing the user came to do. A product should feel like its core workflow, not a generic dashboard with feature panels attached.
 
-These are opinionated defaults, not a single product spec. Apply what fits the repo. The named tools below are swappable defaults. The paradigms around them are not.
+These are opinionated defaults, not a single product spec. The named tools below are swappable defaults. The paradigms around them are not.
+
+Each part states when it applies. Where it applies, it is required and applied in full. Where it does not, the repository goes without it. A condition holds once the repository or its providers show it, or once the user or the repository's docs say it will, so a product the user says will be hosted gets its hosting from its first change. A repository deploys when a hosting project, static hosting included, builds from it, or a hosted backend deployment runs its code. It has a production stage when anything outside the developer's machine uses its production resources, whether a host serves it or its users run it as an installer or app, so every repository that deploys has one. A cloud backend's development deployment that a developer machine pushes to counts toward neither.
 
 ## Default Stack
 
@@ -48,8 +50,8 @@ Whatever else applies, read at least the starting set for each surface the work 
 | --- | --- |
 | Public site | marketing-site, rendering, seo, public-discovery, social-metadata, legal-pages (which decides whether the site has any), responsive-layout, design-tokens, font-loading, interaction-feedback, definition-of-done |
 | Signed-in app | app-surface, legal-pages, spa-feel, routing, query-state, ids, product-ux, interaction-feedback, user-facing-errors, loading-states, responsive-layout, design-tokens, font-loading, seo, social-metadata, definition-of-done |
-| New repository | stack, monorepo-layout, naming, environment, secrets-store (when a runtime reads env), branches, deployment, continuous-integration, build-caches, provider-setup, origins, domains, definition-of-done, and the set of every surface it holds |
-| Public API or MCP server | http-apis, model-context-protocol, agent-tool-design, auth, ids, user-facing-errors, abuse-resistance, environment, secrets-store, deployment, continuous-integration, definition-of-done |
+| New repository | stack, monorepo-layout, naming, environment, branches, build-caches, provider-setup, origins, definition-of-done, and the set of every surface it holds, plus continuous-integration when it has a remote, deployment when it deploys, domains when a hosting project builds from it, and secrets-store when a runtime reads env and the repository has a remote or a production stage |
+| Public API or MCP server | http-apis, model-context-protocol, agent-tool-design, auth, ids, user-facing-errors, abuse-resistance, environment, definition-of-done, plus continuous-integration when the repository has a remote, deployment when it deploys, and secrets-store when a runtime reads env and the repository has a remote or a production stage |
 | Agent plugin | agent-plugins, agent-skills, published-folders, legal-pages, model-context-protocol, agent-tool-design, versioning, definition-of-done |
 
 Architecture:
@@ -97,9 +99,9 @@ Identity and URLs:
 Runtime and environment:
 
 - Read [references/environment.md](references/environment.md) when creating, auditing, repairing, or filling env files, deciding which store holds a value, or keeping provider env separated by stage.
-- Read [references/secrets-store.md](references/secrets-store.md) when a repository's runtimes read env: setting up the secrets store, creating or rotating any key, filling env after a fresh clone, or wiring a sync to hosting, CI, or a provider.
+- Read [references/secrets-store.md](references/secrets-store.md) when a repository's runtimes read env and it has a remote or a production stage, or it already keeps a secrets store: setting up the secrets store, creating or rotating any key, filling env after a fresh clone, or wiring a sync to hosting, CI, or a provider.
 - Read [references/branches.md](references/branches.md) when mapping branches to deployment stages and provider credential tiers.
-- Read [references/deployment.md](references/deployment.md) when creating a hosting project, configuring which branches deploy, or wiring how hosting runs. Use the [deployment configuration asset](assets/vercel.json) when applying its branch-gating defaults.
+- Read [references/deployment.md](references/deployment.md) when creating a hosting project, configuring which branches deploy, wiring how hosting runs, or wiring how a hosted backend deploys. Use the [deployment configuration asset](assets/vercel.json) when applying its branch-gating defaults.
 - Read [references/continuous-integration.md](references/continuous-integration.md) when adding verification workflows, release automation, or checks required before promotion, running verification gates through a task runner, or deciding which branches trigger artifact-building workflows.
 - Read [references/build-caches.md](references/build-caches.md) when writing a repository's gitignore for build output, configuring the task runner's cache, setting up a Rust crate such as a desktop app's backend, or when `.turbo`, `.next`, or `target` folders grow.
 - Read [references/dns.md](references/dns.md) when creating DNS records, proxy settings, or record comments.
@@ -147,7 +149,7 @@ Frontend and UI:
 
 Operating philosophy:
 
-- Read [references/provider-setup.md](references/provider-setup.md) when onboarding providers or standing up a stage, deciding the order providers are wired, or configuring OAuth, webhooks, CORS, or allowed origins.
+- Read [references/provider-setup.md](references/provider-setup.md) when onboarding providers or standing up a stage, deciding the order providers are wired, giving parallel worktrees or agents their own development backend, or configuring OAuth, webhooks, CORS, or allowed origins.
 - Read [references/runtime-truth.md](references/runtime-truth.md) when deciding whether a change is actually complete.
 - Read [references/promotion.md](references/promotion.md) when promoting work between deployment stages.
 - Read [references/definition-of-done.md](references/definition-of-done.md) before implementing or reviewing a shippable feature. Use its verification categories to identify every other reference the work must load.
@@ -159,7 +161,7 @@ Operating philosophy:
   ```
 - Read [references/versioning.md](references/versioning.md) when bumping versions or keeping version mentions in sync.
 - Read [references/cleanup.md](references/cleanup.md) when removing dead flows, stale docs, or temporary artifacts.
-- Read [references/catch-up.md](references/catch-up.md) when asked whether a repository is missing anything from these opinions, or to bring an existing repository up to them.
+- Read [references/catch-up.md](references/catch-up.md) for any request to check or audit a repository against these opinions, to find what it is missing from them or what is new in them, or to bring an existing repository up to them, however it is worded.
 
 ## Core Non-Negotiables
 
@@ -177,22 +179,9 @@ Operating philosophy:
 - Compatibility requires an explicit supported contract. Current intended behavior replaces unreleased mistakes.
 - Env holds secrets and true environment variance. Product decisions live in code.
 - Same env key names across stages. Values change by store, not the key.
-- Branches are deployment roles: `dev` is local, `preview` is hosted staging on dev resources, `main` is production.
+- Branches are deployment roles: `dev` is local, and `main` is production, or only the released line in a repository without a production stage. A repository that deploys adds `preview`, hosted staging on dev resources.
 - Check quota before expensive work, reserve it when parallel requests could overspend it, and record usage only after durable success. Expensive jobs retry only on user action. Failed states must be actionable.
 - User-facing failures use product-owned copy. Raw exception, provider, framework, request, and stack details stay internal.
 - A change is done when the runtime it depends on is true, not when TypeScript compiles.
-
-## Web Repository Audit
-
-When invoked to audit a web repo:
-
-1. Classify public versus signed-in surfaces, whether their rendering posture matches, and whether every publicly reachable page ships a favicon and a correct link preview card.
-2. Inspect URL IDs, route paths, query-state restoration, and link stability across reorganization.
-3. Check auth bootstrap, workspace creation, and permission-gated UI that hides unavailable actions.
-4. Confirm per-runtime env contracts, every env value kept in the secrets store, no root env clutter, and same key names across stages.
-5. Check ownership boundaries, external sources, search scope, media storage, and bounded data work.
-6. Verify user-facing failures, partial results, feedback, and responsive interaction states remain coherent.
-7. Confirm branch-to-stage mapping, deploy gating, migrations, webhooks, DNS records, and provider setup are recorded in each deployable app's setup document.
-8. Report mismatches by category and file area, never by leaking secret values or one-off product names.
 
 Several references carry an "Ask before" line for their riskiest changes, such as production domains, DNS, credentials, billing mode, public sharing, and provider resources. Honor those where the topic lives.

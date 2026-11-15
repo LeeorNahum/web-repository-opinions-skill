@@ -1,6 +1,6 @@
 # Domains
 
-Lay out hosts around one canonical origin per surface, with the primary surface on the apex.
+Where a hosting project builds from the repository, lay out its hosts around one canonical origin per surface, with the primary surface on the apex.
 
 - Primary site on the apex: `example.com`. This is the default home. A product that pitches itself on a public site and does its work in a private signed-in workspace, which is nearly every SaaS, keeps the public site alone on the apex and the signed-in product on its role subdomain. The apex carries sign-in only when its public pages are the product itself, so a signed-out visitor uses the same surface a signed-in one does and signing in only adds to it.
 - Signed-in app on its own subdomain: `app.example.com`.

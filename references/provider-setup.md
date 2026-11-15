@@ -4,7 +4,7 @@ Provider dashboards are part of the product. A setting that can break the app is
 
 Provider resources should be understandable from the dashboard alone. Fill optional descriptions, labels, and tags with the product, operational purpose, and environment or shared scope. Use canonical names from the repo, and prefer concise metadata that helps both people and automation distinguish similar resources across stages. Resource-specific formats, such as DNS record comments, remain authoritative where defined.
 
-Keep a committed setup document beside each deployable app's `.env.example` that lists, per stage and never with secret values:
+In a repository with a production stage, keep a committed setup document beside the `.env.example` of each app or backend that uses a provider, or at its own root when it has none, listing, per stage and never with secret values:
 
 - CORS policies
 - Webhook URLs and the store holding each signing secret
@@ -20,7 +20,7 @@ When onboarding providers, work one provider or one small sub-step at a time: ma
 
 Some steps need a public URL that does not exist yet, such as a webhook target before the first staging deploy. Defer those explicitly, note what will unblock them, and keep them in the setup document rather than guessing a value.
 
-Every provider resource exists once per stage. A dev-tier app, key, or install pointing at production, or a production one reusing dev credentials, is not a shortcut, it is a wrong webhook target and a shared blast radius. Create the production resource when the stage exists rather than borrowing the development one and planning to fix it later.
+Every provider resource exists once per credential tier, and a backend deployment once per stage. A dev-tier app, key, or install pointing at production, or a production one reusing dev credentials, is not a shortcut, it is a wrong webhook target and a shared blast radius. Create the production resource when the stage exists rather than borrowing the development one and planning to fix it later.
 
 Provider branding is part of setup, not decoration. Fill the logo, name, support contact, and links on every consent screen, app listing, and connector entry, so a user granting access sees the product rather than an unnamed client.
 
@@ -34,14 +34,15 @@ Name the provider project, application, workspace, or account with the product's
 
 ## Order Of Operations
 
-Wire each provider as completely as its known dependencies allow, across dev/test and production, while its dashboard is open.
+Wire each provider as completely as its known dependencies allow, across every stage the repository has, while its dashboard is open.
 
-- Configure the dev/test tier first, then production. Complete production provisioning whenever its values are known, even when end-to-end production verification comes later.
+- Configure the dev/test tier first. When the repository has a production stage, configure production next, and complete its provisioning whenever its values are known, even when end-to-end production verification comes later.
 - Order by dependency truth. Establish canonical projects, deployments, domains, and origins before credentials, allowlists, callbacks, webhooks, or redirect URIs that refer to them. Defer a dependent setting until its upstream value exists rather than entering a temporary value that needs repair later.
 - Finish every actionable setting of one provider before moving to the next, and record each remaining deferral with its blocker.
-- Fill local env and push the dev backend deployment as soon as dev/test values are ready, so local verification proceeds while production waits.
-- Push the repo to its remote before wiring a host that deploys from it.
-- For each hosted stage, provision credentials, fill env, then add its domain and DNS records once the stage has an origin.
+- When parallel worktrees or agents push a development backend, give each its own development backend deployment, because a push of the whole function set replaces whatever the others pushed.
+- Fill local env, and push the dev backend deployment when the product has one, as soon as dev/test values are ready, so local verification proceeds while production waits.
+- When the repository deploys, push it to its remote before wiring the host or workflow that builds from it.
+- For each stage, provision credentials and fill env, and where a hosting project serves the stage, add its domain and DNS records once it has an origin.
 - Count a stage as done only when its dashboard state, such as allowed origins, callbacks, webhooks, and branch deploys, is set alongside its keys.
 - When a later step changes an earlier value, update every store that holds it in the same pass.
 - After cloning a provider instance from one stage to another, diff every setting between the two, because a clone can drop a setting without saying so.

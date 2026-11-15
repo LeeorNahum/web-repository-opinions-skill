@@ -2,7 +2,7 @@
 
 Origin resolution is deciding which scheme, host, and port a link or callback should use. Centralize it in one shared module so every surface and the backend resolve origins the same way. Never scatter hardcoded origins through app code.
 
-A canonical origin is the locked production origin for a surface, such as `https://example.com` or `https://app.example.com`, held as a code constant.
+A canonical origin is the locked production origin for a surface, such as `https://example.com` or `https://app.example.com`, held as a code constant. Canonical and stage origins exist once a hosting project builds from the repository. Until then, its resolvers serve local origins and any explicit env override.
 
 ## Resolution Order
 
@@ -18,18 +18,18 @@ Same-surface navigation uses relative paths (`/pricing`, `/settings/billing`). C
 
 ## Stage Awareness
 
-A resolver must know which deployment stage it is serving, not only which surface, so a preview deployment resolves to the preview origin instead of production.
+Once a hosting project builds from the repository, a resolver must know which deployment stage it is serving, not only which surface, so a preview deployment resolves to the preview origin instead of production.
 
 Any UI that displays an origin, endpoint, base URL, example request, or copyable command builds it from the resolver. A page served from preview shows preview URLs, a page served from production shows production URLs. Never print a hardcoded production origin on a non-production stage, because users copy what they see and will hit the wrong or non-existent host.
 
 ## Shape
 
-The shared module exposes a canonical origin and a resolver per surface, plus an absolute-URL helper. One resolver exists for each surface the product actually has, named by the surface role, not hardcoded to a fixed pair. A product with only a site has one resolver, and a product with site, app, and admin has three.
+The shared module exposes a resolver per surface, a canonical origin per surface a hosting project serves, and an absolute-URL helper. One resolver exists for each surface the product actually has, named by the surface role, not hardcoded to a fixed pair. A product with only a site has one resolver, and a product with site, app, and admin has three.
 
 ```text
-CANONICAL_<SURFACE>_ORIGIN   one constant per real surface
+CANONICAL_<SURFACE>_ORIGIN   one constant per surface a hosting project serves
 LOCAL_<SURFACE>_ORIGIN       one local default per real surface
-PREVIEW_<SURFACE>_ORIGIN     one staging origin per real surface
+PREVIEW_<SURFACE>_ORIGIN     one staging origin per surface a hosting project serves
 resolve<Surface>Origin()     one resolver per real surface
 absoluteUrl(path, origin)    join a path to a resolved origin
 ```

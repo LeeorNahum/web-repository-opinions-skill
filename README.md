@@ -6,8 +6,8 @@ The opinions are paradigm-named and provider-stated: sections are named for what
 
 ## Layout
 
-- `SKILL.md` is the spine: thesis, default stack, the reference-loading map, core non-negotiables, and the audit procedure.
-- `references/` holds one single concept per file, loaded on demand.
+- `SKILL.md` is the spine: thesis, default stack, the reference-loading map, and core non-negotiables.
+- `references/` holds one single concept per file, loaded on demand. `references/catch-up.md` is Repository Catch-Up, the pass that checks a repository against these opinions.
 - `assets/` holds copyable starter files for a target repo: hosting config and the folder publish workflow.
 - `scripts/check-layout.mjs` is the layout check an agent runs on its served build, and `package.json` lets it run from GitHub.
 - `AGENTS.md` is the editing and maintenance contract for this skill.

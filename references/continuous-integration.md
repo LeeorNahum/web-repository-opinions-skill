@@ -1,6 +1,6 @@
 # Continuous Integration
 
-Use GitHub Actions for repository verification by default. Keep deployment with the existing hosting integration when it already owns that job. Give each runtime and published artifact one publishing owner.
+A repository that has a remote verifies itself with workflows there, on GitHub Actions by default. Keep deployment with the existing hosting integration when it already owns that job. Give each runtime and published artifact one publishing owner.
 
 - Ship the workflow with the repository's first change. Run lint, typecheck, contract, and unit tests on every push and every pull request. Pin the runtime and package manager and install from the frozen lockfile.
 - Give each deployable app real `lint`, `typecheck`, and `build` scripts that the workspace root runs.
@@ -13,7 +13,7 @@ Use GitHub Actions for repository verification by default. Keep deployment with 
 
 ## Artifact Workflows Follow The Deploy Gate
 
-Expensive workflows trigger on the same branches the hosting config deploys, `main` and `preview`, never on every `dev` or feature-branch push. This covers any workflow that compiles installers, packages, or full production bundles. Runner minutes are metered, artifact storage is capped and its usage meter recalculates slowly, and a working branch that builds an installer per commit can exhaust the storage quota and block the release pipeline itself.
+In a repository that deploys, expensive workflows trigger on the branches that deploy, `main` and `preview`, never on every `dev` or feature-branch push. This covers any workflow that compiles installers, packages, or full production bundles. Runner minutes are metered, artifact storage is capped and its usage meter recalculates slowly, and a working branch that builds an installer per commit can exhaust the storage quota and block the release pipeline itself.
 
 - Put the gate in the trigger of each release-candidate and artifact-producing workflow, with `workflow_dispatch` kept for manual runs:
 
@@ -25,6 +25,7 @@ Expensive workflows trigger on the same branches the hosting config deploys, `ma
   ```
 
 - Scope a release workflow that builds from version tags to those tags instead of `main`. The pre-release workflow then triggers on `preview` alone, because a `main` push would rebuild what the tag build already owns.
+- In a repository that does not deploy, which has no `preview` and no hosted `main` to follow, trigger each artifact-producing workflow on version tags alone, with `workflow_dispatch` kept for manual runs.
 - Set `retention-days` to 7 or fewer on every non-release artifact upload. Only release artifacts earn long retention.
 
 The gate lives in each workflow's own trigger lines, so it has no copyable asset. A repository with no artifact-building workflows has nothing to gate.
